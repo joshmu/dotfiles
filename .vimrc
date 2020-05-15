@@ -25,6 +25,9 @@ set undofile
 set incsearch
 set hlsearch
 
+" use system clipboard
+set clipboard=unnamedplus
+
 " Give more space for displaying messages.
 set cmdheight=2
 
@@ -46,7 +49,7 @@ set showbreak=+++
 
 call plug#begin('~/.vim/plugged')
 
-
+Plug 'sheerun/vim-polyglot'
 Plug 'vim-airline/vim-airline'
 Plug 'vim-airline/vim-airline-themes'
 Plug 'ycm-core/YouCompleteMe'
