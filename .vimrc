@@ -2,6 +2,12 @@ syntax on
 
 inoremap jk <Esc>
 
+" remove scroll bars
+set guioptions=
+
+" text wraps and newline isn't created
+" set textwidth=80
+" set wrap
 
 set hidden
 set noerrorbells
@@ -29,8 +35,14 @@ set updatetime=50
 " Don't pass messages to |ins-completion-menu|.
 set shortmess+=c
 
-" set colorcolumn=80
-" highlight ColorColumn ctermbg=0 guibg=lightgrey
+set colorcolumn=80
+highlight ColorColumn ctermbg=0 guibg=lightgrey
+
+" soft wrap hack
+autocmd VimResized * if (&columns > 80) | set columns=80 | endif
+set wrap
+set linebreak
+set showbreak=+++
 
 call plug#begin('~/.vim/plugged')
 
@@ -105,6 +117,5 @@ set cursorline
 hi CursorLine term=none cterm=none guibg=Grey40
 " hi CursorLine term=bold cterm=bold guibg=Grey40
 
-" set textwidth=80
 
 

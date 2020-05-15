@@ -9,7 +9,8 @@ module.exports = {
     updateChannel: 'stable',
 
     // default font size in pixels for all tabs
-    fontSize: 16,
+    // 'verimnal' causes max fontSize limit
+    fontSize: 14,
 
     // enable ligatures by disabling this (performance loss!)
     webGLRenderer: true,
@@ -17,6 +18,7 @@ module.exports = {
     // Overrides for the verminal theme
     verminal: {
       fontFamily: '"Fira Code"',
+      fontSize: 14
     },
 
     // font family with optional fallbacks
