@@ -1,0 +1,16 @@
+# This is Git's per-user configuration file.
+[user]
+email = mu@joshmu.com
+name = Josh Mu
+[alias]
+a = add
+ca = commit -a
+cam = commit -am
+s = status
+pom = push origin master
+pog = push origin gh-pages
+puom = pull origin master
+puog = pull origin gh-pages
+cob = checkout -b
+[color]
+ui = auto
