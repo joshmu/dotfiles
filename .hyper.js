@@ -13,7 +13,7 @@ module.exports = {
     fontSize: 14,
 
     // enable ligatures by disabling this (performance loss!)
-    webGLRenderer: true,
+    webGLRenderer: false,
 
     // Overrides for the verminal theme
     verminal: {

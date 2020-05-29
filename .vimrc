@@ -17,6 +17,9 @@ set expandtab
 set smartindent
 set nu
 set nowrap
+" using ignorecase with smartcase so it becomes sensitive only when we use
+" upperccase characters
+set ignorecase
 set smartcase
 set noswapfile
 set nobackup
@@ -49,6 +52,8 @@ set showbreak=+++
 
 call plug#begin('~/.vim/plugged')
 
+Plug 'ThePrimeagen/vim-be-good'
+Plug 'justinmk/vim-sneak'
 Plug 'jiangmiao/auto-pairs'
 Plug 'sheerun/vim-polyglot'
 Plug 'vim-airline/vim-airline'
