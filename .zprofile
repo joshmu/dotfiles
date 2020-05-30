@@ -22,6 +22,7 @@ alias gitconf="vim /Users/joshmu/Desktop/code/dotfiles/.gitconfig"
 alias gadd="git add ."
 alias gcom='git commit -m '
 alias gpom='git push origin master'
+alias gpom='git push heroku master'
 alias gphm='git push heroku master'
 alias gpdm='git push dreamhost master'
 alias glog='git log'
