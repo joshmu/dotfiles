@@ -14,15 +14,15 @@ alias yt-video="youtube-dl -o '%(title)s.%(ext)s' -f 'bestvideo[ext=mp4]'"
 alias yt-audio="youtube-dl -o '%(title)s.%(ext)s' -f 'bestaudio[ext=m4a]'"
 
 ### CONFIG
-alias vimconf="vim /Users/joshmu/Desktop/code/dotfiles/.vimrc"
-alias hypconf="vim /Users/joshmu/Desktop/code/dotfiles/.hyper.js"
-alias gitconf="vim /Users/joshmu/Desktop/code/dotfiles/.gitconfig"
+alias vimconf="nvim ~/.vimrc"
+alias hypconf="nvim ~/.hyper.js"
+alias gitconf="nvim ~/.gitconfig"
 
 ### GIT
 alias gadd="git add ."
 alias gcom='git commit -m '
 alias gpom='git push origin master'
-alias gpom='git push heroku master'
+alias gphm='git push heroku master'
 alias gphm='git push heroku master'
 alias gpdm='git push dreamhost master'
 alias glog='git log'
