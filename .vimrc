@@ -29,7 +29,7 @@ set incsearch
 set hlsearch
 
 " use system clipboard
-set clipboard=unnamedplus
+set clipboard^=unnamed,unnamedplus
 
 " Give more space for displaying messages.
 set cmdheight=2
