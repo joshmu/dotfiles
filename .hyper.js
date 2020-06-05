@@ -6,7 +6,7 @@ module.exports = {
   config: {
     // choose either `'stable'` for receiving highly polished,
     // or `'canary'` for less polished but more frequent updates
-    updateChannel: 'stable',
+    updateChannel: 'canary',
 
     // default font size in pixels for all tabs
     // 'verimnal' causes max fontSize limit
@@ -18,7 +18,7 @@ module.exports = {
     // Overrides for the verminal theme
     verminal: {
       fontFamily: '"Fira Code"',
-      fontSize: 14
+      fontSize: 14,
     },
 
     // font family with optional fallbacks
@@ -151,18 +151,17 @@ module.exports = {
   //   `@company/project`
   //   `project#1.0.1`
   plugins: [
-    'verminal',
-    'hyper-snazzy',
-    'hyper-search',
-    'hyper-sync-settings',
-    'hyper-snazzy',
+    //'verminal',
+      'hyper-snazzy',
+    // 'hyper-search',
+    // 'hyper-sync-settings',
     // 'hyper-statusline',
-    'hyper-tabs-enhanced',
-    'hyper-quit',
-    'hypercwd',
-    'hyperminimal',
+     'hyper-tabs-enhanced',
+    // 'hyper-quit',
+    // 'hypercwd',
+     'hyperminimal',
     'hyper-font-ligatures',
-    'hyperpower2',
+    // 'hyperpower2',
   ],
 
   // in development, you can create a directory under

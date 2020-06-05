@@ -21,6 +21,7 @@ alias gitconf="nvim ~/.gitconfig"
 ### GIT
 alias gadd="git add ."
 alias gcom='git commit -m '
+alias gcam='git commit -am '
 alias gpom='git push origin master'
 alias gphm='git push heroku master'
 alias gphm='git push heroku master'

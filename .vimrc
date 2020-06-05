@@ -52,6 +52,8 @@ set showbreak=+++
 
 call plug#begin('~/.vim/plugged')
 
+" Use release branch (recommend)
+Plug 'neoclide/coc.nvim', {'branch': 'release'}
 Plug 'ThePrimeagen/vim-be-good'
 Plug 'justinmk/vim-sneak'
 Plug 'jiangmiao/auto-pairs'
@@ -59,7 +61,7 @@ Plug 'sheerun/vim-polyglot'
 Plug 'vim-airline/vim-airline'
 Plug 'vim-airline/vim-airline-themes'
 Plug 'ycm-core/YouCompleteMe'
-Plug 'morhetz/gruvbox'
+Plug 'gruvbox-community/gruvbox'
 Plug 'jremmen/vim-ripgrep'
 Plug 'tpope/vim-fugitive'
 Plug 'leafgarland/typescript-vim'
@@ -112,9 +114,13 @@ autocmd FileType typescript :call GoYCM()
 
 set t_Co=256
 
+" true color suppoprt
+set termguicolors
+
+" let g:gruvbox_italic=1
 colorscheme gruvbox
 " colorscheme cobalt2
-"
+
 let g:airline_theme='gruvbox'
 let g:airline_powerline_fonts = 1
 
@@ -123,8 +129,12 @@ set background=dark
 set guifont=Fira\ Mono\ for\ Powerline
 
 set cursorline
-hi CursorLine term=none cterm=none guibg=Grey40
-" hi CursorLine term=bold cterm=bold guibg=Grey40
+hi CursorLine term=bold cterm=bold guibg=Grey10
 
-
-
+" CUSTOM MAPPINGS
+" Record Macro > tabe ~/.vimrc > "qp (q being where the macro is held in
+" register)
+" map, imap, nmap, vmap, > modes
+" ^M = <CR> = Enter (Carriage Return)
+" ^[ = <esc>
+nmap <Leader>ch i- [ ] jk
