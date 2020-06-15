@@ -1,6 +1,103 @@
-syntax on
+"-------------------------------------------------------------
+" PLUGINS
+call plug#begin('~/.vim/plugged')
 
+" Use release branch (recommend)
+Plug 'neoclide/coc.nvim', {'branch': 'release'}
+Plug 'justinmk/vim-sneak'
+Plug 'sheerun/vim-polyglot'
+Plug 'vim-airline/vim-airline'
+Plug 'vim-airline/vim-airline-themes'
+Plug 'jremmen/vim-ripgrep'
+Plug 'tpope/vim-fugitive'
+Plug 'leafgarland/typescript-vim'
+Plug 'vim-utils/vim-man'
+Plug 'ctrlpvim/ctrlp.vim'
+Plug 'mbbill/undotree'
+Plug 'preservim/nerdcommenter'
+
+" colorschemes
+Plug 'joshdick/onedark.vim'
+Plug 'gruvbox-community/gruvbox'
+
+" games
+Plug 'ThePrimeagen/vim-be-good'
+
+call plug#end()
+
+
+"-------------------------------------------------------------
+" MAPPINGS
 inoremap jk <Esc>
+let mapleader = " "
+
+" Switch tabs
+nnoremap <S-L> gt
+nnoremap <S-H> gT
+
+nnoremap <leader>h :wincmd h<CR>
+nnoremap <leader>j :wincmd j<CR>
+nnoremap <leader>k :wincmd k<CR>
+nnoremap <leader>l :wincmd l<CR>
+nnoremap <leader>u :UndotreeShow<CR>
+nnoremap <leader>pv :wincmd v<bar> :Ex <bar> :vertical resize 30<CR>
+nnoremap <Leader>ps :Rg<SPACE>
+nnoremap <silent> <Leader>+ :vertical resize +5<CR>
+nnoremap <silent> <Leader>- :vertical resize -5<CR>
+vnoremap J :m '>+1<CR>gv=gv
+vnoremap K :m '<-2<CR>gv=gv
+
+" Use <c-space> to trigger completion.
+inoremap <silent><expr> <c-space> coc#refresh()
+
+" Remap keys for gotos
+nmap <silent> gd <Plug>(coc-definition)
+nmap <silent> gy <Plug>(coc-type-definition)
+nmap <silent> gi <Plug>(coc-implementation)
+nmap <silent> gr <Plug>(coc-references)
+
+" Use `[g` and `]g` to navigate diagnostics
+" Use `:CocDiagnostics` to get all diagnostics of current buffer in location list.
+nmap <silent> [g <Plug>(coc-diagnostic-prev)
+nmap <silent> ]g <Plug>(coc-diagnostic-next)
+
+" Use K to show documentation in preview window
+nnoremap <silent> K :call <SID>show_documentation()<CR>
+function! s:show_documentation()
+  if (index(['vim','help'], &filetype) >= 0)
+    execute 'h '.expand('<cword>')
+  else
+    call CocAction('doHover')
+  endif
+endfunction
+
+" Highlight the symbol and its references when holding the cursor.
+autocmd CursorHold * silent call CocActionAsync('highlight')
+
+" Symbol renaming.
+nmap <leader>rn <Plug>(coc-rename)
+" Remap for rename current word
+nmap <F2> <Plug>(coc-rename)
+
+"-------------------------------------------------------------
+" CUSTOM MAPPINGS
+" Record Macro > tabe ~/.vimrc > "qp (q being where the macro is held in
+" register)
+" map, imap, nmap, vmap, > modes
+" ^M = <CR> = Enter (Carriage Return)
+" ^[ = <esc>
+"nmap === nnoremap
+nmap <Leader>ch i- [ ]
+" this gets translated to vscode (suppposedly imap and nnoremap work)
+nnoremap <Leader>j ihello
+
+
+"-------------------------------------------------------------
+" SETTINGS
+syntax on
+set t_Co=256
+" true color suppoprt
+set termguicolors
 
 " remove scroll bars
 set guioptions=
@@ -8,6 +105,8 @@ set guioptions=
 " text wraps and newline isn't created
 " set textwidth=80
 " set wrap
+
+set relativenumber
 
 set hidden
 set noerrorbells
@@ -50,57 +149,22 @@ set wrap
 set linebreak
 set showbreak=+++
 
-call plug#begin('~/.vim/plugged')
-
-" Use release branch (recommend)
-Plug 'neoclide/coc.nvim', {'branch': 'release'}
-Plug 'ThePrimeagen/vim-be-good'
-Plug 'justinmk/vim-sneak'
-Plug 'jiangmiao/auto-pairs'
-Plug 'sheerun/vim-polyglot'
-Plug 'vim-airline/vim-airline'
-Plug 'vim-airline/vim-airline-themes'
-Plug 'ycm-core/YouCompleteMe'
-Plug 'gruvbox-community/gruvbox'
-Plug 'jremmen/vim-ripgrep'
-Plug 'tpope/vim-fugitive'
-Plug 'leafgarland/typescript-vim'
-Plug 'vim-utils/vim-man'
-Plug 'ctrlpvim/ctrlp.vim'
-Plug 'mbbill/undotree'
-
-call plug#end()
-
+"-------------------------------------------------------------
+" RG
 if executable('rg')
     let g:rg_derive_root='true'
 endif
 
-let g:ctrlp_user_command = ['.git/', 'git --git-dir=%s/.git ls-files -oc --exclude-standard']
-let mapleader = " "
-
+"-------------------------------------------------------------
+" NETRW
 let g:netrw_browse_split = 1
 let g:netrw_banner = 0
 " let g:netrw_winsize = 25
 
+"-------------------------------------------------------------
+" CTRLP
+let g:ctrlp_user_command = ['.git/', 'git --git-dir=%s/.git ls-files -oc --exclude-standard']
 let g:ctrlp_use_caching = 0
-
-nnoremap <leader>h :wincmd h<CR>
-nnoremap <leader>j :wincmd j<CR>
-nnoremap <leader>k :wincmd k<CR>
-nnoremap <leader>l :wincmd l<CR>
-nnoremap <leader>u :UndotreeShow<CR>
-nnoremap <leader>pv :wincmd v<bar> :Ex <bar> :vertical resize 30<CR>
-nnoremap <Leader>ps :Rg<SPACE>
-nnoremap <silent> <Leader>+ :vertical resize +5<CR>
-nnoremap <silent> <Leader>- :vertical resize -5<CR>
-vnoremap J :m '>+1<CR>gv=gv
-vnoremap K :m '<-2<CR>gv=gv
-
-fun! GoYCM()
-    nnoremap <buffer> <silent> <leader>gd :YcmCompleter GoTo<CR>
-    nnoremap <buffer> <silent> <leader>gr :YcmCompleter GoToReferences<CR>
-    nnoremap <buffer> <silent> <leader>rr :YcmCompleter RefactorRename<space>
-endfun
 
 fun! TrimWhitespace()
     let l:save = winsaveview()
@@ -109,32 +173,83 @@ fun! TrimWhitespace()
 endfun
 
 autocmd BufWritePre * :call TrimWhitespace()
-autocmd FileType typescript :call GoYCM()
 
-
-set t_Co=256
-
-" true color suppoprt
-set termguicolors
-
+"-------------------------------------------------------------
+" THEME
 " let g:gruvbox_italic=1
-colorscheme gruvbox
-" colorscheme cobalt2
+" let g:airline_theme='gruvbox'
+" colorscheme gruvbox
 
-let g:airline_theme='gruvbox'
+let g:onedark_hide_endofbuffer = 1
+let g:onedark_terminal_italics = 1
+let g:airline_theme='onedark'
+colorscheme onedark
+
 let g:airline_powerline_fonts = 1
-
 set background=dark
-
 set guifont=Fira\ Mono\ for\ Powerline
 
 set cursorline
 hi CursorLine term=bold cterm=bold guibg=Grey10
 
-" CUSTOM MAPPINGS
-" Record Macro > tabe ~/.vimrc > "qp (q being where the macro is held in
-" register)
-" map, imap, nmap, vmap, > modes
-" ^M = <CR> = Enter (Carriage Return)
-" ^[ = <esc>
-nmap <Leader>ch i- [ ] jk
+"-------------------------------------------------------------
+" COC CONFIG
+let g:coc_global_extensions = [
+  \ 'coc-snippets',
+  \ 'coc-pairs',
+  \ 'coc-tsserver',
+  \ 'coc-eslint',
+  \ 'coc-prettier',
+  \ 'coc-json',
+  \ ]
+
+" prettier command for coc
+command! -nargs=0 Prettier :CocCommand prettier.formatFile
+
+" Use tab for trigger completion with characters ahead and navigate.
+" Use command ':verbose imap <tab>' to make sure tab is not mapped by other plugin.
+inoremap <silent><expr> <TAB>
+      \ pumvisible() ? "\<C-n>" :
+      \ <SID>check_back_space() ? "\<TAB>" :
+      \ coc#refresh()
+inoremap <expr><S-TAB> pumvisible() ? "\<C-p>" : "\<C-h>"
+
+function! s:check_back_space() abort
+  let col = col('.') - 1
+  return !col || getline('.')[col - 1]  =~# '\s'
+endfunction
+
+" TextEdit might fail if hidden is not set.
+set hidden
+
+" Some servers have issues with backup files, see #649.
+set nobackup
+set nowritebackup
+
+" Give more space for displaying messages.
+set cmdheight=2
+
+" Having longer updatetime (default is 4000 ms = 4 s) leads to noticeable
+" delays and poor user experience.
+set updatetime=300
+
+" Don't pass messages to |ins-completion-menu|.
+set shortmess+=c
+
+" Always show the signcolumn, otherwise it would shift the text each time
+" diagnostics appear/become resolved.
+if has("patch-8.1.1564")
+  " Recently vim can merge signcolumn and number column into one
+  set signcolumn=number
+else
+  set signcolumn=yes
+endif
+
+"-------------------------------------------------------------
+" COMMENTER
+" Add spaces after comment delimiters by default
+let g:NERDSpaceDelims = 1
+" Use compact syntax for prettified multi-line comments
+let g:NERDCompactSexyComs = 1
+" Enable trimming of trailing whitespace when uncommenting
+let g:NERDTrimTrailingWhitespace = 1

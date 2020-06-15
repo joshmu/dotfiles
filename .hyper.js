@@ -152,14 +152,14 @@ module.exports = {
   //   `project#1.0.1`
   plugins: [
     //'verminal',
-      'hyper-snazzy',
+    'hyper-snazzy',
     // 'hyper-search',
     // 'hyper-sync-settings',
     // 'hyper-statusline',
-     'hyper-tabs-enhanced',
+    'hyper-tabs-enhanced',
     // 'hyper-quit',
     // 'hypercwd',
-     'hyperminimal',
+    'hyperminimal',
     'hyper-font-ligatures',
     // 'hyperpower2',
   ],

@@ -14,3 +14,5 @@ puog = pull origin gh-pages
 cob = checkout -b
 [color]
 ui = auto
+[core]
+	editor = nvim
