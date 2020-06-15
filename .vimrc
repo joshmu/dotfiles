@@ -80,7 +80,7 @@ nmap <leader>rn <Plug>(coc-rename)
 nmap <F2> <Plug>(coc-rename)
 
 "-------------------------------------------------------------
-" CUSTOM MAPPINGS
+" MACROS
 " Record Macro > tabe ~/.vimrc > "qp (q being where the macro is held in
 " register)
 " map, imap, nmap, vmap, > modes
