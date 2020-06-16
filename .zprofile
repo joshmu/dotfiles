@@ -41,7 +41,10 @@ alias gpristine='git reset --hard && git clean -df'
 ### Added by the Heroku Toolbelt
 export PATH="/usr/local/heroku/bin:$PATH"
 
-### Added by Josh for bash script inits
+### MYSQL
+export PATH=$PATH:/usr/local/mysql/bin
+
+### Added by Me for bash script inits
 export PATH="$HOME/bin:$PATH"
 
 [[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm" # Load RVM into a shell session *as a function*
