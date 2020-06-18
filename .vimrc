@@ -31,6 +31,10 @@ call plug#end()
 inoremap jk <Esc>
 let mapleader = " "
 
+" quicker saves & exits
+nnoremap <leader>w :w<CR>
+nnoremap <leader>q :q<CR>
+
 " Switch tabs
 nnoremap <S-L> gt
 nnoremap <S-H> gT
@@ -106,7 +110,7 @@ set guioptions=
 " set textwidth=80
 " set wrap
 
-set relativenumber
+" set relativenumber
 
 set hidden
 set noerrorbells
