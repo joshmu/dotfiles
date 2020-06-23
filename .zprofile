@@ -1,3 +1,6 @@
+# ----------------------
+# ALIASES
+# ----------------------
 alias cafode='caffeinate -d node'
 alias fox='caffeinate -d node ~/Google\ Drive/scout/fox/index.js'
 alias mod='node ~/Google\ Drive/CCC/CCC\ HELPERS/morphCSV/mod.js'
@@ -9,34 +12,44 @@ alias pip=/usr/local/bin/pip3
 alias vim=nvim
 alias nv=nvim
 
-
-### YOUTUBE-DL
+# ----------------------
+# YOUTUBE-DL
+# ----------------------
 alias yt-playlist="youtube-dl -o '%(playlist)s/%(playlist_index)s - %(title)s.%(ext)s' -f 'bestvideo[ext=mp4]'"
 alias yt-video="youtube-dl -o '%(title)s.%(ext)s' -f 'bestvideo[ext=mp4]'"
 alias yt-audio="youtube-dl -o '%(title)s.%(ext)s' -f 'bestaudio[ext=m4a]'"
 
-### CONFIG
+# ----------------------
+# CONFIG
+# ----------------------
 alias vimconf="nvim ~/.vimrc"
 alias hypconf="nvim ~/.hyper.js"
 alias gitconf="nvim ~/.gitconfig"
 
-### GIT
-alias gadd="git add ."
-alias gcom='git commit -m '
-alias gcam='git commit -am '
+# ----------------------
+# GIT ALIASES
+# ----------------------
+alias ga='git add'
+alias gaa='git add .'
+alias gaaa='git add -A'
+alias gc='git commit'
+alias gcm='git commit -m'
+alias gd='git diff'
+alias gi='git init'
+alias gl='git log'
+alias gp='git pull'
+alias gpsh='git push'
+alias gss='git status -s'
+alias gs='echo ""; echo "*********************************************"; echo -e "   DO NOT FORGET TO PULL BEFORE COMMITTING"; echo "*********************************************"; echo ""; git status'
 alias gpom='git push origin master'
 alias gphm='git push heroku master'
-alias gphm='git push heroku master'
 alias gpdm='git push dreamhost master'
-alias glog='git log'
 alias gitopen='open $(git config remote.origin.url)'
 alias gpristine='git reset --hard && git clean -df'
 
-### Added for Homebrew & Vim ###
-# export PATH="/usr/local/bin:$PATH"
-# export PATH="$HOME/.npm-packages/bin:$PATH"
-# alias vi='/usr/local/bin/vim'
-# alias vim='/usr/local/bin/vim'
+# ----------------------
+# PATHS
+# ----------------------
 
 ### Added by the Heroku Toolbelt
 export PATH="/usr/local/heroku/bin:$PATH"
