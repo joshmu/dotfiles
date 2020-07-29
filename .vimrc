@@ -93,7 +93,8 @@ nmap <F2> <Plug>(coc-rename)
 "nmap === nnoremap
 nmap <Leader>ch i- [ ]
 " this gets translated to vscode (suppposedly imap and nnoremap work)
-nnoremap <Leader>j ihello
+nnoremap <Leader>cl iconsole.log()<Esc>ha
+nnoremap <Leader>ce iconsole.error()<Esc>ha
 
 
 "-------------------------------------------------------------
