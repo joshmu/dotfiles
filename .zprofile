@@ -13,6 +13,11 @@ alias vim=nvim
 alias nv=nvim
 
 # ----------------------
+# FUNCTIONS
+# ----------------------
+function getportpid() { lsof -i tcp:"$1"; }
+
+# ----------------------
 # YOUTUBE-DL
 # ----------------------
 alias yt-playlist="youtube-dl -o '%(playlist)s/%(playlist_index)s - %(title)s.%(ext)s' -f 'bestvideo[ext=mp4]'"
