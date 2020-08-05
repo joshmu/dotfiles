@@ -77,7 +77,7 @@ ZSH_THEME="powerlevel10k/powerlevel10k"
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(osx zsh-autosuggestions zsh-syntax-highlighting z)
+plugins=(osx zsh-autosuggestions zsh-syntax-highlighting z alias-tips)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -117,6 +117,9 @@ bindkey -v
 
 # ZSH AUTO SUGGESTIONS - KEY BINDING
 bindkey '^j' autosuggest-accept
+
+# ALIAS-TIPS
+export ZSH_PLUGINS_ALIAS_TIPS_TEXT="ALIAS: "
 
 # REMOVE COMP NAME FROM PROMPT
 # removed 'promp_context()' as it is uneeded with p10k
