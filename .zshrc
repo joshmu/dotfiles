@@ -19,6 +19,9 @@ export ZSH="/Users/joshmu/.oh-my-zsh"
 # ZSH_THEME="agnoster"
 ZSH_THEME="powerlevel10k/powerlevel10k"
 
+# YOU-SHOULD-USE - ONLY SHOW MOST CONDENSED RESULT
+export YSU_MODE=BESTMATCH
+
 # Set list of themes to pick from when loading at random
 # Setting this variable when ZSH_THEME=random will cause zsh to load
 # a theme from this variable instead of looking in ~/.oh-my-zsh/themes/
@@ -117,6 +120,7 @@ bindkey -v
 
 # ZSH AUTO SUGGESTIONS - KEY BINDING
 bindkey '^j' autosuggest-accept
+
 
 # REMOVE COMP NAME FROM PROMPT
 # removed 'promp_context()' as it is uneeded with p10k

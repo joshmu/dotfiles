@@ -11,6 +11,7 @@ alias mukill='pkill -a -i'
 alias pip=/usr/local/bin/pip3
 alias vim=nvim
 alias nv=nvim
+alias localip="ipconfig getifaddr en0"
 
 # ----------------------
 # FUNCTIONS
@@ -23,6 +24,7 @@ function getportpid() { lsof -i tcp:"$1"; }
 alias yt-playlist="youtube-dl -o '%(playlist)s/%(playlist_index)s - %(title)s.%(ext)s' -f 'bestvideo[ext=mp4]'"
 alias yt-video="youtube-dl -o '%(title)s.%(ext)s' -f 'bestvideo[ext=mp4]'"
 alias yt-audio="youtube-dl -o '%(title)s.%(ext)s' -f 'bestaudio[ext=m4a]'"
+alias yt-mp3="youtube-dl -o '%(title)s.%(ext)s' -i --extract-audio --audio-format mp3 --audio-quality 0"
 
 # ----------------------
 # CONFIG
@@ -49,6 +51,7 @@ alias gss='git status -s'
 alias gpom='git push origin master'
 alias gphm='git push heroku master'
 alias gpdm='git push dreamhost master'
+alias gfh='git log --full-history --'
 alias gitopen='open $(git config remote.origin.url)'
 alias gpristine='git reset --hard && git clean -df'
 alias glog='git log --oneline --decorate --graph'
