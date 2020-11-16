@@ -12,6 +12,7 @@ alias pip=/usr/local/bin/pip3
 alias vim=nvim
 alias nv=nvim
 alias localip="ipconfig getifaddr en0"
+alias plc="npx plop component"
 
 # ----------------------
 # FUNCTIONS
