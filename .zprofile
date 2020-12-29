@@ -9,11 +9,14 @@ alias restartaudio='sudo killall coreaudiod'
 alias mongod='mongod --dbpath /System/Volumes/Data/data/db'
 alias mukill='pkill -a -i'
 alias pip=/usr/local/bin/pip3
-alias vim=nvim
+# alias vim=nvim
 alias nv=nvim
 alias localip='ipconfig getifaddr en0'
 alias plc='npx plop component'
 alias rm=trash
+alias arch86='arch -x86_64'
+alias hidedesktop='defaults write com.apple.finder CreateDesktop -bool false; killall Finder'
+alias showdesktop='defaults write com.apple.finder CreateDesktop -bool true; killall Finder'
 
 # ----------------------
 # FUNCTIONS
