@@ -80,7 +80,7 @@ export YSU_MODE=BESTMATCH
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(osx zsh-autosuggestions zsh-syntax-highlighting z you-should-use)
+plugins=(osx zsh-autosuggestions zsh-syntax-highlighting z you-should-use git-open)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -143,5 +143,15 @@ fi
 
 export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
 
+# JAVA 8
+#export JAVA_HOME="/Library/Java/JavaVirtualMachines/zulu-8.jdk/Contents/Home"
+export JAVA_HOME="/Library/Java/JavaVirtualMachines/jdk1.8.0_271.jdk/Contents/Home"
+
+export PATH="$JAVA_HOME/bin:$PATH"
+
 # Add RVM to PATH for scripting. Make sure this is the last PATH variable change.
 export PATH="$PATH:$HOME/.rvm/bin"
+
+#THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
+export SDKMAN_DIR="/Users/joshmu/.sdkman"
+[[ -s "/Users/joshmu/.sdkman/bin/sdkman-init.sh" ]] && source "/Users/joshmu/.sdkman/bin/sdkman-init.sh"

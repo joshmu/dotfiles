@@ -1,7 +1,7 @@
 # This is Git's per-user configuration file.
 [user]
-email = mu@joshmu.com
-name = Josh Mu
+	email = hello@joshmu.dev
+	name = Josh Mu
 [alias]
 a = add
 ca = commit -a
