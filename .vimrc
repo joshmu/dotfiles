@@ -144,6 +144,9 @@ set wrap
 set linebreak
 set showbreak=+++
 
+" remove safe write for dev webpack code compilation potential issues
+:set backupcopy=yes
+
 "-------------------------------------------------------------
 " RG
 if executable('rg')
