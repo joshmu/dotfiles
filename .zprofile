@@ -1,3 +1,6 @@
+# IMPORT DEV WORK
+source ~/.zprofile_secret
+
 # ----------------------
 # ALIASES
 # ----------------------
@@ -14,14 +17,49 @@ alias nv=nvim
 alias localip='ipconfig getifaddr en0'
 alias plc='npx plop component'
 alias rm=trash
-alias arch86='arch -x86_64'
+alias brew='arch -x86_64 brew'
 alias hidedesktop='defaults write com.apple.finder CreateDesktop -bool false; killall Finder'
 alias showdesktop='defaults write com.apple.finder CreateDesktop -bool true; killall Finder'
+alias cl=clear
+alias publicSshKey='pbcopy < ~/.ssh/id_rsa.pub'
+alias compilekeyboard='qmk compile -kb dztech/dz60rgb_ansi/v2 -km joshmu'
+alias disable-keyrepeat='defaults write -g ApplePressAndHoldEnabled -bool'
+alias chrome-cors='open -a Google\ Chrome --args --disable-web-security --user-data-dir="/Users/joshmu/Library/ApplicationSupport/Google/Chrome"'
+alias zen='/Users/joshmu/Desktop/code/projects/zen/src/main.js'
+alias tre='tree --prune -P '
+alias ls='colorls'
+
+function notify() {
+    local msg="$1"
+    osascript -e "display notification \"$msg\"";
+}
+
+# ----------------------
+# AEM
+# ----------------------
+alias aemauthor='java -jar aem-author-p4502.jar'
+export COMMERCE_ENDPOINT="https://mcstaging.breville.com/graphql"
+alias aem-proxy="npx local-cors-proxy --proxyUrl https://mcstaging.breville.com --port 3002 --proxyPartial ''"
+alias sdserver="ssh -N augw-tunnel"
+
+alias mvn-root="mvn clean install -PautoInstallSinglePackage"
+alias mvn-child="mvn clean install -PautoInstallBundle"
+alias mvn-i="mvn clean install -PautoInstallSinglePackage -f /Users/joshmu/work/breville/source/breville-aem-brands"
+alias mvn-i-fe="mvn clean install -PautoInstallBundle -f /Users/joshmu/work/breville/source/breville-aem-brands/ui.frontend"
+alias mvn-i-breville="mvn clean install -PautoInstallBundle -f /Users/joshmu/work/breville/source/breville-aem-brands/ui.frontend-breville"
+alias mvn-i-beanz="mvn clean install -PautoInstallBundle -f /Users/joshmu/work/breville/source/breville-aem-brands/ui.frontend-beanz"
+alias mvn-i-ui="mvn clean install -PautoInstallBundle -f /Users/joshmu/work/breville/source/breville-aem-brands/ui.apps"
+
+
 
 # ----------------------
 # FUNCTIONS
 # ----------------------
 function getportpid() { lsof -i tcp:"$1"; }
+# check how to pass arg to function then convert this to func
+alias killport='sudo kill -9 $(sudo lsof -t -i:4052)'
+alias killjava='killall -9 java'
+
 
 # ----------------------
 # YOUTUBE-DL
@@ -57,10 +95,13 @@ alias gpom='git push origin master'
 alias gphm='git push heroku master'
 alias gpdm='git push dreamhost master'
 alias gfh='git log --full-history --'
-alias gitopen='open $(git config remote.origin.url)'
+# alias gitopen='open $(git config remote.origin.url)'
+# GIT OPEN Plugin
+alias gitopen='git open'
 alias gpristine='git reset --hard && git clean -df'
 alias glog='git log --oneline --decorate --graph'
 alias gs='echo ""; echo "*********************************************"; echo -e "   DO NOT FORGET TO PULL BEFORE COMMITTING"; echo "*********************************************"; echo ""; git status'
+
 
 # ----------------------
 # PATHS
@@ -75,4 +116,5 @@ export PATH=$PATH:/usr/local/mysql/bin
 ### Added by Me for bash script inits
 export PATH="$HOME/bin:$PATH"
 
-[[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm" # Load RVM into a shell session *as a function*
+
+
