@@ -76,7 +76,7 @@ alias vconf="nvim ~/.vimrc"
 alias zconf="nvim ~/.zprofile"
 alias zrconf="nvim ~/.zshrc"
 alias hypconf="nvim ~/.hyper.js"
-alias gitconf="nvim ~/.gitconfig"
+alias gconf="nvim ~/.gitconfig"
 
 # ----------------------
 # GIT ALIASES
@@ -97,7 +97,7 @@ alias gss='git status -s'
 alias gpom='git push origin master'
 alias gphm='git push heroku master'
 alias gpdm='git push dreamhost master'
-alias glo="git log --first-parent --graph --pretty=format:'%C(auto,yellow)%h%C(auto,magenta)% G? %C(auto,blue)%>(12,trunc)%ad %C(auto,green)%<(7,trunc)%aN%C(auto,reset)%s%C(auto,red)% gD% D' --abbrev-commit --date=relative"
+alias glo="git log --first-parent --graph --pretty=format:'%C(auto,yellow)%h%C(auto,magenta)% G? %C(auto,blue)%>(12,trunc)%ad %C(auto,green)%<(7,trunc)%aN %C(auto,reset)%s%C(auto,red)% gD% D' --abbrev-commit --date=relative"
 alias gfh='git log --full-history --'
 # alias gitopen='open $(git config remote.origin.url)'
 # GIT OPEN Plugin
