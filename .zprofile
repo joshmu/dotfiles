@@ -72,13 +72,16 @@ alias yt-mp3="youtube-dl -o '%(title)s.%(ext)s' -i --extract-audio --audio-forma
 # ----------------------
 # CONFIG
 # ----------------------
-alias vimconf="nvim ~/.vimrc"
+alias vconf="nvim ~/.vimrc"
+alias zconf="nvim ~/.zprofile"
+alias zrconf="nvim ~/.zshrc"
 alias hypconf="nvim ~/.hyper.js"
 alias gitconf="nvim ~/.gitconfig"
 
 # ----------------------
 # GIT ALIASES
 # ----------------------
+alias g='git'
 alias ga='git add'
 alias gaa='git add .'
 alias gaaa='git add -A'
@@ -94,6 +97,7 @@ alias gss='git status -s'
 alias gpom='git push origin master'
 alias gphm='git push heroku master'
 alias gpdm='git push dreamhost master'
+alias glo="git log --first-parent --graph --pretty=format:'%C(auto,yellow)%h%C(auto,magenta)% G? %C(auto,blue)%>(12,trunc)%ad %C(auto,green)%<(7,trunc)%aN%C(auto,reset)%s%C(auto,red)% gD% D' --abbrev-commit --date=relative"
 alias gfh='git log --full-history --'
 # alias gitopen='open $(git config remote.origin.url)'
 # GIT OPEN Plugin
@@ -101,7 +105,7 @@ alias gitopen='git open'
 alias gpristine='git reset --hard && git clean -df'
 alias glog='git log --oneline --decorate --graph'
 alias gs='echo ""; echo "*********************************************"; echo -e "   DO NOT FORGET TO PULL BEFORE COMMITTING"; echo "*********************************************"; echo ""; git status'
-
+alias gfm='git fetch && git merge'
 
 # ----------------------
 # PATHS
