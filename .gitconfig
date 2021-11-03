@@ -12,7 +12,13 @@ pog = push origin gh-pages
 puom = pull origin master
 puog = pull origin gh-pages
 cob = checkout -b
+hs = log --pretty='%C(yellow)%h %C(cyan)%cd %Cblue%aN%C(auto)%d %Creset%s' --date=relative --date-order
 [color]
 ui = auto
 [core]
 	editor = nvim
+[log]
+    data = relative
+[format]
+    pretty = format:%C(auto,yellow)%h%C(auto,magenta)% G? %C(auto,blue)%>(12,trunc)%ad %C(auto,green)%<(7,trunc)%aN%C(auto,reset)%s%C(auto,red)% gD% D
+

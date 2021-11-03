@@ -3,17 +3,20 @@
 call plug#begin('~/.vim/plugged')
 
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
-Plug 'preservim/nerdtree'
-Plug 'preservim/nerdcommenter'
-Plug 'ctrlpvim/ctrlp.vim'
+" Plug 'preservim/nerdtree'
+" Plug 'preservim/nerdcommenter'
+" Plug 'ctrlpvim/ctrlp.vim'
 Plug 'justinmk/vim-sneak'
-Plug 'sheerun/vim-polyglot'
+" Plug 'sheerun/vim-polyglot'
 Plug 'vim-airline/vim-airline'
-Plug 'jremmen/vim-ripgrep'
-Plug 'tpope/vim-fugitive'
+" Plug 'jremmen/vim-ripgrep'
+" Plug 'tpope/vim-fugitive'
 Plug 'leafgarland/typescript-vim'
 Plug 'vim-utils/vim-man'
-Plug 'mbbill/undotree'
+" Plug 'mbbill/undotree'
+Plug 'nvim-lua/plenary.nvim'
+Plug 'nvim-telescope/telescope.nvim'
+Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
 
 " theming
 Plug 'joshdick/onedark.vim'
@@ -21,7 +24,7 @@ Plug 'gruvbox-community/gruvbox'
 Plug 'vim-airline/vim-airline-themes'
 
 " games
-Plug 'ThePrimeagen/vim-be-good'
+" Plug 'ThePrimeagen/vim-be-good'
 
 call plug#end()
 
@@ -53,6 +56,14 @@ vnoremap K :m '<-2<CR>gv=gv
 
 " Use <c-space> to trigger completion.
 inoremap <silent><expr> <c-space> coc#refresh()
+
+" Find files using Telescope command-line sugar.
+nnoremap <leader>ff <cmd>Telescope find_files<cr>
+nnoremap <c-p> <cmd>Telescope find_files<cr>
+nnoremap <leader>fg <cmd>Telescope live_grep<cr>
+nnoremap <leader>fb <cmd>Telescope buffers<cr>
+nnoremap <leader>fh <cmd>Telescope help_tags<cr>
+nnoremap <Leader>fp <cmd>Telescope oldfiles<cr>
 
 " Remap keys for gotos
 nmap <silent> gd <Plug>(coc-definition)
@@ -169,8 +180,8 @@ let g:NERDTreeDirArrowCollapsible = '▾'
 
 "-------------------------------------------------------------
 " CTRLP
-let g:ctrlp_user_command = ['.git/', 'git --git-dir=%s/.git ls-files -oc --exclude-standard']
-let g:ctrlp_use_caching = 0
+" let g:ctrlp_user_command = ['.git/', 'git --git-dir=%s/.git ls-files -oc --exclude-standard']
+" let g:ctrlp_use_caching = 0
 
 fun! TrimWhitespace()
     let l:save = winsaveview()

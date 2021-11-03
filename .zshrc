@@ -80,7 +80,7 @@ export YSU_MODE=BESTMATCH
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(osx zsh-autosuggestions zsh-syntax-highlighting z you-should-use git-open)
+plugins=(osx zsh-autosuggestions zsh-syntax-highlighting z you-should-use git-open fzf)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -144,7 +144,19 @@ fi
 export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
 
 # colorls setup - tab completion
-source $(dirname $(gem which colorls))/tab_complete.sh
+# source $(dirname $(gem which colorls))/tab_complete.sh
+# hard coding due to path issues
+source /Users/joshmu/.rbenv/versions/2.7.2/lib/ruby/gems/2.7.0/gems/colorls-1.4.4/lib/tab_complete.sh
+
+# FZF (with FD)
+## suppose you have installed fzf to ~/.fzf, change it to what suits you
+export FZF_BASE="$HOME/.fzf"
+export FZF_DEFAULT_COMMAND="fd --type file --color=always --exclude .git"
+# include hidden files & follow symbolic links
+# export FZF_DEFAULT_COMMAND="fd --type file --color=always --hidden --follow --exclude .git"
+export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+export FZF_ALT_C_COMMAND="fd -t d . $HOME"
+export FZF_DEFAULT_OPTS="--ansi"
 
 # JAVA 8
 #export JAVA_HOME="/Library/Java/JavaVirtualMachines/zulu-8.jdk/Contents/Home"
@@ -161,3 +173,5 @@ export SDKMAN_DIR="/Users/joshmu/.sdkman"
 [[ -s "/Users/joshmu/.sdkman/bin/sdkman-init.sh" ]] && source "/Users/joshmu/.sdkman/bin/sdkman-init.sh"
 export PATH="$HOME/.jenv/bin:$PATH"
 eval "$(jenv init -)"
+
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
