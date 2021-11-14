@@ -50,6 +50,7 @@ alias mvn-i-breville="mvn clean install -PautoInstallBundle -f /Users/joshmu/wor
 alias mvn-i-beanz="mvn clean install -PautoInstallBundle -f /Users/joshmu/work/breville/source/breville-aem-brands/ui.frontend-beanz"
 alias mvn-i-ui="mvn clean install -PautoInstallBundle -f /Users/joshmu/work/breville/source/breville-aem-brands/ui.apps"
 
+alias s="rg '.*' --smart-case --vimgrep --color ansi | fzf --ansi | /Users/joshmu/.vscode/extensions/rlivings39.fzf-quick-open-0.4.4/scripts/topipe.sh rg \"/var/folders/vz/rj4lzgbs7sscn45cs48q174m0000gn/T/fzf-pipe-24774\""
 
 
 # ----------------------
@@ -106,6 +107,7 @@ alias gpristine='git reset --hard && git clean -df'
 alias glog='git log --oneline --decorate --graph'
 alias gs='echo ""; echo "*********************************************"; echo -e "   DO NOT FORGET TO PULL BEFORE COMMITTING"; echo "*********************************************"; echo ""; git status'
 alias gfm='git fetch && git merge'
+alias gh='g hs | fzf +s'
 
 # ----------------------
 # PATHS

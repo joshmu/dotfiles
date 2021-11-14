@@ -12,11 +12,15 @@ Plug 'vim-airline/vim-airline'
 " Plug 'jremmen/vim-ripgrep'
 " Plug 'tpope/vim-fugitive'
 Plug 'leafgarland/typescript-vim'
+Plug 'mxw/vim-jsx'
+Plug 'pangloss/vim-javascript'
 Plug 'vim-utils/vim-man'
 " Plug 'mbbill/undotree'
 Plug 'nvim-lua/plenary.nvim'
 Plug 'nvim-telescope/telescope.nvim'
 Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+Plug 'TimUntersberger/neogit'
+Plug 'tpope/vim-surround'
 
 " theming
 Plug 'joshdick/onedark.vim'
@@ -106,7 +110,6 @@ nmap <Leader>ch i- [ ]
 " this gets translated to vscode (suppposedly imap and nnoremap work)
 nnoremap <Leader>cl iconsole.log()<Esc>ha
 nnoremap <Leader>ce iconsole.error()<Esc>ha
-
 
 "-------------------------------------------------------------
 " SETTINGS
