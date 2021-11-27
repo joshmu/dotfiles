@@ -14,6 +14,7 @@ alias mukill='pkill -a -i'
 alias pip=/usr/local/bin/pip3
 # alias vim=nvim
 alias nv=nvim
+alias v=nvim
 alias localip='ipconfig getifaddr en0'
 alias plc='npx plop component'
 alias rm=trash
@@ -50,8 +51,7 @@ alias mvn-i-breville="mvn clean install -PautoInstallBundle -f /Users/joshmu/wor
 alias mvn-i-beanz="mvn clean install -PautoInstallBundle -f /Users/joshmu/work/breville/source/breville-aem-brands/ui.frontend-beanz"
 alias mvn-i-ui="mvn clean install -PautoInstallBundle -f /Users/joshmu/work/breville/source/breville-aem-brands/ui.apps"
 
-alias s="rg '.*' --smart-case --vimgrep --color ansi | fzf --ansi | /Users/joshmu/.vscode/extensions/rlivings39.fzf-quick-open-0.4.4/scripts/topipe.sh rg \"/var/folders/vz/rj4lzgbs7sscn45cs48q174m0000gn/T/fzf-pipe-24774\""
-
+alias s="rg '.*' --smart-case --vimgrep --color ansi | fzf --ansi | /Users/joshmu/.vscode/extensions/rlivings39.fzf-quick-open-0.4.5/scripts/topipe.sh rg \"/var/folders/vz/rj4lzgbs7sscn45cs48q174m0000gn/T/fzf-pipe-71561\""
 
 # ----------------------
 # FUNCTIONS

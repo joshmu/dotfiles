@@ -1,11 +1,11 @@
 "-------------------------------------------------------------
 " PLUGINS
+"-------------------------------------------------------------
 call plug#begin('~/.vim/plugged')
 
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
-" Plug 'preservim/nerdtree'
-" Plug 'preservim/nerdcommenter'
-" Plug 'ctrlpvim/ctrlp.vim'
+Plug 'preservim/nerdtree'
+Plug 'preservim/nerdcommenter'
 Plug 'justinmk/vim-sneak'
 " Plug 'sheerun/vim-polyglot'
 Plug 'vim-airline/vim-airline'
@@ -35,6 +35,7 @@ call plug#end()
 
 "-------------------------------------------------------------
 " MAPPINGS
+"-------------------------------------------------------------
 inoremap jk <Esc>
 let mapleader = " "
 
@@ -98,8 +99,18 @@ nmap <leader>rn <Plug>(coc-rename)
 " Remap for rename current word
 nmap <F2> <Plug>(coc-rename)
 
+" Paste in visual mode without copying
+xnoremap p pgvy
+
+" Surround
+nmap <leader>s ysiw
+
+" Centered scroll
+nnoremap <leader>zz :let &scrolloff=999-&scrolloff<CR>
+
 "-------------------------------------------------------------
 " MACROS
+"-------------------------------------------------------------
 " Record Macro > tabe ~/.vimrc > "qp (q being where the macro is held in
 " register)
 " map, imap, nmap, vmap, > modes
@@ -113,6 +124,7 @@ nnoremap <Leader>ce iconsole.error()<Esc>ha
 
 "-------------------------------------------------------------
 " SETTINGS
+"-------------------------------------------------------------
 syntax on
 set t_Co=256
 " true color suppoprt
@@ -149,7 +161,7 @@ set hlsearch
 " use system clipboard
 set clipboard^=unnamed,unnamedplus
 
-set colorcolumn=80
+set colorcolumn=120
 " highlight ColorColumn ctermbg=0 guibg=lightgrey
 
 " soft wrap hack
@@ -163,12 +175,14 @@ set showbreak=+++
 
 "-------------------------------------------------------------
 " RG
+"-------------------------------------------------------------
 if executable('rg')
     let g:rg_derive_root='true'
 endif
 
 "-------------------------------------------------------------
 " NERDTREE
+"-------------------------------------------------------------
 " open automatically if no file specified or folder selected
 autocmd StdinReadPre * let s:std_in=1
 autocmd VimEnter * if argc() == 1 && isdirectory(argv()[0]) && !exists("s:std_in") | exe 'NERDTree' argv()[0] | wincmd p | ene | exe 'cd '.argv()[0] | endif
@@ -182,20 +196,8 @@ let g:NERDTreeDirArrowExpandable = '▸'
 let g:NERDTreeDirArrowCollapsible = '▾'
 
 "-------------------------------------------------------------
-" CTRLP
-" let g:ctrlp_user_command = ['.git/', 'git --git-dir=%s/.git ls-files -oc --exclude-standard']
-" let g:ctrlp_use_caching = 0
-
-fun! TrimWhitespace()
-    let l:save = winsaveview()
-    keeppatterns %s/\s\+$//e
-    call winrestview(l:save)
-endfun
-
-autocmd BufWritePre * :call TrimWhitespace()
-
-"-------------------------------------------------------------
 " THEME
+"-------------------------------------------------------------
 " let g:gruvbox_italic=1
 " let g:airline_theme='gruvbox'
 " colorscheme gruvbox
@@ -214,6 +216,7 @@ hi CursorLine term=bold cterm=bold guibg=Grey10
 
 "-------------------------------------------------------------
 " COC CONFIG
+"-------------------------------------------------------------
 let g:coc_global_extensions = [
   \ 'coc-snippets',
   \ 'coc-pairs',
@@ -269,6 +272,7 @@ endif
 
 "-------------------------------------------------------------
 " COMMENTER
+"-------------------------------------------------------------
 " Add spaces after comment delimiters by default
 let g:NERDSpaceDelims = 1
 " Use compact syntax for prettified multi-line comments
@@ -278,7 +282,8 @@ let g:NERDTrimTrailingWhitespace = 1
 
 
 "-------------------------------------------------------------
-" PYTHON PROVIDERS {{{
+" PYTHON PROVIDERS
+"-------------------------------------------------------------
 
 if has('macunix')
 
@@ -301,5 +306,3 @@ elseif has('win32') || has('win64')
 " Window
 
 endif
-
-" }}}
