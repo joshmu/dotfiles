@@ -36,6 +36,11 @@ function notify() {
 }
 
 # ----------------------
+# DEBUG
+# ----------------------
+alias edge="/Applications/Microsoft\ Edge.app/Contents/MacOS/Microsoft\ Edge --remote-debugging-port=9222 --user-data-dir=remote-debug-profile"
+
+# ----------------------
 # AEM
 # ----------------------
 alias aemauthor='java -jar aem-author-p4502.jar'
