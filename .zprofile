@@ -14,6 +14,7 @@ alias mukill='pkill -a -i'
 alias pip=/usr/local/bin/pip3
 # alias vim=nvim
 alias nv=nvim
+alias v=nvim
 alias localip='ipconfig getifaddr en0'
 alias plc='npx plop component'
 alias rm=trash
@@ -36,6 +37,12 @@ function notify() {
 }
 
 # ----------------------
+# DEBUG
+# ----------------------
+alias debug-chrome="/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome  --remote-debugging-port=9222 --user-data-dir=remote-debug-profile"
+alias debug-edge="/Applications/Microsoft\ Edge.app/Contents/MacOS/Microsoft\ Edge --remote-debugging-port=9222 --user-data-dir=remote-debug-profile"
+
+# ----------------------
 # AEM
 # ----------------------
 alias aemauthor='java -jar aem-author-p4502.jar'
@@ -56,7 +63,6 @@ alias mvn-i-ui="mvn clean install -PautoInstallBundle -f /Users/joshmu/work/brev
 # ----------------------
 
 function ys() { yarn start:$1; }
-alias s="rg '.*' --smart-case --vimgrep --color ansi | fzf --ansi | /Users/joshmu/.vscode/extensions/rlivings39.fzf-quick-open-0.4.5/scripts/topipe.sh rg \"/var/folders/vz/rj4lzgbs7sscn45cs48q174m0000gn/T/fzf-pipe-71561\""
 
 # ----------------------
 # FUNCTIONS

@@ -99,6 +99,15 @@ nmap <leader>rn <Plug>(coc-rename)
 " Remap for rename current word
 nmap <F2> <Plug>(coc-rename)
 
+" Paste in visual mode without copying
+xnoremap p pgvy
+
+" Surround
+nmap <leader>s ysiw
+
+" Centered scroll
+nnoremap <leader>zz :let &scrolloff=999-&scrolloff<CR>
+
 "-------------------------------------------------------------
 " MACROS
 "-------------------------------------------------------------
