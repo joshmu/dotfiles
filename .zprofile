@@ -28,6 +28,7 @@ alias chrome-cors='open -a Google\ Chrome --args --disable-web-security --user-d
 alias zen='/Users/joshmu/Desktop/code/projects/zen/src/main.js'
 alias tre='tree --prune -P '
 alias ls='colorls'
+alias ios-runtimes='xcrun simctl list runtimes'
 
 function notify() {
     local msg="$1"
@@ -50,8 +51,12 @@ alias mvn-i-breville="mvn clean install -PautoInstallBundle -f /Users/joshmu/wor
 alias mvn-i-beanz="mvn clean install -PautoInstallBundle -f /Users/joshmu/work/breville/source/breville-aem-brands/ui.frontend-beanz"
 alias mvn-i-ui="mvn clean install -PautoInstallBundle -f /Users/joshmu/work/breville/source/breville-aem-brands/ui.apps"
 
-alias s="rg '.*' --smart-case --vimgrep --color ansi | fzf --ansi | /Users/joshmu/.vscode/extensions/rlivings39.fzf-quick-open-0.4.4/scripts/topipe.sh rg \"/var/folders/vz/rj4lzgbs7sscn45cs48q174m0000gn/T/fzf-pipe-24774\""
+# ----------------------
+# DEV
+# ----------------------
 
+function ys() { yarn start:$1; }
+alias s="rg '.*' --smart-case --vimgrep --color ansi | fzf --ansi | /Users/joshmu/.vscode/extensions/rlivings39.fzf-quick-open-0.4.5/scripts/topipe.sh rg \"/var/folders/vz/rj4lzgbs7sscn45cs48q174m0000gn/T/fzf-pipe-71561\""
 
 # ----------------------
 # FUNCTIONS
