@@ -117,10 +117,7 @@ nnoremap <leader>zz :let &scrolloff=999-&scrolloff<CR>
 " ^M = <CR> = Enter (Carriage Return)
 " ^[ = <esc>
 "nmap === nnoremap
-nmap <Leader>ch i- [ ]
-" this gets translated to vscode (suppposedly imap and nnoremap work)
-nnoremap <Leader>cl iconsole.log()<Esc>ha
-nnoremap <Leader>ce iconsole.error()<Esc>ha
+" nmap <Leader>ch i- [ ] 
 
 "-------------------------------------------------------------
 " SETTINGS
