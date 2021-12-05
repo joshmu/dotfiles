@@ -108,6 +108,9 @@ nmap <leader>s ysiw
 " Centered scroll
 nnoremap <leader>zz :let &scrolloff=999-&scrolloff<CR>
 
+" Vscode jump to
+nnoremap <silent> <leader>go :execute "! code --goto %:" . getcurpos()[1] . ":" . getcurpos()[2] | q!<CR>
+
 "-------------------------------------------------------------
 " MACROS
 "-------------------------------------------------------------

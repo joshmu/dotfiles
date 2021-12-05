@@ -62,6 +62,7 @@ alias mvn-i-ui="mvn clean install -PautoInstallBundle -f /Users/joshmu/work/brev
 # DEV
 # ----------------------
 
+alias y=yarn
 function ys() { yarn start:$1; }
 
 # ----------------------
