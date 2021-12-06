@@ -30,11 +30,19 @@ alias zen='/Users/joshmu/Desktop/code/projects/zen/src/main.js'
 alias tre='tree --prune -P '
 alias ls='colorls'
 alias ios-runtimes='xcrun simctl list runtimes'
+alias node-process='node -p "process.arch"'
 
 function notify() {
     local msg="$1"
     osascript -e "display notification \"$msg\"";
 }
+
+# grep from current file and open in vscode
+function r() {
+    local pattern="$1"
+    rg "$1" --smart-case --vimgrep --color ansi | fzf --ansi | cut -f 1 -d ' ' | sed 's/.$//' | xargs -I '{}' code --goto '{}'
+}
+
 
 # ----------------------
 # DEBUG
