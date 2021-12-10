@@ -175,3 +175,5 @@ export PATH="$HOME/.jenv/bin:$PATH"
 eval "$(jenv init -)"
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+
+alias luamake=/Users/joshmu/Desktop/code/other/lua-language-server/3rd/luamake/luamake
