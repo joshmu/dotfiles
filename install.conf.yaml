@@ -5,20 +5,15 @@
 - clean: ['~']
 
 - link:
-    ~/.tmux.conf: tmux.conf
-    ~/.vim: vim
     ~/.vimrc: vimrc
-    ~/.bashrc: bashrc
-    ~/.zsh:
     ~/.zshrc: zshrc
     ~/.zprofile: zprofile
     ~/.config/nvim:
+    ~/.config/iterm2:
+    ~/.config/karabiner:
     ~/.gitconfig:
     ~/.p10k.zsh: zsh/p10k.zsh
-    ~/.shell:
-    ~/.ssh/config.asc: ssh/config.asc
-    ~/.tmux.conf:
-    ~/.tmux:
+    ~/.hyper.js: hyper.js
 
 - create:
     - ~/downloads
