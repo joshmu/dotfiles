@@ -1,3 +1,4 @@
+-- https://github.com/neovim/nvim-lspconfig/blob/master/doc/server_configurations.md
 -- https://jose-elias-alvarez.medium.com/configuring-neovims-lsp-client-for-typescript-development-5789d58ea9c
 local lspconfig = require("lspconfig")
 
@@ -83,6 +84,7 @@ lspconfig["null-ls"].setup({
 })
 
 -- LUA
+--  (brew install lua-language-server)
 local runtime_path = vim.split(package.path, ';')
 table.insert(runtime_path, "lua/?.lua")
 table.insert(runtime_path, "lua/?/init.lua")
