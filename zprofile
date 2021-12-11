@@ -31,6 +31,7 @@ alias tre='tree --prune -P '
 alias ls='colorls'
 alias ios-runtimes='xcrun simctl list runtimes'
 alias node-process='node -p "process.arch"'
+alias remove-mail-logs='sudo rm /var/mail/joshmu'
 
 function notify() {
     local msg="$1"
