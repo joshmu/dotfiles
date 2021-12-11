@@ -10,6 +10,7 @@
     ~/.zprofile: zprofile
     ~/.config/nvim:
     ~/.config/iterm2:
+    ~/Library/Preferences/com.googlecode.iterm2.plist: iterm2/com.googlecode.iterm2.plist
     ~/.config/karabiner:
     ~/.gitconfig:
     ~/.p10k.zsh: zsh/p10k.zsh
