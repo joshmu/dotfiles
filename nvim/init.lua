@@ -102,6 +102,16 @@ map('n', '<silent> <leader>v', ':execute "! code --goto %:" . getcurpos()[1] . "
 -- highlight
 map('n', '<esc>', ':noh <CR>')      -- disable highlight
 
+-- comment
+map('n', '<C-_>', ':Commentary<CR>')  -- '_' is '/'
+
+-- tabs
+-- Move to previous/next
+map('n', '<C-[>', ':BufferPrevious<CR>')
+map('n', '<C-]>', ':BufferNext<CR>')
+-- -- Close buffer
+map('n', '<leader>x', ':BufferClose<CR>')
+
 -- auto install packer plugins when plugins.lua is updated
 vim.cmd([[
 augroup packer_user_config

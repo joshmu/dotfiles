@@ -63,6 +63,13 @@ return require('packer').startup(function(use)
     end
   }
 
+  -- tabs
+  use {
+    'romgrk/barbar.nvim',
+    requires = {'kyazdani42/nvim-web-devicons'}
+  }
+
+
   -- completion
   use 'hrsh7th/cmp-nvim-lsp'
   use 'hrsh7th/cmp-buffer'
