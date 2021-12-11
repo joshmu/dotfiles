@@ -104,6 +104,8 @@ map('n', '<esc>', ':noh <CR>')      -- disable highlight
 
 -- comment
 map('n', '<C-_>', ':Commentary<CR>')  -- '_' is '/'
+map('o', '<C-_>', ':Commentary<CR>')  -- '_' is '/'
+map('x', '<C-_>', ':Commentary<CR>')  -- '_' is '/'
 
 -- tabs
 -- Move to previous/next
