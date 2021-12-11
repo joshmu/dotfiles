@@ -6,7 +6,6 @@ require('treesitter-config')
 local cmd = vim.cmd  -- to execute Vim commands e.g. cmd('pwd')
 local fn = vim.fn    -- to call Vim functions e.g. fn.bufnr()
 local g = vim.g      -- a table to access global variables
-local win = vim.o    -- window
 local opt = vim.opt  -- to set options
 
 g.mapleader = ' '                   -- Leader
@@ -39,9 +38,8 @@ opt.guicursor = 'n-v-c:block,i-ci-ve:ver25,r-cr:hor20,o:hor50'    -- cursor disp
 opt.clipboard = 'unnamedplus'       -- yank adds to system clipboard
 opt.showmode = false                -- remove default status
 opt.cmdheight = 1                   -- cmd line height
--- opt.foldlevel=20
-win.foldmethod='expr'
-win.foldexpr='nvim_treesitter#foldexpr()'
+opt.foldmethod='expr'                       -- code folding using treesitter
+opt.foldexpr='nvim_treesitter#foldexpr()'   -- code folding using treesitter
 
 -- remove scroll bars
 -- set guioptions=
