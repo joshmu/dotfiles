@@ -99,6 +99,9 @@ return require('packer').startup(function(use)
     end
   }
 
+  -- comments
+  use 'tpope/vim-commentary'
+
   -- startup
   use {
     'goolord/alpha-nvim',
