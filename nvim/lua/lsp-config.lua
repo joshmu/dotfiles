@@ -26,6 +26,7 @@ local on_attach = function(client, bufnr)
 --    buf_map(bufnr, "n", "gr", ":LspRefs<CR>")         -- Telescope will do this
 --    buf_map(bufnr, "n", "gy", ":LspTypeDef<CR>")      -- Telescope will do this
     buf_map(bufnr, "n", "gh", ":LspHover<CR>")
+    buf_map(bufnr, "n", "K", ":LspHover<CR>")
     buf_map(bufnr, "n", "[a", ":LspDiagPrev<CR>")
     buf_map(bufnr, "n", "]a", ":LspDiagNext<CR>")
     buf_map(bufnr, "n", "ga", ":LspCodeAction<CR>")
