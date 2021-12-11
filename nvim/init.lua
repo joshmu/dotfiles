@@ -35,14 +35,14 @@ opt.wildmode = {'list', 'longest'}  -- Command-line completion mode
 opt.wrap = false                    -- Disable line wrap
 opt.cursorline = true               -- highlight current cursor line
 opt.guicursor = 'n-v-c:block,i-ci-ve:ver25,r-cr:hor20,o:hor50'    -- cursor display modes
+opt.clipboard = 'unnamedplus'       -- yank adds to system clipboard
+opt.showmode = false                -- remove default status
+opt.cmdheight = 1                   -- cmd line height
 
 -- remove scroll bars
 -- set guioptions=
 opt.textwidth = 80
-opt.hidden = true
 opt.errorbells = true
-opt.expandtab = true
-opt.smartindent = true
 opt.nu = true
 
 -- using ignorecase with smartcase so it becomes sensitive only when we use
