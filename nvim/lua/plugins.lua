@@ -106,6 +106,9 @@ return require('packer').startup(function(use)
     end
   }
 
+  -- sneak
+  use 'justinmk/vim-sneak'
+
   -- comments
   use 'tpope/vim-commentary'
 

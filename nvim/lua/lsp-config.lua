@@ -34,11 +34,9 @@ local on_attach = function(client, bufnr)
     buf_map(bufnr, "i", "<C-x><C-x>", "<cmd> LspSignatureHelp<CR>")
 
     -- format on save
-    --[[
     if client.resolved_capabilities.document_formatting then
         vim.cmd("autocmd BufWritePre <buffer> lua vim.lsp.buf.formatting_sync()")
     end
-    --]]
 end
 
 local capabilities = require('cmp_nvim_lsp').update_capabilities(vim.lsp.protocol.make_client_capabilities())
@@ -62,7 +60,8 @@ lspconfig.tsserver.setup({
             eslint_enable_diagnostics = true,
             eslint_enable_code_actions = true,
             enable_formatting = true,
-            formatter = "prettier",
+            -- formatter = "prettier",
+            formatter = "eslint",
         })
         ts_utils.setup_client(client)
         buf_map(bufnr, "n", "gs", ":TSLspOrganize<CR>")

@@ -40,6 +40,7 @@ opt.showmode = false                -- remove default status
 opt.cmdheight = 1                   -- cmd line height
 opt.foldmethod='expr'                       -- code folding using treesitter
 opt.foldexpr='nvim_treesitter#foldexpr()'   -- code folding using treesitter
+opt.foldlevelstart = 99             -- fold level when opening buffer
 
 -- remove scroll bars
 -- set guioptions=
