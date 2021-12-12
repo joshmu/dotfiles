@@ -88,9 +88,10 @@ map('n', '<leader>l', ':wincmd l<CR>')
 -- telescope
 map('n', '<leader>ff', '<cmd> lua require("telescope.builtin").find_files()<cr>')
 map('n', '<leader>fg', '<cmd> lua require("telescope.builtin").live_grep()<cr>')
+map('n', '<leader>fb', '<cmd> lua require("telescope.builtin").buffers()<cr>')
+map('n', '<C-p>', '<cmd> lua require("telescope.builtin").buffers()<cr>')
 map('n', 'gr', '<cmd> lua require("telescope.builtin").lsp_references()<cr>')
 map('n', 'gd', '<cmd> lua require("telescope.builtin").lsp_definitions()<cr>')
-map('n', '<C-p>', '<cmd> lua require("telescope.builtin").buffers()<cr>')
 
 -- Centered scroll
 map('n', '<leader>zz', ':let &scrolloff=999-&scrolloff<CR>')
