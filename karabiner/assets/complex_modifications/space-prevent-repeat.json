@@ -1,0 +1,22 @@
+{
+  "title": "Utils",
+  "rules": [
+    {
+      "description": "Prevent key repeat for Spacebar",
+      "manipulators": [
+        {
+          "from": {
+            "key_code": "spacebar"
+          },
+          "to": [
+            {
+              "key_code": "spacebar",
+              "repeat": false
+            }
+          ],
+          "type": "basic"
+        }
+      ]
+    }
+  ]
+}
