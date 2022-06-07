@@ -66,20 +66,33 @@ export COMMERCE_ENDPOINT="https://mcstaging.breville.com/graphql"
 alias aem-proxy="npx local-cors-proxy --proxyUrl https://mcstaging.breville.com --port 3002 --proxyPartial ''"
 alias sdserver="ssh -N augw-tunnel"
 
+alias python="usr/local/bin/python3"
+alias aem-auth-deploy="~/bin/aem-tools-macos deploy -L yes -c ${AEM_CONF} -f $*"
+alias aem-quick-deploy="(cd core && mvn clean install -P fast) && (cd ui.apps && mvn clean install) && (cd all && mvn clean install) && aem-auth-deploy all/target/breville-aem-brands.all-1.0.0-SNAPSHOT.zip"
+
 alias mvn-root="mvn clean install -PautoInstallSinglePackage"
 alias mvn-child="mvn clean install -PautoInstallBundle"
 alias mvn-i="mvn clean install -PautoInstallSinglePackage -f /Users/joshmu/work/breville/source/breville-aem-brands"
 alias mvn-i-fe="mvn clean install -PautoInstallBundle -f /Users/joshmu/work/breville/source/breville-aem-brands/ui.frontend"
 alias mvn-i-breville="mvn clean install -PautoInstallBundle -f /Users/joshmu/work/breville/source/breville-aem-brands/ui.frontend-breville"
 alias mvn-i-beanz="mvn clean install -PautoInstallBundle -f /Users/joshmu/work/breville/source/breville-aem-brands/ui.frontend-beanz"
-alias mvn-i-ui="mvn clean install -PautoInstallBundle -f /Users/joshmu/work/breville/source/breville-aem-brands/ui.apps"
+
+alias mvn-i-core="mvn clean install -P fast -f /Users/joshmu/work/breville/source/breville-aem-brands/core"
+alias mvn-i-ui="mvn clean install -f /Users/joshmu/work/breville/source/breville-aem-brands/ui.apps"
+alias mvn-i-all="mvn clean install -f /Users/joshmu/work/breville/source/breville-aem-brands/all"
 
 # ----------------------
 # DEV
 # ----------------------
 
+alias jenkins="aws ssm start-session --target i-0f15d2a2a8c01a91a --document-name AWS-StartPortForwardingSession --parameters "localPortNumber=8080,portNumber=8080" --region us-west-2"
 alias y=yarn
 function ys() { yarn start:$1; }
+
+# https://developers.cloudflare.com/cache/about/default-cache-behavior/
+function cf-cache-check() {
+  curl -svo /dev/null "$1" 2>&1 | grep -i 'cf-cache-status'
+}
 
 # ----------------------
 # FUNCTIONS
