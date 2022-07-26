@@ -85,7 +85,7 @@ alias mvn-i-all="mvn clean install -f /Users/joshmu/work/breville/source/brevill
 # DEV
 # ----------------------
 
-alias jenkins="aws ssm start-session --target i-0f15d2a2a8c01a91a --document-name AWS-StartPortForwardingSession --parameters "localPortNumber=8080,portNumber=8080" --region us-west-2"
+alias jenkins="aws ssm start-session --target i-01ed64d48bef70275 --document-name AWS-StartPortForwardingSession --parameters "localPortNumber=8080,portNumber=8080" --region us-west-2"
 alias y=yarn
 function ys() { yarn start:$1; }
 
