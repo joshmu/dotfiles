@@ -1,7 +1,7 @@
 require('plugins')
 require('lsp-config')
 require('cmp-config')
-require('treesitter-config')
+-- require('treesitter-config')
 
 local cmd = vim.cmd  -- to execute Vim commands e.g. cmd('pwd')
 local fn = vim.fn    -- to call Vim functions e.g. fn.bufnr()
@@ -125,8 +125,9 @@ augroup end
 ]])
 
 
+--[[
 require('nvim-treesitter.configs').setup({
-  ensure_installed = "maintained", -- one of "all", "maintained" (parsers with maintainers), or a list of languages
+  ensure_installed = {'typescript'}, -- one of "all", "maintained" (parsers with maintainers), or a list of languages
   sync_install = false, -- install languages synchronously (only applied to `ensure_installed`)
   ignore_install = {}, -- List of parsers to ignore installing
   highlight = {
@@ -142,3 +143,4 @@ require('nvim-treesitter.configs').setup({
     additional_vim_regex_highlighting = false,
   },
 })
+--]]

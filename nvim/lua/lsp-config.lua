@@ -42,6 +42,7 @@ end
 local capabilities = require('cmp_nvim_lsp').update_capabilities(vim.lsp.protocol.make_client_capabilities())
 -- generic server
 local servers = {'cssls', 'bashls', 'diagnosticls', 'dockerls', 'html', 'intelephense', 'jsonls', 'rls', 'rust_analyzer', 'sourcekit', 'vimls', 'vuels'}
+
 for _, lsp in ipairs(servers) do
   lspconfig[lsp].setup({
     on_attach = on_attach,
@@ -72,6 +73,7 @@ lspconfig.tsserver.setup({
     capabilities = capabilities,
 })
 
+--[[
 -- NULL
 local null_ls = require("null-ls")
 null_ls.config({})
@@ -79,9 +81,13 @@ lspconfig["null-ls"].setup({
     on_attach = on_attach,
     sources = {
         null_ls.builtins.code_actions.gitsigns,
+        null_ls.builtins.formatting.stylua,
+        null_ls.builtins.diagnostics.eslint,
+        null_ls.builtins.completion.spell,
     },
     capabilities = capabilities,
 })
+--]]
 
 -- LUA
 --  (brew install lua-language-server)
