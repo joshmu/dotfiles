@@ -112,6 +112,9 @@ return require('packer').startup(function(use)
   -- comments
   use 'tpope/vim-commentary'
 
+  -- context
+  use 'wellle/context.vim'
+
   -- startup
   use {
     'goolord/alpha-nvim',
