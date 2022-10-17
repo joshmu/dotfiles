@@ -127,10 +127,10 @@ return require('packer').startup(function(use)
   -- startup
   use {
     'goolord/alpha-nvim',
-    requires = { 'kyazdani42/nvim-web-devicons' },
-    config = function ()
-      require'alpha'.setup(require'alpha.themes.startify'.opts)
-    end
+    requires = { 'kyazdani42/nvim-web-devicons' }
+    -- config = function ()
+    --   require'alpha'.setup(require'alpha.themes.startify'.opts)
+    -- end
   }
 
   -- Automatically set up your configuration after cloning packer.nvim

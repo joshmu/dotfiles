@@ -1,26 +1,14 @@
--- disable netrw at the very start of your init.lua (strongly advised)
+-- disable netrw at the very start of your init.lua for 'nvim-tree'
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
 
-require("nvim-tree").setup({
-  sort_by = "case_sensitive",
-  view = {
-    adaptive_size = true,
-    mappings = {
-      list = {
-        { key = "u", action = "dir_up" },
-      },
-    },
-  },
-  renderer = {
-    group_empty = true,
-  },
-  filters = {
-    dotfiles = true,
-  },
-})
+require('plugins/nvim-tree')
+require('plugins/alpha-nvim')
 
+-- todo: use the new plugin config in this folder to replace the plugin config
+--injected below for simplicity
 require('plugins')
+
 require('lsp-config')
 require('cmp-config')
 -- require('treesitter-config')
@@ -106,6 +94,9 @@ map('n', '<leader>h', ':wincmd h<CR>')
 map('n', '<leader>j', ':wincmd j<CR>')
 map('n', '<leader>k', ':wincmd k<CR>')
 map('n', '<leader>l', ':wincmd l<CR>')
+
+-- nvim-tree
+map('n', '<leader>e', ':NvimTreeToggle<CR>')
 
 -- telescope
 map('n', '<leader>ff', '<cmd> lua require("telescope.builtin").find_files()<cr>')
