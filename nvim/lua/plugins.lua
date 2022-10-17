@@ -9,6 +9,15 @@ return require('packer').startup(function(use)
   use 'dracula/vim'
   use 'mhartington/oceanic-next'
 
+  -- tree
+  use {
+    'nvim-tree/nvim-tree.lua',
+    requires = {
+      'nvim-tree/nvim-web-devicons', -- optional, for file icons
+    },
+    tag = 'nightly' -- optional, updated every week. (see issue #1193)
+  }
+
   -- telescope
   use {
     'nvim-telescope/telescope.nvim',
