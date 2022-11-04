@@ -151,6 +151,8 @@ alias glog='git log --oneline --decorate --graph'
 alias gs='echo ""; echo "*********************************************"; echo -e "   DO NOT FORGET TO PULL BEFORE COMMITTING"; echo "*********************************************"; echo ""; git status'
 alias gfm='git fetch && git merge'
 alias gh='g hs | fzf +s'
+alias gb='git rev-parse --abbrev-ref HEAD'
+alias gbc='gb | pbcopy'
 
 # ----------------------
 # PATHS
