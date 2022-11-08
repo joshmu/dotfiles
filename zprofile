@@ -153,6 +153,11 @@ alias gfm='git fetch && git merge'
 alias gh='g hs | fzf +s'
 alias gb='git rev-parse --abbrev-ref HEAD'
 alias gbc='gb | pbcopy'
+function gdelta() { 
+  local main=${1:-'qa'}
+  local develop=${2:-'develop'}
+  git log origin/"$develop"..origin/"$main" | rg -v "Merge|fix|xps|revert|resolution|resolved"
+}
 
 # ----------------------
 # PATHS
