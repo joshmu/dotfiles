@@ -84,7 +84,7 @@ export YSU_MODE=BESTMATCH
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(macos zsh-autosuggestions zsh-syntax-highlighting z you-should-use git-open fzf)
+plugins=(macos zsh-autosuggestions zsh-syntax-highlighting z you-should-use git-open fzf zsh-autocomplete)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -123,7 +123,8 @@ source $ZSH/oh-my-zsh.sh
 bindkey -v
 
 # ZSH AUTO SUGGESTIONS - KEY BINDING
-bindkey '^j' autosuggest-accept
+#bindkey '^j' autosuggest-accept
+bindkey '^ ' autosuggest-accept
 
 
 # REMOVE COMP NAME FROM PROMPT

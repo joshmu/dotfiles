@@ -15,6 +15,7 @@ alias pip=/usr/local/bin/pip3
 alias vim=nvim
 alias nv=nvim
 alias v=nvim
+alias t=tmux
 alias localip='ipconfig getifaddr en0'
 alias plc='npx plop component'
 alias rm=trash
@@ -119,6 +120,7 @@ alias zconf="nvim ~/.zprofile"
 alias zrconf="nvim ~/.zshrc"
 alias hypconf="nvim ~/.hyper.js"
 alias gconf="nvim ~/.gitconfig"
+alias tmuxconf="nvim ~/.tmux.conf"
 
 # ----------------------
 # GIT ALIASES
@@ -150,9 +152,9 @@ alias gpristine='git reset --hard && git clean -df'
 alias glog='git log --oneline --decorate --graph'
 alias gs='echo ""; echo "*********************************************"; echo -e "   DO NOT FORGET TO PULL BEFORE COMMITTING"; echo "*********************************************"; echo ""; git status'
 alias gfm='git fetch && git merge'
-alias gh='g hs | fzf +s'
-alias gb='git rev-parse --abbrev-ref HEAD'
-alias gbc='gb | pbcopy'
+alias gh='g hs | fzf | pbcopy'
+alias gb-current='g rev-parse --abbrev-ref HEAD'
+alias gb="g for-each-ref --count=15 --sort=committerdate refs/heads/ --format='%(refname:short)' | fzf | pbcopy"
 function gdelta() { 
   local main=${1:-'qa'}
   local develop=${2:-'develop'}
