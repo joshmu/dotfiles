@@ -31,6 +31,16 @@ return function(use)
   -- tmux
   use 'christoomey/vim-tmux-navigator'
 
+  -- lsp
+  use {
+      "glepnir/lspsaga.nvim",
+      branch = "main",
+      config = function()
+          require("lspsaga").setup({})
+      end,
+      requires = { {"nvim-tree/nvim-web-devicons"} }
+  }
+
   -- surround
   use({
       "kylechui/nvim-surround",
