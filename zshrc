@@ -84,7 +84,7 @@ export YSU_MODE=BESTMATCH
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(macos zsh-autosuggestions zsh-syntax-highlighting z you-should-use git-open fzf zsh-autocomplete)
+plugins=(macos zsh-autosuggestions zsh-syntax-highlighting zsh-z you-should-use git-open fzf zsh-autocomplete)
 
 source $ZSH/oh-my-zsh.sh
 
