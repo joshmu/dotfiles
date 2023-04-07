@@ -86,6 +86,9 @@ alias mvn-i-all="mvn clean install -f /Users/joshmu/work/breville/source/brevill
 # DEV
 # ----------------------
 
+alias aws='docker run --rm -it public.ecr.aws/aws-cli/aws-cli'
+export AWS_DEFAULT_REGION=us-west-2
+
 alias jenkins="aws ssm start-session --target i-01ed64d48bef70275 --document-name AWS-StartPortForwardingSession --parameters "localPortNumber=8080,portNumber=8080" --region us-west-2"
 alias y=yarn
 function ys() { yarn start:$1; }
