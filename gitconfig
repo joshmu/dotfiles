@@ -2,6 +2,7 @@
 [user]
 	email = hello@joshmu.dev
 	name = Josh Mu
+	signingkey = 3C4A4E8B7575050D
 [alias]
 	a = add
 	ca = commit -a

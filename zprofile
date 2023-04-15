@@ -67,7 +67,9 @@ export COMMERCE_ENDPOINT="https://mcstaging.breville.com/graphql"
 alias aem-proxy="npx local-cors-proxy --proxyUrl https://mcstaging.breville.com --port 3002 --proxyPartial ''"
 alias sdserver="ssh -N augw-tunnel"
 
-alias python="usr/local/bin/python3"
+#alias python="usr/local/bin/python3"
+alias python="/Library/Frameworks/Python.framework/Versions/3.11/bin/python3"
+
 alias aem-auth-deploy="~/bin/aem-tools-macos deploy -L yes -c ${AEM_CONF} -f $*"
 alias aem-quick-deploy="(cd core && mvn clean install -P fast) && (cd ui.apps && mvn clean install) && (cd all && mvn clean install) && aem-auth-deploy all/target/breville-aem-brands.all-1.0.0-SNAPSHOT.zip"
 
@@ -86,8 +88,10 @@ alias mvn-i-all="mvn clean install -f /Users/joshmu/work/breville/source/brevill
 # DEV
 # ----------------------
 
-alias aws='docker run --rm -it public.ecr.aws/aws-cli/aws-cli'
+# alias aws='docker run --rm -it public.ecr.aws/aws-cli/aws-cli'
 export AWS_DEFAULT_REGION=us-west-2
+alias aws-resource-policies="aws logs describe-resource-policies"
+alias aws-delete-resource-policy="aws logs delete-resource-policy --policy-name"
 
 alias jenkins="aws ssm start-session --target i-01ed64d48bef70275 --document-name AWS-StartPortForwardingSession --parameters "localPortNumber=8080,portNumber=8080" --region us-west-2"
 alias y=yarn
@@ -164,6 +168,9 @@ function gdelta() {
   git log origin/"$develop"..origin/"$main" | rg -v "Merge|fix|xps|revert|resolution|resolved"
 }
 
+# GPG SIGNING KEY
+export GPG_TTY=$(tty)
+
 # ----------------------
 # PATHS
 # ----------------------
@@ -177,5 +184,7 @@ export PATH=$PATH:/usr/local/mysql/bin
 ### Added by Me for bash script inits
 export PATH="$HOME/bin:$PATH"
 
-
-
+# Setting PATH for Python 3.11
+# The original version is saved in .zprofile.pysave
+PATH="/Library/Frameworks/Python.framework/Versions/3.11/bin:${PATH}"
+export PATH
