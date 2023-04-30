@@ -17,6 +17,7 @@
     ~/.p10k.zsh: zsh/p10k.zsh
     ~/.hyper.js: hyper.js
     ~/.oh-my-mu.json: oh-my-mu.json
+    ~/.docker/config.json: docker-config.json
 
 - create:
     - ~/downloads
