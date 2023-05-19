@@ -42,6 +42,9 @@ map('n', '<silent> <leader>v', ':execute "! code --goto %:" . getcurpos()[1] . "
 -- highlight
 map('n', '<esc>', ':noh <CR>')      -- disable highlight
 
+-- git
+map('n', '<leader>gd', ':Gdiffsplit')
+
 -- comment
 map('n', '<C-_>', ':Commentary<CR>')  -- '_' is '/'
 map('o', '<C-_>', ':Commentary<CR>')  -- '_' is '/'
