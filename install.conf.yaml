@@ -2,14 +2,14 @@
     link:
       relink: true
 
-- clean: ['~']
+- clean: ["~"]
 
 - link:
     ~/.vimrc: vimrc
     ~/.zshrc: zshrc
     ~/.zprofile: zprofile
     ~/.tmux.conf: tmux.conf
-    ~/.config/nvim:
+    ~/.config/nvim/lua/user: nvim/lua/user
     ~/.config/iterm2:
     # ~/Library/Preferences/com.googlecode.iterm2.plist: iterm2/com.googlecode.iterm2.plist
     ~/.config/karabiner:
@@ -24,4 +24,4 @@
     - ~/.vim/undo-history
 
 - shell:
-  - [git submodule update --init --recursive, Installing submodules]
+    - [git submodule update --init --recursive, Installing submodules]

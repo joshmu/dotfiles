@@ -165,7 +165,7 @@ alias gb="g for-each-ref --count=15 --sort=committerdate refs/heads/ --format='%
 function gdelta() { 
   local main=${1:-'qa'}
   local develop=${2:-'develop'}
-  git log origin/"$develop"..origin/"$main" | rg -v "Merge|fix|xps|revert|resolution|resolved"
+  git log origin/"$develop"..origin/"$main" | rg -v "Merge|fix|xps|revert|resolution|resolved|bitbucket"
 }
 
 # GPG SIGNING KEY
