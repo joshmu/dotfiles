@@ -9,4 +9,26 @@ return {
   --     require("lsp_signature").setup()
   --   end,
   -- },
+  {
+    "nvim-neo-tree/neo-tree.nvim",
+    opts = {
+      window = {
+        position = "left",
+      },
+      filesystem = {
+        filtered_items = {
+          always_show = {
+            ".gitingore",
+          },
+          never_show = {
+            ".DS_Store",
+            "thumbs.db",
+          },
+        },
+      },
+    },
+  },
+  { "dracula/vim" },
+  { "mhartington/oceanic-next" },
+  { "justinmk/vim-sneak" },
 }
