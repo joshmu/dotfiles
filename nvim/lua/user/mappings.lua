@@ -26,6 +26,10 @@ return {
       function() require("gitsigns").diffthis "~2" end,
       desc = "View Git diff",
     },
+    ["gh"] = {
+      function() vim.lsp.buf.hover() end,
+      desc = "Hover symbol details",
+    },
   },
   t = {
     -- setting a mapping to false will disable it
