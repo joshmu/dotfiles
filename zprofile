@@ -133,6 +133,7 @@ alias tmuxconf="nvim ~/.tmux.conf"
 # GIT ALIASES
 # ----------------------
 alias g='git'
+alias lg='lazygit'
 alias ga='git add'
 alias gaa='git add .'
 alias gaaa='git add -A'
@@ -159,9 +160,9 @@ alias gpristine='git reset --hard && git clean -df'
 alias glog='git log --oneline --decorate --graph'
 alias gs='git status'
 alias gfm='git fetch && git merge'
-alias gh='g hs | fzf | pbcopy'
+alias gh='git hs | fzf | pbcopy'
 alias gb-current='g rev-parse --abbrev-ref HEAD'
-alias gb="g for-each-ref --count=15 --sort=committerdate refs/heads/ --format='%(refname:short)' | fzf | pbcopy"
+alias gb="git for-each-ref --count=15 --sort=committerdate refs/heads/ --format='%(refname:short)' | fzf | pbcopy"
 function gdelta() { 
   local main=${1:-'qa'}
   local develop=${2:-'develop'}
