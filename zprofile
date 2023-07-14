@@ -35,6 +35,7 @@ alias node-process='node -p "process.arch"'
 alias remove-mail-logs='sudo rm /var/mail/joshmu'
 alias yt='yt-dlp --merge-output-format mp4'
 alias npm-default-registry='npm config set registry https://registry.npmjs.com'
+alias pgpt='(cd /Users/joshmu/Desktop/code/projects/privateGPT && python privateGPT.py)'
 
 function notify() {
     local msg="$1"
@@ -158,6 +159,7 @@ alias gfh='git log --full-history --'
 alias gitopen='git open'
 alias gpristine='git reset --hard && git clean -df'
 alias glog='git log --oneline --decorate --graph'
+alias gldiff='git log --follow --oneline -p --'
 alias gs='git status'
 alias gfm='git fetch && git merge'
 alias gh='git hs | fzf | pbcopy'

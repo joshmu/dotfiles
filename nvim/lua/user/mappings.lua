@@ -23,12 +23,16 @@ return {
     -- quick save
     -- ["<C-s>"] = { ":w!<cr>", desc = "Save File" },  -- change description but the same command
     ["<leader>gD"] = {
-      function() require("gitsigns").diffthis "~2" end,
+      function() require("gitsigns").diffthis "~1" end,
       desc = "View Git diff",
     },
     ["gh"] = {
       function() vim.lsp.buf.hover() end,
       desc = "Hover symbol details",
+    },
+    ["vs"] = {
+      ':silent execute "! code --goto %:" . getcurpos()[1] . ":" . getcurpos()[2] <bar> q!<CR>',
+      desc = "Goto VScode",
     },
   },
   t = {
