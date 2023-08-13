@@ -11,7 +11,7 @@ alias trk='node ~/Google\ Drive/CCC/CCC\ HELPERS/morphCSV/trk.js'
 alias restartaudio='sudo killall coreaudiod'
 alias mongod='mongod --dbpath /System/Volumes/Data/data/db'
 alias mukill='pkill -a -i'
-alias pip=/usr/local/bin/pip3
+#alias pip=/usr/local/bin/pip3
 alias vim=nvim
 alias nv=nvim
 alias v=nvim
@@ -19,7 +19,7 @@ alias t=tmux
 alias localip='ipconfig getifaddr en0'
 alias plc='npx plop component'
 alias rm=trash
-alias brew='arch -x86_64 brew'
+#alias brew='arch -x86_64 brew'
 alias hidedesktop='defaults write com.apple.finder CreateDesktop -bool false; killall Finder'
 alias showdesktop='defaults write com.apple.finder CreateDesktop -bool true; killall Finder'
 alias cl=clear
@@ -175,20 +175,3 @@ function gdelta() {
 # GPG SIGNING KEY
 export GPG_TTY=$(tty)
 
-# ----------------------
-# PATHS
-# ----------------------
-
-### Added by the Heroku Toolbelt
-export PATH="/usr/local/heroku/bin:$PATH"
-
-### MYSQL
-export PATH=$PATH:/usr/local/mysql/bin
-
-### Added by Me for bash script inits
-export PATH="$HOME/bin:$PATH"
-
-# Setting PATH for Python 3.11
-# The original version is saved in .zprofile.pysave
-PATH="/Library/Frameworks/Python.framework/Versions/3.11/bin:${PATH}"
-export PATH

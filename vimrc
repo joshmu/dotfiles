@@ -177,6 +177,9 @@ set showbreak=+++
 " remove safe write for dev webpack code compilation potential issues
 :set backupcopy=yes
 
+" fzf support
+set rtp+=/opt/homebrew/opt/fzf
+
 "-------------------------------------------------------------
 " RG
 "-------------------------------------------------------------

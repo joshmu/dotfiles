@@ -1,3 +1,12 @@
+# HOMEBREW
+eval "$(/opt/homebrew/bin/brew shellenv)"
+if type brew &>/dev/null; then
+   FPATH=$(brew --prefix)/share/zsh/site-functions:$FPATH
+
+   autoload -Uz compinit
+   compinit
+fi
+
 # OH MY POSH
 # eval "$(oh-my-posh init zsh)"
 eval "$(oh-my-posh init zsh --config ~/.oh-my-mu.json)"
@@ -126,7 +135,6 @@ bindkey -v
 #bindkey '^j' autosuggest-accept
 bindkey '^ ' autosuggest-accept
 
-
 # REMOVE COMP NAME FROM PROMPT
 # removed 'promp_context()' as it is uneeded with p10k
 # prompt_context() {
@@ -138,20 +146,10 @@ bindkey '^ ' autosuggest-accept
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 # [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
-# auto complete for heroku
-if type brew &>/dev/null; then
-  FPATH=$(brew --prefix)/share/zsh/site-functions:$FPATH
-
-  autoload -Uz compinit
-  compinit
-fi
-
-export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
-
 # colorls setup - tab completion
 # source $(dirname $(gem which colorls))/tab_complete.sh
 # hard coding due to path issues
-source /Users/joshmu/.rbenv/versions/2.7.2/lib/ruby/gems/2.7.0/gems/colorls-1.4.4/lib/tab_complete.sh
+# source /Users/joshmu/.rbenv/versions/2.7.2/lib/ruby/gems/2.7.0/gems/colorls-1.4.4/lib/tab_complete.sh
 
 # FZF (with FD)
 ## suppose you have installed fzf to ~/.fzf, change it to what suits you
@@ -162,6 +160,14 @@ export FZF_DEFAULT_COMMAND="fd --type file --color=always --exclude .git"
 export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
 export FZF_ALT_C_COMMAND="fd -t d . $HOME"
 export FZF_DEFAULT_OPTS="--ansi"
+
+
+
+# ----------------------
+# PATHS
+# ----------------------
+
+export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
 
 # JAVA 8
 #export JAVA_HOME="/Library/Java/JavaVirtualMachines/zulu-8.jdk/Contents/Home"
@@ -182,3 +188,16 @@ eval "$(jenv init -)"
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
 alias luamake=/Users/joshmu/Desktop/code/other/lua-language-server/3rd/luamake/luamake
+
+### Added by the Heroku Toolbelt
+#export PATH="/usr/local/heroku/bin:$PATH"
+
+### MYSQL
+export PATH=$PATH:/usr/local/mysql/bin
+
+### Added by Me for bash script inits
+export PATH="$HOME/bin:$PATH"
+
+# Setting PATH for Python 3.11
+# The original version is saved in .zprofile.pysave
+export PATH="/Library/Frameworks/Python.framework/Versions/3.11/bin:${PATH}"
