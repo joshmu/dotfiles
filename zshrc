@@ -146,11 +146,6 @@ bindkey '^ ' autosuggest-accept
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 # [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
-# colorls setup - tab completion
-# source $(dirname $(gem which colorls))/tab_complete.sh
-# hard coding due to path issues
-# source /Users/joshmu/.rbenv/versions/2.7.2/lib/ruby/gems/2.7.0/gems/colorls-1.4.4/lib/tab_complete.sh
-
 # FZF (with FD)
 ## suppose you have installed fzf to ~/.fzf, change it to what suits you
 export FZF_BASE="$HOME/.fzf"
