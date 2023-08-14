@@ -23,7 +23,7 @@ return {
     -- quick save
     -- ["<C-s>"] = { ":w!<cr>", desc = "Save File" },  -- change description but the same command
     ["<leader>gD"] = {
-      function() require("gitsigns").diffthis "~1" end,
+      function() require("gitsigns").diffthis "HEAD~1" end,
       desc = "View Git diff",
     },
     ["gh"] = {
