@@ -8,7 +8,7 @@ if type brew &>/dev/null; then
 fi
 
 # OH MY POSH
-# eval "$(oh-my-posh init zsh)"
+#eval "$(oh-my-posh init zsh)"
 eval "$(oh-my-posh init zsh --config ~/.oh-my-mu.json)"
 
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.

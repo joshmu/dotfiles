@@ -19,7 +19,7 @@
           "foreground": "#282828",
           "powerline_symbol": "\ue0b0",
           "properties": {
-            "style": "unique"
+            "style": "letter"
           },
           "style": "powerline",
           "template": " {{ .Path }} ",
