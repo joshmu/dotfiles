@@ -38,6 +38,7 @@ alias remove-mail-logs='sudo rm /var/mail/joshmu'
 alias yt='yt-dlp --merge-output-format mp4'
 alias npm-default-registry='npm config set registry https://registry.npmjs.com'
 alias pgpt='(cd /Users/joshmu/Desktop/code/projects/privateGPT && python privateGPT.py)'
+alias dep='npx qnm match'
 
 function notify() {
     local msg="$1"
@@ -159,6 +160,7 @@ alias gfh='git log --full-history --'
 # alias gitopen='open $(git config remote.origin.url)'
 # GIT OPEN Plugin
 alias gitopen='git open'
+alias go='git open'
 alias gpristine='git reset --hard && git clean -df'
 alias glog='git log --oneline --decorate --graph'
 alias gldiff='git log --follow --oneline -p --'
@@ -170,6 +172,17 @@ function gdelta() {
   local main=${1:-'qa'}
   local develop=${2:-'develop'}
   git log origin/"$develop"..origin/"$main" | rg -v "Merge|fix|xps|revert|resolution|resolved|bitbucket"
+}
+
+function smart_diff() {
+  # Check if there are changes in the working directory or the staging area
+  if git diff --quiet && git diff --cached --quiet; then
+    # If no changes, then show the diff between the last two commits
+    git diff HEAD^..HEAD
+  else
+    # If there are changes, then show the diff including working and staged changes against the last commit
+    git diff HEAD
+  fi
 }
 
 # GPG SIGNING KEY
