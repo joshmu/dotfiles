@@ -28,8 +28,8 @@ return {
         prettier = function()
           require("null-ls").register(require("null-ls").builtins.formatting.prettier.with {
             condition = function(utils)
-              return utils.root_has_file "package.json"
-                or utils.root_has_file ".prettierrc"
+              -- return utils.root_has_file "package.json"
+              return utils.root_has_file ".prettierrc"
                 or utils.root_has_file ".prettierrc.json"
                 or utils.root_has_file ".prettierrc.js"
             end,
@@ -39,8 +39,8 @@ return {
         prettierd = function()
           require("null-ls").register(require("null-ls").builtins.formatting.prettierd.with {
             condition = function(utils)
-              return utils.root_has_file "package.json"
-                or utils.root_has_file ".prettierrc"
+              -- return utils.root_has_file "package.json"
+              return utils.root_has_file ".prettierrc"
                 or utils.root_has_file ".prettierrc.json"
                 or utils.root_has_file ".prettierrc.js"
             end,
