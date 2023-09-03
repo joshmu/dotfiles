@@ -74,3 +74,5 @@
 [alias]
 [interactive]
     diffFilter = delta --color-only --line-numbers
+[init]
+	defaultBranch = main
