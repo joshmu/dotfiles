@@ -11,7 +11,6 @@ alias trk='node ~/Google\ Drive/CCC/CCC\ HELPERS/morphCSV/trk.js'
 alias restartaudio='sudo killall coreaudiod'
 alias mongod='mongod --dbpath /System/Volumes/Data/data/db'
 alias mukill='pkill -a -i'
-#alias pip=/usr/local/bin/pip3
 alias vim=nvim
 alias nv=nvim
 alias v=nvim
@@ -19,7 +18,6 @@ alias t=tmux
 alias localip='ipconfig getifaddr en0'
 alias plc='npx plop component'
 alias rm=trash
-#alias brew='arch -x86_64 brew'
 alias hidedesktop='defaults write com.apple.finder CreateDesktop -bool false; killall Finder'
 alias showdesktop='defaults write com.apple.finder CreateDesktop -bool true; killall Finder'
 alias cl=clear
@@ -30,7 +28,6 @@ alias chrome-cors='open -a Google\ Chrome --args --disable-web-security --user-d
 alias zen='/Users/joshmu/Desktop/code/projects/zen/src/main.js'
 alias tre='tree --prune -P '
 alias tree='tree -F '
-# alias ls='ls -F --color=auto'
 alias ls='colorls'
 alias ios-runtimes='xcrun simctl list runtimes'
 alias node-process='node -p "process.arch"'
@@ -50,7 +47,6 @@ function r() {
     local pattern="$1"
     rg "$1" --smart-case --vimgrep --color ansi | fzf --ansi | cut -f 1 -d ' ' | sed 's/.$//' | xargs -I '{}' code --goto '{}'
 }
-
 
 # ----------------------
 # DEBUG
@@ -149,7 +145,7 @@ alias gi='git init'
 alias gl='git fzf'
 alias gph='git push'
 alias gpl='git pull'
-alias gch='git checkout'
+#alias gch='git checkout'
 alias gf='git fetch'
 alias gss='git status -s'
 alias gpom='git push origin master'
@@ -167,7 +163,32 @@ alias gldiff='git log --follow --oneline -p --'
 alias gs='git status'
 alias gfm='git fetch && git merge'
 alias gb-current='g rev-parse --abbrev-ref HEAD'
-alias gb="git for-each-ref --count=15 --sort=committerdate refs/heads/ --format='%(refname:short)' | fzf | pbcopy"
+
+function fzf_git_branch_to_clipboard() {
+  local selected_result
+  local selected_branch
+  
+  selected_result=$(
+    (
+      git for-each-ref --sort=-committerdate refs/heads/ --format='%(committerdate:iso8601) %(refname:short) %(authorname)' ; \
+      git for-each-ref --sort=-committerdate refs/remotes/ --format='%(committerdate:iso8601) %(refname:short) %(authorname)'
+    ) | sort -r | \
+    awk '{
+      author=substr($0, index($0, $5)); \
+      printf "%-60s %*s\n", $4, 20, substr(author, 1, 10)
+    }' | fzf
+  )
+  
+  selected_branch=$(echo "$selected_result" | awk '{print $1}')
+  
+  if [ -n "$selected_branch" ]; then
+    echo "$selected_branch"
+    echo -n "$selected_branch" | pbcopy
+  fi
+}
+alias gb='fzf_git_branch_to_clipboard'
+alias gch='git checkout $(gb)'
+
 function gdelta() { 
   local main=${1:-'qa'}
   local develop=${2:-'develop'}

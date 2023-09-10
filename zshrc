@@ -201,3 +201,8 @@ export PATH="$HOME/bin:$PATH"
 # Setting PATH for Python 3.11
 # The original version is saved in .zprofile.pysave
 export PATH="/Library/Frameworks/Python.framework/Versions/3.11/bin:${PATH}"
+
+#source my zprofile again to guarantee all my aliases work
+# ls alias for colorls is failing
+# zshrc is loaded after zprofile
+source ~/.zprofile
