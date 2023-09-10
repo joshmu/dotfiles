@@ -18,7 +18,7 @@
           "powerline_symbol": "",
           "properties": {
             "home_icon": "~",
-            "style": "full"
+            "style": "unique"
           },
           "style": "powerline",
           "template": "  {{ .Path }} ",
