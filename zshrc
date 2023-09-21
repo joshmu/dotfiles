@@ -161,7 +161,7 @@ export FZF_DEFAULT_OPTS="--ansi"
 # ----------------------
 
 # FASTLY
-eval "$(fastly --completion-script-zsh)"
+# eval "$(fastly --completion-script-zsh)"
 
 # ----------------------
 # PATHS
@@ -205,4 +205,7 @@ export PATH="/Library/Frameworks/Python.framework/Versions/3.11/bin:${PATH}"
 #source my zprofile again to guarantee all my aliases work
 # ls alias for colorls is failing
 # zshrc is loaded after zprofile
-source ~/.zprofile
+# source ~/.zprofile
+
+autoload -U +X bashcompinit && bashcompinit
+complete -o nospace -C /opt/homebrew/bin/terraform terraform

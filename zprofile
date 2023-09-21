@@ -11,7 +11,7 @@ alias trk='node ~/Google\ Drive/CCC/CCC\ HELPERS/morphCSV/trk.js'
 alias restartaudio='sudo killall coreaudiod'
 alias mongod='mongod --dbpath /System/Volumes/Data/data/db'
 alias mukill='pkill -a -i'
-alias vim=nvim
+#alias vim=nvim
 alias nv=nvim
 alias v=nvim
 alias t=tmux
@@ -145,7 +145,7 @@ alias gi='git init'
 alias gl='git fzf'
 alias gph='git push'
 alias gpl='git pull'
-#alias gch='git checkout'
+alias gch='git checkout'
 alias gf='git fetch'
 alias gss='git status -s'
 alias gpom='git push origin master'
@@ -187,7 +187,7 @@ function fzf_git_branch_to_clipboard() {
   fi
 }
 alias gb='fzf_git_branch_to_clipboard'
-alias gch='git checkout $(gb)'
+alias gchf='git checkout $(gb)'
 
 function gdelta() { 
   local main=${1:-'qa'}
