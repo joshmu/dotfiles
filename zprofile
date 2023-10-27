@@ -130,6 +130,12 @@ alias gconf="nvim ~/.gitconfig"
 alias tmuxconf="nvim ~/.tmux.conf"
 
 # ----------------------
+# DOCKER
+# ----------------------
+# FIX: docker host not visible to sam cli
+export DOCKER_HOST=unix:///Users/joshmu/.docker/run/docker.sock
+
+# ----------------------
 # GIT ALIASES
 # ----------------------
 alias g='git'
