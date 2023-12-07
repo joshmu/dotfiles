@@ -19,6 +19,7 @@ return {
   { import = "astrocommunity.pack.html-css" },
   -- { import = "astrocommunity.pack.tailwindcss" },
   { import = "astrocommunity.pack.yaml" },
+  { import = "astrocommunity.pack.rust" },
 
   { import = "astrocommunity.motion.nvim-surround" },
 
