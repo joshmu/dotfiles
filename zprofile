@@ -49,6 +49,16 @@ function r() {
 }
 
 # ----------------------
+# AI
+# ----------------------
+alias ai='ollama run codellama'
+# creates a new docker image for ollama-webui if it doesn't already exist
+alias aio='lsof -ti tcp:11434 | xargs kill; ollama serve & docker start ollama-webui && sleep 1 && open http://localhost:3333'
+alias ai-start='lsof -ti tcp:11434 | xargs kill; ollama serve & docker start ollama-webui && sleep 1 && open http://localhost:3333'
+alias aiq='docker stop ollama-webui; pkill -f "ollama serve"'
+alias ai-stop='docker stop ollama-webui; pkill -f "ollama serve"'
+
+# ----------------------
 # DEBUG
 # ----------------------
 alias debug-chrome="/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome  --remote-debugging-port=9222 --user-data-dir=remote-debug-profile"
@@ -58,6 +68,16 @@ function cov() {
     local pattern="$1"
     yarn test:coverage -- --collectCoverageFrom=$1
 }
+
+# MADGE - Dependency Graph View
+# help -> npx madge -h
+# generate dependency graph when at root of a TS repo
+# optional way to pass args to madge via $@ (requires atleaset scan path './' to be passed)
+function depgraph() {
+    # The $@ will include all arguments passed to the function
+    npx madge --basedir ./ --ts-config ./tsconfig.json --extensions ts,tsx,js,jsx --exclude "dist/*|cdk.out/*|\.test\.ts$" -i ./madge.svg "$@" && open -a "Brave Browser" ./madge.svg
+}
+alias depgraph-circular='depgraph --circular'
 
 # ----------------------
 # AEM
