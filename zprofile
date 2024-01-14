@@ -51,7 +51,11 @@ function r() {
 # ----------------------
 # AI
 # ----------------------
-alias ai='ollama run codellama'
+function ai() {
+    output=$(ollama run codellama "$@")
+    echo "$output" | glow
+}
+
 # creates a new docker image for ollama-webui if it doesn't already exist
 alias aio='lsof -ti tcp:11434 | xargs kill; ollama serve & docker start ollama-webui && sleep 1 && open http://localhost:3333'
 alias ai-start='lsof -ti tcp:11434 | xargs kill; ollama serve & docker start ollama-webui && sleep 1 && open http://localhost:3333'
