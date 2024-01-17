@@ -17,10 +17,15 @@ return {
       },
       filesystem = {
         filtered_items = {
-          always_show = {
-            ".gitingore",
-          },
+          visible = true, -- show dot files but remain dimmed
+          -- show_hidden_count = true,
+          -- hide_dotfiles = false,
+          -- hide_gitignored = false,
+          -- always_show = {
+          --   ".gitingore",
+          -- },
           never_show = {
+            ".git",
             ".DS_Store",
             "thumbs.db",
           },
