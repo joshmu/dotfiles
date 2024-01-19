@@ -22,9 +22,31 @@ return {
     ["<leader>b"] = { name = "Buffers" },
     -- quick save
     -- ["<C-s>"] = { ":w!<cr>", desc = "Save File" },  -- change description but the same command
-    ["<leader>gD"] = {
-      function() require("gitsigns").diffthis "HEAD~1" end,
+    -- ["<leader>gD"] = {
+    --   function() require("gitsigns").diffthis "HEAD~1" end,
+    --   desc = "View Git diff",
+    -- },
+    -- ["<leader>gd"] = {
+    --   function() require("gitsigns").diffthis "~" end,
+    --   desc = "View Git diff",
+    -- },
+    ["<leader>gd"] = {
+      -- diffview plugin
+      -- function() vim.api.nvim_command "DiffviewOpen" end,
+      require("user.utils.diff_helpers").diffview_toggle,
       desc = "View Git diff",
+    },
+    ["<leader>gl"] = {
+      function()
+        local commit_hash = require("user.utils.git_helpers").get_commit_hash_for_current_line()
+
+        -- diffview plugin
+        if commit_hash then
+          local cmd = "DiffviewOpen " .. commit_hash .. "^!"
+          vim.api.nvim_command(cmd)
+        end
+      end,
+      desc = "Line diff",
     },
     ["gh"] = {
       function() vim.lsp.buf.hover() end,
