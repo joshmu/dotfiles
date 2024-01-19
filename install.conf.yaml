@@ -11,6 +11,7 @@
       ~/.aliases: aliases
       ~/.tmux.conf: tmux.conf
       ~/.config/nvim/lua/user: nvim/lua/user
+      ~/.luacheckrc: nvim/.luacheckrc
       ~/.config/iterm2: # ~/Library/Preferences/com.googlecode.iterm2.plist: iterm2/com.googlecode.iterm2.plist
 
       ~/.config/karabiner:
