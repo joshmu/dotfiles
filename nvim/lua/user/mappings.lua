@@ -22,14 +22,6 @@ return {
     ["<leader>b"] = { name = "Buffers" },
     -- quick save
     -- ["<C-s>"] = { ":w!<cr>", desc = "Save File" },  -- change description but the same command
-    -- ["<leader>gD"] = {
-    --   function() require("gitsigns").diffthis "HEAD~1" end,
-    --   desc = "View Git diff",
-    -- },
-    -- ["<leader>gd"] = {
-    --   function() require("gitsigns").diffthis "~" end,
-    --   desc = "View Git diff",
-    -- },
     ["<leader>gd"] = {
       -- diffview plugin
       -- function() vim.api.nvim_command "DiffviewOpen" end,
@@ -51,6 +43,10 @@ return {
     ["gh"] = {
       function() vim.lsp.buf.hover() end,
       desc = "Hover symbol details",
+    },
+    ["<leader><Esc>"] = {
+      function() require("notify").dismiss() end,
+      desc = "Dismiss notifications",
     },
     ["vs"] = {
       ':silent execute "! code --goto %:" . getcurpos()[1] . ":" . getcurpos()[2] <bar> q!<CR>',
