@@ -1,3 +1,4 @@
+-- https://github.com/rcarriga/nvim-notify
 return {
   "nvim-notify",
   opts = {

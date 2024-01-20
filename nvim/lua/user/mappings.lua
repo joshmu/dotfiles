@@ -40,6 +40,20 @@ return {
       end,
       desc = "Line diff",
     },
+    ["<leader>zz"] = {
+      function()
+        local scrolloff = vim.api.nvim_get_option "scrolloff"
+        local notify = require "notify"
+        if scrolloff == 0 then
+          vim.api.nvim_set_option("scrolloff", 999)
+          notify("Enabled", "info", { title = "Sticky Cursor Centre", render = "compact", timeout = 1000 })
+        else
+          vim.api.nvim_set_option("scrolloff", 0)
+          notify("Disabled", "warn", { title = "Sticky Cursor Centre", render = "compact", timeout = 1000 })
+        end
+      end,
+      desc = "Toggle Sticky Cursor Centre",
+    },
     ["gh"] = {
       function() vim.lsp.buf.hover() end,
       desc = "Hover symbol details",
