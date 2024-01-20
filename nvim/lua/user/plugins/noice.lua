@@ -7,7 +7,7 @@ return {
     opts = function(_, opts)
       if opts.ensure_installed ~= "all" then
         opts.ensure_installed =
-            utils.list_insert_unique(opts.ensure_installed, { "bash", "markdown", "markdown_inline", "regex", "vim" })
+          utils.list_insert_unique(opts.ensure_installed, { "bash", "markdown", "markdown_inline", "regex", "vim" })
       end
     end,
   },
@@ -26,11 +26,35 @@ return {
           },
         },
         presets = {
-          bottom_search = true,                              -- use a classic bottom cmdline for search
-          command_palette = true,                            -- position the cmdline and popupmenu together
-          long_message_to_split = true,                      -- long messages will be sent to a split
+          bottom_search = false, -- use a classic bottom cmdline for search
+          command_palette = true, -- position the cmdline and popupmenu together
+          long_message_to_split = true, -- long messages will be sent to a split
           inc_rename = utils.is_available "inc-rename.nvim", -- enables an input dialog for inc-rename.nvim
-          lsp_doc_border = false,                            -- add a border to hover docs and signature help
+          lsp_doc_border = false, -- add a border to hover docs and signature help
+        },
+        routes = {
+          {
+            -- https://github.com/folke/noice.nvim/wiki/Configuration-Recipes#hide-search-virtual-text
+            filter = {
+              event = "msg_show",
+              kind = "search_count",
+            },
+            opts = { skip = true },
+          },
+          {
+            -- https://github.com/folke/noice.nvim/wiki/Configuration-Recipes#hide-written-messages
+            filter = {
+              event = "msg_show",
+              kind = "",
+              find = "written",
+            },
+            opts = { skip = true },
+          },
+          {
+            -- https://github.com/folke/noice.nvim/wiki/Configuration-Recipes#show-recording-messages          {
+            view = "notify",
+            filter = { event = "msg_showmode" },
+          },
         },
       })
     end,
