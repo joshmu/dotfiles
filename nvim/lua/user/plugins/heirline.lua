@@ -1,3 +1,4 @@
+-- https://github.com/rebelot/heirline.nvim
 return {
   "rebelot/heirline.nvim",
   opts = function(_, opts)
@@ -35,13 +36,13 @@ return {
           surround = false,
           update = "BufEnter",
         },
-        -- show the breadcrumbs
-        status.component.breadcrumbs {
-          icon = { hl = true },
-          hl = status.hl.get_attributes("winbar", true),
-          prefix = true,
-          padding = { left = 0 },
-        },
+        -- show the breadcrumbs (in file references/symbols/tokens)
+        -- status.component.breadcrumbs {
+        --   icon = { hl = true },
+        --   hl = status.hl.get_attributes("winbar", true),
+        --   prefix = true,
+        --   padding = { left = 0 },
+        -- },
       },
     }
 
