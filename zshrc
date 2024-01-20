@@ -1,10 +1,17 @@
+# zsh perf check (also run zprof at end of file)
+# zmodload zsh/zprof
+
 # HOMEBREW
 eval "$(/opt/homebrew/bin/brew shellenv)"
 if type brew &>/dev/null; then
    FPATH=$(brew --prefix)/share/zsh/site-functions:$FPATH
 
    autoload -Uz compinit
-   compinit
+   # only update completions every 24 hours - https://medium.com/@dannysmith/little-thing-2-speeding-up-zsh-f1860390f92
+   for dump in ~/.zcompdump(N.mh+24); do
+     compinit
+   done
+   compinit -C
 fi
 
 # OH MY POSH
@@ -216,3 +223,6 @@ esac
 # ALIASES
 # ----------------------
 source ~/.aliases
+
+# zsh perf check
+# zprof
