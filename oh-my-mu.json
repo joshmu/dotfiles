@@ -179,7 +179,7 @@
           "invert_powerline": true,
           "style": "diamond",
           "template": " {{ .CurrentDate | date .Format }}  ",
-          "trailing_diamond": "─╮",
+          "trailing_diamond": "─╮ ",
           "type": "time"
         }
       ],
