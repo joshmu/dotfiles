@@ -147,7 +147,8 @@ alias yt-mp3="youtube-dl -o '%(title)s.%(ext)s' -i --extract-audio --audio-forma
 # CONFIG
 # ----------------------
 alias vconf="nvim ~/.vimrc"
-alias zconf="nvim ~/.zshrc"
+alias zconf="nvim ~/.aliases"
+alias zrconf="nvim ~/.zshrc"
 alias zpconf="nvim ~/.zprofile"
 alias hypconf="nvim ~/.hyper.js"
 alias gconf="nvim ~/.gitconfig"
