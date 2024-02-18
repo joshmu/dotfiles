@@ -4,6 +4,7 @@ return {
   "nvim-telescope/telescope.nvim",
   dependencies = { -- add a new dependency to telescope that is our new plugin
     {
+      -- https://github.com/nvim-telescope/telescope-live-grep-args.nvim
       "nvim-telescope/telescope-live-grep-args.nvim",
       -- This will not install any breaking changes.
       -- For major updates, this must be adjusted manually.
@@ -14,7 +15,7 @@ return {
   -- the second is the table of options as set up in Lazy with the `opts` key
   config = function(plugin, opts)
     -- run the core AstroNvim configuration function with the options table
-    require "plugins.configs.telescope"(plugin, opts)
+    require "plugins.configs.telescope" (plugin, opts)
 
     -- require telescope and load extensions as necessary
     local telescope = require "telescope"
