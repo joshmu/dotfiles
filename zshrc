@@ -135,6 +135,9 @@ source $ZSH/oh-my-zsh.sh
 # autoload -U promptinit; promptinit
 # prompt pure
 
+# Set default editor
+export EDITOR='nvim'
+
 # USE VIM IN ZSH CLI
 bindkey -v
 
@@ -226,3 +229,5 @@ source ~/.aliases
 
 # zsh perf check
 # zprof
+
+PATH=~/.console-ninja/.bin:$PATH
