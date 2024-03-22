@@ -231,3 +231,6 @@ source ~/.aliases
 # zprof
 
 PATH=~/.console-ninja/.bin:$PATH
+
+# GH COPLOT (https://github.com/github/gh-copilot)
+eval "$(gh copilot alias -- zsh)"
