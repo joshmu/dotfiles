@@ -1,33 +1,30 @@
 - defaults:
-      link:
-          relink: true
+    link:
+      relink: true
 
-- clean: [ "~" ]
+- clean: ["~"]
 
 - link:
-      ~/.vimrc: vimrc
-      ~/.zshrc: zshrc
-      ~/.zprofile: zprofile
-      ~/.aliases: aliases
-      ~/.tmux.conf: tmux.conf
-      ~/.config/nvim/lua/user: nvim/lua/user
-      ~/.luacheckrc: nvim/.luacheckrc
-      ~/.config/iterm2: # ~/Library/Preferences/com.googlecode.iterm2.plist: iterm2/com.googlecode.iterm2.plist
+    ~/.vimrc: vimrc
+    ~/.zshrc: zshrc
+    ~/.zprofile: zprofile
+    ~/.aliases: aliases
+    ~/.tmux.conf: tmux.conf
+    ~/.config/nvim/lua/user: nvim/lua/user
+    ~/.luacheckrc: nvim/.luacheckrc
+    ~/.config/iterm2: # ~/Library/Preferences/com.googlecode.iterm2.plist: iterm2/com.googlecode.iterm2.plist
 
-      ~/.config/karabiner:
-      ~/.gitconfig:
-      ~/.p10k.zsh: zsh/p10k.zsh
-      ~/.hyper.js: hyper.js
-      ~/.oh-my-mu.json: oh-my-mu.json
-      ~/.docker/config.json: docker-config.json
-      ~/Library/Application Support/lazygit/config.yml: lazygit-config.yml
+    ~/.config/karabiner:
+    ~/.gitconfig:
+    ~/.p10k.zsh: zsh/p10k.zsh
+    ~/.hyper.js: hyper.js
+    ~/.oh-my-mu.json: oh-my-mu.json
+    ~/.docker/config.json: docker-config.json
+    ~/Library/Application Support/lazygit/config.yml: lazygit-config.yml
 
 - create:
-      - ~/downloads
-      - ~/.vim/undo-history
+    - ~/downloads
+    - ~/.vim/undo-history
 
 - shell:
-      - [
-            git submodule update --init --recursive,
-            Installing submodules
-        ]
+    - [git submodule update --init --recursive, Installing submodules]
