@@ -15,7 +15,7 @@ return {
   -- the second is the table of options as set up in Lazy with the `opts` key
   config = function(plugin, opts)
     -- run the core AstroNvim configuration function with the options table
-    require "plugins.configs.telescope" (plugin, opts)
+    require "plugins.configs.telescope"(plugin, opts)
 
     -- require telescope and load extensions as necessary
     local telescope = require "telescope"
@@ -24,6 +24,13 @@ return {
     local lga_actions = require "telescope-live-grep-args.actions"
 
     telescope.setup {
+      defaults = {
+        layout_config = {
+          horizontal = {
+            preview_cutoff = 80,
+          },
+        },
+      },
       extensions = {
         live_grep_args = {
           auto_quoting = true,
