@@ -37,6 +37,7 @@ alias yt='yt-dlp --merge-output-format mp4'
 alias npm-default-registry='npm config set registry https://registry.npmjs.com'
 alias pgpt='(cd /Users/joshmu/Desktop/code/projects/privateGPT && python privateGPT.py)'
 alias dep='npx qnm match'
+alias oo='cd /Users/joshmu/Library/Mobile Documents/iCloud~md~obsidian/Documents/obsidian'
 
 function notify() {
     local msg="$1"

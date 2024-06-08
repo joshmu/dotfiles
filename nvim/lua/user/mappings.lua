@@ -69,6 +69,26 @@ return {
       ':silent execute "! code --goto %:" . getcurpos()[1] . ":" . getcurpos()[2] <bar> q!<CR>',
       desc = "Goto VScode",
     },
+    ["<leader>on"] = {
+      ":ObsidianTemplate note<CR>",
+      desc = "New Obsidian note",
+    },
+    ["<leader>off"] = {
+      function()
+        require("telescope.builtin").find_files {
+          search_dirs = { "/Users/joshmu/library/Mobile Documents/iCloud~md~obsidian/Documents/obsidian" },
+        }
+      end,
+      desc = "Obsidian Find Files",
+    },
+    ["<leader>ofw"] = {
+      function()
+        require("telescope").extensions.live_grep_args.live_grep_args {
+          search_dirs = { "/Users/joshmu/library/Mobile Documents/iCloud~md~obsidian/Documents/obsidian" },
+        }
+      end,
+      desc = "Obsidian Grep",
+    },
   },
   t = {
     -- setting a mapping to false will disable it
