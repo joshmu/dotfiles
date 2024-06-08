@@ -1,1 +1,5 @@
+dotbot/
+!dotbot/README.md
 BrewfileOld
+nvim.bak
+**/*backups/**
