@@ -23,18 +23,18 @@ return {
         name = "obsidian-vault",
         path = "/Users/joshmu/Library/Mobile Documents/iCloud~md~obsidian/Documents/obsidian",
       },
-      -- {
-      --   name = "work",
-      --   path = "~/vaults/work",
-      -- },
-      new_notes_location = "notes",
-      -- notes_subdir = "inbox",
-      -- new_notes_location = "notes_subdir",
-      -- disable_frontmatter = true,
-      template = {
-        path = "/Users/joshmua/Library/Mobile Documents/iCloud~md~obsidian/Documents/obsidian/templates",
-        default = "note.md",
-      },
+    },
+    -- {
+    --   name = "work",
+    --   path = "~/vaults/work",
+    -- },
+    new_notes_location = "notes",
+    -- notes_subdir = "inbox",
+    -- new_notes_location = "notes_subdir",
+    disable_frontmatter = true,
+    template = {
+      path = "/Users/joshmua/Library/Mobile Documents/iCloud~md~obsidian/Documents/obsidian/templates",
+      default = "note.md",
     },
   },
 }

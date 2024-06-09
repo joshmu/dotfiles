@@ -1,5 +1,26 @@
+" list of available commands via note -> 'obcommands via dataview'
+
 " Normal mode mapping
 imap jk <Esc>
+
+" workaround for 'Space' to be the 'Leader' key
+unmap <Space>
+
+" quick open
+exmap switcher_open obcommand switcher:open
+nmap <Space>ff :switcher_open
+
+" go to link
+exmap followLink :obcommand editor:follow-link
+nmap gd :followLink
+
+" go to backlinks
+exmap backlinks :obcommand backlink:open-backlinks
+nmap gr :backlinks
+
+" global search
+exmap global_search obcommand global-search:open
+nmap <Space>fw :global_search
 
 " Yank to system clipboard
 set clipboard=unnamed
@@ -53,3 +74,7 @@ exmap tabnext obcommand cycle-through-panes:cycle-through-panes
 nmap gt :tabnext
 exmap tabprev obcommand cycle-through-panes:cycle-through-panes-reverse
 nmap gT :tabprev
+
+" custom command to toggle markdown checkbox
+exmap toggle_checkbox :obcommand editor:toggle-checklist-status
+nmap <Space>d :toggle_checkbox
