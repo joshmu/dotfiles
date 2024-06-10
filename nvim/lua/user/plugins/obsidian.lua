@@ -28,7 +28,7 @@ return {
     --   name = "work",
     --   path = "~/vaults/work",
     -- },
-    new_notes_location = "notes",
+    new_notes_location = "inbox",
     -- notes_subdir = "inbox",
     -- new_notes_location = "notes_subdir",
     disable_frontmatter = true,
