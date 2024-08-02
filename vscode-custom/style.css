@@ -1,0 +1,28 @@
+/* MU - LOGO */
+.titlebar-left:after {
+  content: "(╯°□°)╯︵ ┻━┻";
+  font-size: 1em;
+  color: #acdcff;
+}
+
+/* Scroll Bar */
+.slider {
+  position: absolute !important;
+  right: 1px !important;
+  width: 1px !important;
+  background: #bc9abc !important;
+  left: auto !important;
+}
+
+/* Project title's style at the top. */
+.monaco-workbench .part.titlebar>.titlebar-container>.titlebar-center>.window-title>.command-center .action-item.command-center-center {
+  border: none !important;
+  background: transparent !important;
+}
+
+/* Project Title */
+.titlebar-left {
+  /* justify-content: flex-start !important; */
+  /* flex-grow: 0 !important; */
+  /* width: auto !important; */
+}
