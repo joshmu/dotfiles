@@ -13,6 +13,7 @@
     ~/.config/nvim/lua/user: nvim/lua/user
     ~/.luacheckrc: nvim/.luacheckrc
     ~/.config/iterm2: # ~/Library/Preferences/com.googlecode.iterm2.plist: iterm2/com.googlecode.iterm2.plist
+    ~/vscode-custom: vscode-custom
 
     ~/.config/karabiner:
     ~/.gitconfig:
@@ -21,7 +22,7 @@
     ~/.oh-my-mu.json: oh-my-mu.json
     ~/.docker/config.json: docker-config.json
     ~/Library/Application Support/lazygit/config.yml: lazygit-config.yml
-    ~/Library/Mobile Documents/iCloud~md~obsidian/Documents/obsidian/.obsidian.vimrc: obsidian.vimrc
+    # ~/Library/Mobile Documents/iCloud~md~obsidian/Documents/obsidian/.obsidian.vimrc: obsidian.vimrc
 
 - create:
     - ~/downloads
