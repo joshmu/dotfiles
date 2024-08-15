@@ -162,6 +162,7 @@ alias tmuxconf="nvim ~/.tmux.conf"
 # ----------------------
 alias g='git'
 alias lg='lazygit'
+alias gg='lazygit'
 alias ga='git add'
 alias gaa='git add .'
 alias gaaa='git add -A'
