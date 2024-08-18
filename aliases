@@ -12,7 +12,7 @@ alias restartaudio='sudo killall coreaudiod'
 alias mongod='mongod --dbpath /System/Volumes/Data/data/db'
 alias mukill='pkill -a -i'
 #alias vim=nvim
-alias nvim-astro='NVIM_APPNAME="nvim-astro" nvim'
+alias va='NVIM_APPNAME="nvim-astro" nvim'
 alias nv=nvim
 alias v=nvim
 alias pn=pnpm
