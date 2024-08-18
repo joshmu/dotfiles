@@ -25,5 +25,5 @@ return {
 
   { import = "astrocommunity.editing-support.todo-comments-nvim" },
   { import = "astrocommunity.markdown-and-latex.markdown-preview-nvim" },
-  { import = "astrocommunity.debugging.nvim-bqf" },
+  { import = "astrocommunity.quickfix.nvim-bqf" },
 }

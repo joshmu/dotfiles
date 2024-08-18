@@ -28,9 +28,6 @@ return {
       require("user.utils.diff_helpers").diffview_toggle,
       desc = "View Git diff",
     },
-    ["<leader>fw"] = {
-      require("telescope").extensions.live_grep_args.live_grep_args,
-    },
     ["<leader>gl"] = {
       function()
         local commit_hash = require("user.utils.git_helpers").get_commit_hash_for_current_line()
@@ -42,6 +39,9 @@ return {
         end
       end,
       desc = "Line diff",
+    },
+    ["<leader>fw"] = {
+      require("telescope").extensions.live_grep_args.live_grep_args,
     },
     ["<leader>zz"] = {
       function()
