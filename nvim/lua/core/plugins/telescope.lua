@@ -63,17 +63,53 @@ return {
       require('telescope').setup {
         -- You can put your default mappings / updates / etc. in here
         --  All the info you're looking for is in `:help telescope.setup()`
-        --
         defaults = {
+          layout_strategy = 'horizontal',
           layout_config = {
             horizontal = {
+              prompt_position = 'top',
               preview_cutoff = 80,
             },
           },
-          --   mappings = {
-          --     i = { ['<c-enter>'] = 'to_fuzzy_refine' },
-          --   },
-        },
+          sorting_strategy = 'ascending',
+          --- other configs
+        }, --
+        -- defaults = {
+        --   layout_config = {
+        --     bottom_pane = {
+        --       height = 25,
+        --       preview_cutoff = 120,
+        --       prompt_position = 'top',
+        --     },
+        --     center = {
+        --       height = 0.4,
+        --       preview_cutoff = 40,
+        --       prompt_position = 'top',
+        --       width = 0.5,
+        --     },
+        --     cursor = {
+        --       height = 0.9,
+        --       preview_cutoff = 40,
+        --       width = 0.8,
+        --     },
+        --     horizontal = {
+        --       height = 0.9,
+        --       -- preview_cutoff = 120,
+        --       preview_cutoff = 80,
+        --       prompt_position = 'bottom',
+        --       width = 0.8,
+        --     },
+        --     vertical = {
+        --       height = 0.9,
+        --       preview_cutoff = 40,
+        --       prompt_position = 'bottom',
+        --       width = 0.8,
+        --     },
+        --   },
+        --   mappings = {
+        --     i = { ['<c-enter>'] = 'to_fuzzy_refine' },
+        --   },
+        -- },
         -- pickers = {}
         extensions = {
           ['ui-select'] = {
