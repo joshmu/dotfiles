@@ -178,6 +178,12 @@ return {
         -- But for many setups, the LSP (`tsserver`) will work just fine
         tsserver = {},
         --
+        bashls = {},
+        eslint = {},
+        html = {},
+        jsonls = {},
+        terraformls = {},
+        yamlls = {},
 
         lua_ls = {
           -- cmd = {...},
