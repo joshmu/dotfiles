@@ -1,3 +1,14 @@
+return {
+  {
+    'catppuccin/nvim',
+    name = 'catppuccin',
+    priority = 1000,
+    init = function()
+      -- colorscheme catppuccin " catppuccin-latte, catppuccin-frappe, catppuccin-macchiato, catppuccin-mocha
+      vim.cmd.colorscheme 'catppuccin-macchiato'
+    end,
+  },
+}
 -- return {
 --   { -- You can easily change to a different colorscheme.
 --     -- Change the name of the colorscheme plugin below, and then
@@ -26,12 +37,12 @@
 --     end,
 --   },
 -- }
-return {
-  {
-    'mhartington/oceanic-next',
-    priority = 1000,
-    init = function()
-      vim.cmd.colorscheme 'OceanicNext'
-    end,
-  },
-}
+-- return {
+--   {
+--     'mhartington/oceanic-next',
+--     priority = 1000,
+--     init = function()
+--       vim.cmd.colorscheme 'OceanicNext'
+--     end,
+--   },
+-- }
