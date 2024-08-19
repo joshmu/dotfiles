@@ -3,6 +3,7 @@ return {
   disable = false,
   dependencies = 'kevinhwang91/promise-async',
   config = function()
+    vim.o.foldcolumn = '1'
     vim.wo.foldlevel = 99 -- feel free to decrease the value
     vim.o.foldlevelstart = 99
     vim.wo.foldenable = true
