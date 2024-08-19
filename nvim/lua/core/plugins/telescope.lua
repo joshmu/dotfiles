@@ -147,6 +147,11 @@ return {
         vim.keymap.set('n', '<leader>' .. key .. 'd', builtin.diagnostics, { desc = term .. ' [D]iagnostics' })
         vim.keymap.set('n', '<leader>' .. key .. 'r', builtin.resume, { desc = term .. ' [R]esume' })
         vim.keymap.set('n', '<leader>' .. key .. '.', builtin.oldfiles, { desc = term .. ' Recent Files ("." for repeat)' })
+
+        -- Shortcut for searching your Neovim configuration files
+        vim.keymap.set('n', '<leader>' .. key .. 'n', function()
+          builtin.find_files { cwd = vim.fn.stdpath 'config' }
+        end, { desc = term .. ' [N]eovim files' })
       end
 
       vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
@@ -168,11 +173,6 @@ return {
           prompt_title = 'Live Grep in Open Files',
         }
       end, { desc = '[S]earch [/] in Open Files' })
-
-      -- Shortcut for searching your Neovim configuration files
-      vim.keymap.set('n', '<leader>sn', function()
-        builtin.find_files { cwd = vim.fn.stdpath 'config' }
-      end, { desc = '[S]earch [N]eovim files' })
     end,
   },
 }
