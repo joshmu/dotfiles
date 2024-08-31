@@ -19,7 +19,6 @@ alias pn=pnpm
 alias t=tmux
 alias localip='ipconfig getifaddr en0'
 alias plc='npx plop component'
-alias rm=trash
 alias hidedesktop='defaults write com.apple.finder CreateDesktop -bool false; killall Finder'
 alias showdesktop='defaults write com.apple.finder CreateDesktop -bool true; killall Finder'
 alias cl=clear
