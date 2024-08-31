@@ -88,14 +88,6 @@ vim.keymap.set('n', '<leader>gl', function()
   end
 end, { desc = 'Line diff' })
 
--- tabs
--- Move to previous/next
-vim.keymap.set('n', '<C-[>', '<cmd>BufferPrevious<CR>')
-vim.keymap.set('n', '<C-]>', '<cmd>BufferNext<CR>')
-
--- -- Close buffer
-vim.keymap.set('n', '<leader>x', '<cmd>BufferClose<CR>')
-
 vim.keymap.set('n', 'gh', vim.lsp.buf.hover, { desc = 'Hover symbol details' })
 
 -- dismiss notifications

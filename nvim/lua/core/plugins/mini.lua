@@ -15,7 +15,11 @@ return {
       -- - saiw) - [S]urround [A]dd [I]nner [W]ord [)]Paren
       -- - sd'   - [S]urround [D]elete [']quotes
       -- - sr)'  - [S]urround [R]eplace [)] [']
-      require('mini.surround').setup()
+      require('mini.surround').setup {
+        mappings = {
+          replace = 'cs',
+        },
+      }
 
       -- Simple and easy statusline.
       --  You could remove this setup call if you don't like it,
@@ -31,6 +35,11 @@ return {
       statusline.section_location = function()
         return '%2l:%-2v'
       end
+
+      -- close buffer
+      -- https://github.com/echasnovski/mini.bufremove
+      require('mini.bufremove').setup()
+      vim.keymap.set('n', '<leader>x', '<cmd>bdelete<CR>')
 
       -- ... and there is more!
       --  Check out: https://github.com/echasnovski/mini.nvim

@@ -39,6 +39,7 @@ return {
       { 'nvim-tree/nvim-web-devicons', enabled = vim.g.have_nerd_font },
     },
     config = function()
+      local z_utils = require 'telescope._extensions.zoxide.utils'
       -- Telescope is a fuzzy finder that comes with a lot of different things that
       -- it can fuzzy find! It's more than just a "file finder", it can search
       -- many different aspects of Neovim, your workspace, LSP, and more!
@@ -118,6 +119,26 @@ return {
           live_grep_args = {
             auto_quoting = true,
           },
+          zoxide = {
+            prompt_title = '[Z]oxide',
+            mappings = {
+              default = {
+                after_action = function(selection)
+                  print('Update to (' .. selection.z_score .. ') ' .. selection.path)
+                end,
+              },
+              ['<C-s>'] = {
+                before_action = function(selection)
+                  print 'before C-s'
+                end,
+                action = function(selection)
+                  vim.cmd.edit(selection.path)
+                end,
+              },
+              -- Opens the selected entry in a new split
+              ['<C-q>'] = { action = z_utils.create_basic_command 'split' },
+            },
+          },
         },
       }
 
@@ -125,6 +146,7 @@ return {
       pcall(require('telescope').load_extension, 'fzf')
       pcall(require('telescope').load_extension, 'ui-select')
       pcall(require('telescope').load_extension, 'live_grep_args')
+      pcall(require('telescope').load_extension, 'zoxide')
 
       -- See `:help telescope.builtin`
       local builtin = require 'telescope.builtin'
@@ -147,6 +169,11 @@ return {
         vim.keymap.set('n', '<leader>' .. key .. 'd', builtin.diagnostics, { desc = term .. ' [D]iagnostics' })
         vim.keymap.set('n', '<leader>' .. key .. 'r', builtin.resume, { desc = term .. ' [R]esume' })
         vim.keymap.set('n', '<leader>' .. key .. '.', builtin.oldfiles, { desc = term .. ' Recent Files ("." for repeat)' })
+
+        vim.keymap.set('n', '<leader>' .. key .. 'b', builtin.buffers, { desc = term .. ' Existing [B]uffers' })
+
+        -- zoxide
+        vim.keymap.set('n', '<leader>' .. key .. 'z', require('telescope').extensions.zoxide.list, { desc = term .. ' [Z]oxide' })
 
         -- Shortcut for searching your Neovim configuration files
         vim.keymap.set('n', '<leader>' .. key .. 'n', function()
