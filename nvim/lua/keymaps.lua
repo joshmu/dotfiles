@@ -15,7 +15,7 @@ vim.keymap.set('n', 'gl', vim.diagnostic.open_float, { desc = 'Open diagnostic f
 --
 -- NOTE: This won't work in all terminal emulators/tmux/etc. Try your own mapping
 -- or just use <C-\><C-n> to exit terminal mode
-vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
+-- vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 
 -- TIP: Disable arrow keys in normal mode
 -- vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
@@ -52,7 +52,7 @@ vim.keymap.set('i', 'jk', '<Esc>', { desc = 'Escape insert mode' })
 
 -- quicker saves & exits
 vim.keymap.set('n', '<leader>w', '<cmd>w<CR>')
-vim.keymap.set('n', '<leader>q', '<cmd>q<CR>')
+vim.keymap.set('n', '<leader>q', '<cmd>q!<CR>')
 
 -- Switch tabs
 vim.keymap.set('n', '<S-L>', 'gt')
@@ -65,7 +65,7 @@ vim.keymap.set('n', '<leader>l', '<cmd>wincmd l<CR>')
 
 -- nvim-tree
 -- vim.keymap.set('n', '<leader>e', '<cmd>NvimTreeToggle<CR>', { desc = 'Open Neotree' })
-vim.keymap.set('n', '<leader>e', '<cmd>Neotree reveal<CR>', { desc = 'Open Neotree' })
+vim.keymap.set('n', '<leader>e', '<cmd>Neotree toggle<CR>', { desc = 'Toggle Neotree' })
 
 vim.keymap.set('n', '<leader>vs', require('utils.code_helpers').openVscodeWithWorkspaceEnabledIfAvailable, { desc = 'Open in VSCode' })
 
