@@ -15,7 +15,8 @@
     # ~/.luacheckrc: nvim/.luacheckrc
     ~/.config/iterm2: # ~/Library/Preferences/com.googlecode.iterm2.plist: iterm2/com.googlecode.iterm2.plist
     ~/vscode-custom: vscode-custom
-    ~/.config/kitty: kitty
+    ~/.config/kitty/kitty.conf: kitty/kitty.conf
+    ~/.config/kitty/current-theme.conf: kitty/current-theme.conf
     ~/.config/karabiner:
     ~/.gitconfig:
     ~/.hushlogin: .hushlogin

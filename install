@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# https://github.com/anishathalye/dotbot
+
 set -e
 
 CONFIG="install.conf.yaml"
