@@ -1,0 +1,16 @@
+/*support fitting mermaid graphs in view*/
+.mermaid svg {
+    max-width: 100%;
+    height: auto;
+}
+.mermaid {
+    overflow: auto;
+}
+.mermaid:hover svg {
+    max-width: 250%
+}
+
+/* create more editing space */
+body {
+  --file-line-width:1000px
+}
