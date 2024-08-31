@@ -55,7 +55,7 @@ require('lazy').setup({
   -- require 'core.plugins.debug',
   -- require 'core.plugins.indent_line',
   -- require 'core.plugins.lint',
-  -- require 'core.plugins.autopairs',
+  require 'core.plugins.autopairs',
   require 'core.plugins.neo-tree',
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
