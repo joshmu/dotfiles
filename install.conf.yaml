@@ -18,6 +18,7 @@
     ~/.config/kitty: kitty
     ~/.config/karabiner:
     ~/.gitconfig:
+    ~/.hushlogin: .hushlogin
     ~/.p10k.zsh: zsh/p10k.zsh
     ~/.hyper.js: hyper.js
     ~/.oh-my-mu.json: oh-my-mu.json
