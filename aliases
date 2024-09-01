@@ -15,7 +15,6 @@ alias mukill='pkill -a -i'
 alias va='NVIM_APPNAME="nvim-astro" nvim'
 alias nv=nvim
 alias v=nvim
-alias pn=pnpm
 alias t=tmux
 alias localip='ipconfig getifaddr en0'
 alias plc='npx plop component'

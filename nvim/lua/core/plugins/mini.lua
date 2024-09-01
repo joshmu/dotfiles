@@ -39,7 +39,7 @@ return {
       -- close buffer
       -- https://github.com/echasnovski/mini.bufremove
       require('mini.bufremove').setup()
-      vim.keymap.set('n', '<leader>x', '<cmd>bdelete<CR>')
+      vim.keymap.set('n', '<leader>x', '<cmd>bprevious<bar>bdelete #<CR>', { noremap = true, silent = true })
 
       -- ... and there is more!
       --  Check out: https://github.com/echasnovski/mini.nvim
