@@ -62,4 +62,11 @@ vim.opt.cursorline = true
 -- Minimal number of screen lines to keep above and below the cursor.
 vim.opt.scrolloff = 999
 
+-- Use spaces instead of tabs
+vim.opt.expandtab = true
+-- Number of spaces that a <Tab> in the file counts for.
+vim.opt.tabstop = 2
+-- Size of an indent
+vim.opt.shiftwidth = 2
+
 -- vim: ts=2 sts=2 sw=2 et
