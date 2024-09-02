@@ -58,6 +58,12 @@ vim.keymap.set('n', '<leader>q', '<cmd>q!<CR>')
 vim.keymap.set('n', '<S-L>', 'gt')
 vim.keymap.set('n', '<S-H>', 'gT')
 
+-- splits
+vim.keymap.set('n', '<leader>|', '<cmd>vsplit<CR>')
+vim.keymap.set('n', '<leader>-', '<cmd>split<CR>')
+-- close current split
+vim.keymap.set('n', '<leader>c', '<cmd>close<CR>')
+
 vim.keymap.set('n', '<leader>h', '<cmd>wincmd h<CR>')
 vim.keymap.set('n', '<leader>j', '<cmd>wincmd j<CR>')
 vim.keymap.set('n', '<leader>k', '<cmd>wincmd k<CR>')
