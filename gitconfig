@@ -41,7 +41,7 @@
 
 
 [color]
-	ui = always
+	ui = auto
 
 [core]
 	editor = nvim
