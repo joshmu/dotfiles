@@ -159,18 +159,21 @@ return {
         vim.keymap.set('n', '<leader>' .. key .. 'h', builtin.help_tags, { desc = term .. ' [H]elp' })
         vim.keymap.set('n', '<leader>' .. key .. 'k', builtin.keymaps, { desc = term .. ' [K]eymaps' })
         vim.keymap.set('n', '<leader>' .. key .. 'f', builtin.find_files, { desc = term .. ' [F]iles' })
-        vim.keymap.set('n', '<leader>' .. key .. 's', builtin.builtin, { desc = term .. ' [S]elect Telescope' })
+        vim.keymap.set('n', '<leader>' .. key .. 'b', builtin.builtin, { desc = term .. ' Telescope [B]uiltins' })
         -- vim.keymap.set('n', '<leader>' .. key .. 'w', builtin.grep_string, { desc = term .. ' current [W]ord' })
+
         -- vim.keymap.set('n', '<leader>' .. key .. 'w', builtin.live_grep, { desc = term .. ' grep [W]ord' })
         -- vim.keymap.set('n', '<leader>' .. key .. 'g', builtin.live_grep, { desc = term .. ' by [G]rep' })
         vim.keymap.set('n', '<leader>' .. key .. 'w', require('telescope').extensions.live_grep_args.live_grep_args, { desc = term .. ' grep *args [W]ord' })
         vim.keymap.set('n', '<leader>' .. key .. 'g', require('telescope').extensions.live_grep_args.live_grep_args, { desc = term .. ' by *args [G]rep' })
 
+        vim.keymap.set('n', '<leader>' .. key .. 's', builtin.git_status, { desc = term .. ' Git [S]tatus' })
+
         vim.keymap.set('n', '<leader>' .. key .. 'd', builtin.diagnostics, { desc = term .. ' [D]iagnostics' })
         vim.keymap.set('n', '<leader>' .. key .. 'r', builtin.resume, { desc = term .. ' [R]esume' })
         vim.keymap.set('n', '<leader>' .. key .. '.', builtin.oldfiles, { desc = term .. ' Recent Files ("." for repeat)' })
 
-        vim.keymap.set('n', '<leader>' .. key .. 'b', builtin.buffers, { desc = term .. ' Existing [B]uffers' })
+        -- vim.keymap.set('n', '<leader>' .. key .. 'b', builtin.buffers, { desc = term .. ' Existing [B]uffers' })
 
         -- zoxide
         vim.keymap.set('n', '<leader>' .. key .. 'z', require('telescope').extensions.zoxide.list, { desc = term .. ' [Z]oxide' })
