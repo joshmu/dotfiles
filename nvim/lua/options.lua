@@ -62,6 +62,9 @@ vim.opt.cursorline = true
 -- Minimal number of screen lines to keep above and below the cursor.
 vim.opt.scrolloff = 999
 
+-- prevent line wrapping
+vim.opt.wrap = false
+
 -- Use spaces instead of tabs
 vim.opt.expandtab = true
 -- Number of spaces that a <Tab> in the file counts for.
