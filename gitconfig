@@ -55,6 +55,7 @@
 	pretty = format:%C(auto,yellow)%h%C(auto,magenta)% G? %C(auto,blue)%>(12,trunc)%ad %C(auto,green)%<(12,trunc)%aN %C(auto,reset)%s%C(auto,red)% gD% D
 
 [push]
+        autoSetupRemote = true
 	default = current
 
 # GIT-DELTA (https://github.com/dandavison/delta)
@@ -71,7 +72,6 @@
 [diff]
     colorMoved = default
     
-[alias]
 [interactive]
     diffFilter = delta --color-only --line-numbers
 [init]
