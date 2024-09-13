@@ -11,8 +11,6 @@
     ~/.aliases: .aliases
     ~/.tmux.conf: tmux.conf
     ~/.config/nvim: nvim
-    ~/.config/nvim-astro: archive/nvim-astro
-    # ~/.luacheckrc: nvim/.luacheckrc
     ~/.config/iterm2: # ~/Library/Preferences/com.googlecode.iterm2.plist: iterm2/com.googlecode.iterm2.plist
     ~/vscode-custom: vscode-custom
     ~/.config/kitty/kitty.conf: kitty/kitty.conf
