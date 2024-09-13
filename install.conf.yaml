@@ -6,9 +6,9 @@
 
 - link:
     # ~/.vimrc: vimrc
-    ~/.zshrc: zshrc
-    ~/.zprofile: zprofile
-    ~/.aliases: aliases
+    ~/.zshrc: .zshrc
+    ~/.zprofile: .zprofile
+    ~/.aliases: .aliases
     ~/.tmux.conf: tmux.conf
     ~/.config/nvim: nvim
     ~/.config/nvim-astro: archive/nvim-astro
