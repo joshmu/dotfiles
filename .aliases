@@ -39,22 +39,22 @@ alias dep='npx qnm match'
 alias oo='cd "/Users/joshmu/Library/Mobile Documents/iCloud~md~obsidian/Documents/obsidian"'
 
 function notify() {
-    local msg="$1"
-    osascript -e "display notification \"$msg\"";
+  local msg="$1"
+  osascript -e "display notification \"$msg\""
 }
 
 # grep from current file and open in vscode
 function r() {
-    local pattern="$1"
-    rg "$1" --smart-case --vimgrep --color ansi | fzf --ansi | cut -f 1 -d ' ' | sed 's/.$//' | xargs -I '{}' code --goto '{}'
+  local pattern="$1"
+  rg "$1" --smart-case --vimgrep --color ansi | fzf --ansi | cut -f 1 -d ' ' | sed 's/.$//' | xargs -I '{}' code --goto '{}'
 }
 
 # ----------------------
 # AI
 # ----------------------
 function ai() {
-    output=$(ollama run codellama "$@")
-    echo "$output" | glow
+  output=$(ollama run codellama "$@")
+  echo "$output" | glow
 }
 alias ai-shell='gh copilot suggest -t shell'
 
@@ -71,8 +71,8 @@ alias debug-chrome="/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chro
 alias debug-edge="/Applications/Microsoft\ Edge.app/Contents/MacOS/Microsoft\ Edge --remote-debugging-port=9222 --user-data-dir=remote-debug-profile"
 
 function cov() {
-    local pattern="$1"
-    yarn test:coverage -- --collectCoverageFrom=$1
+  local pattern="$1"
+  yarn test:coverage -- --collectCoverageFrom=$1
 }
 
 # MADGE - Dependency Graph View
@@ -80,8 +80,8 @@ function cov() {
 # generate dependency graph when at root of a TS repo
 # optional way to pass args to madge via $@ (requires atleaset scan path './' to be passed)
 function depgraph() {
-    # The $@ will include all arguments passed to the function
-    npx madge --basedir ./ --ts-config ./tsconfig.json --extensions ts,tsx,js,jsx --exclude "dist/*|cdk.out/*|\.test\.ts$" -i ./madge.svg "$@" && open -a "Brave Browser" ./madge.svg
+  # The $@ will include all arguments passed to the function
+  npx madge --basedir ./ --ts-config ./tsconfig.json --extensions ts,tsx,js,jsx --exclude "dist/*|cdk.out/*|\.test\.ts$" -i ./madge.svg "$@" && open -a "Brave Browser" ./madge.svg
 }
 alias depgraph-circular='depgraph --circular'
 
@@ -135,7 +135,6 @@ function getportpid() { lsof -i tcp:"$1"; }
 # check how to pass arg to function then convert this to func
 alias killport='sudo kill -9 $(sudo lsof -t -i:4052)'
 alias killjava='killall -9 java'
-
 
 # ----------------------
 # YOUTUBE-DL
@@ -195,20 +194,20 @@ alias gb-current='g rev-parse --abbrev-ref HEAD'
 function fzf_git_branch_to_clipboard() {
   local selected_result
   local selected_branch
-  
+
   selected_result=$(
     (
-      git for-each-ref --sort=-committerdate refs/heads/ --format='%(committerdate:iso8601) %(refname:short) %(authorname)' ; \
+      git for-each-ref --sort=-committerdate refs/heads/ --format='%(committerdate:iso8601) %(refname:short) %(authorname)'
       git for-each-ref --sort=-committerdate refs/remotes/ --format='%(committerdate:iso8601) %(refname:short) %(authorname)'
-    ) | sort -r | \
-    awk '{
+    ) | sort -r |
+      awk '{
       author=substr($0, index($0, $5)); \
       printf "%-60s %*s\n", $4, 20, substr(author, 1, 10)
     }' | fzf
   )
-  
+
   selected_branch=$(echo "$selected_result" | awk '{print $1}')
-  
+
   if [ -n "$selected_branch" ]; then
     echo "$selected_branch"
     echo -n "$selected_branch" | pbcopy
@@ -217,7 +216,7 @@ function fzf_git_branch_to_clipboard() {
 alias gb='fzf_git_branch_to_clipboard'
 alias gchf='git checkout $(gb)'
 
-function gdelta() { 
+function gdelta() {
   local main=${1:-'qa'}
   local develop=${2:-'develop'}
   git log origin/"$develop"..origin/"$main" | rg -v "Merge|fix|xps|revert|resolution|resolved|bitbucket"
@@ -233,4 +232,3 @@ function smart_diff() {
     git diff HEAD
   fi
 }
-

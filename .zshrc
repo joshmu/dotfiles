@@ -184,12 +184,6 @@ export PATH="$JAVA_HOME/bin:$PATH"
 export PATH="$HOME/.rbenv/bin:$PATH"
 eval "$(rbenv init - zsh)"
 
-#THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
-export SDKMAN_DIR="/Users/joshmu/.sdkman"
-[[ -s "/Users/joshmu/.sdkman/bin/sdkman-init.sh" ]] && source "/Users/joshmu/.sdkman/bin/sdkman-init.sh"
-export PATH="$HOME/.jenv/bin:$PATH"
-eval "$(jenv init -)"
-
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
 alias luamake=/Users/joshmu/Desktop/code/other/lua-language-server/3rd/luamake/luamake
@@ -239,6 +233,12 @@ eval "$(zoxide init zsh)"
 export NVM_DIR="$HOME/.nvm"
 [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"  # This loads nvm
 [ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"  # This loads nvm bash_completion
+
+#THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
+export SDKMAN_DIR="/Users/joshmu/.sdkman"
+[[ -s "/Users/joshmu/.sdkman/bin/sdkman-init.sh" ]] && source "/Users/joshmu/.sdkman/bin/sdkman-init.sh"
+export PATH="$HOME/.jenv/bin:$PATH"
+# eval "$(jenv init -)"
 
 # ----------------------
 # ALIASES
