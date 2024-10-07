@@ -73,7 +73,10 @@ vim.keymap.set('n', '<leader>l', '<cmd>wincmd l<CR>')
 -- vim.keymap.set('n', '<leader>e', '<cmd>NvimTreeToggle<CR>', { desc = 'Open Neotree' })
 vim.keymap.set('n', '<leader>e', '<cmd>Neotree toggle<CR>', { desc = 'Toggle Neotree' })
 
-vim.keymap.set('n', '<leader>vs', require('utils.code_helpers').openVscodeWithWorkspaceEnabledIfAvailable, { desc = 'Open in VSCode' })
+vim.keymap.set('n', '<leader>vs', require('utils.code_helpers').openIDEWithWorkspaceEnabledIfAvailable, { desc = 'Open in [V][S]Code' })
+vim.keymap.set('n', '<leader>oc', function()
+  require('utils.code_helpers').openIDEWithWorkspaceEnabledIfAvailable 'cursor'
+end, { desc = '[O]pen in [C]ursor' })
 
 -- Centered scroll
 vim.keymap.set('n', '<leader>zz', '<cmd>let &scrolloff=999-&scrolloff<CR>')
