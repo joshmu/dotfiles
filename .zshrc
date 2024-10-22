@@ -229,6 +229,10 @@ eval "$(gh copilot alias -- zsh)"
 # Zoxide
 eval "$(zoxide init zsh)"
 
+# UV - python package manager
+eval "$(uv generate-shell-completion zsh)"
+eval "$(uvx --generate-shell-completion zsh)"
+
 # nvm
 export NVM_DIR="$HOME/.nvm"
 [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"  # This loads nvm
