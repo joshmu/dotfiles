@@ -9,6 +9,7 @@
     ~/.zshrc: .zshrc
     ~/.zprofile: .zprofile
     ~/.aliases: .aliases
+    ~/completion-for-pnpm.zsh: completion-for-pnpm.zsh
     ~/.tmux.conf: tmux.conf
     ~/.config/nvim: nvim
     ~/.config/iterm2: # ~/Library/Preferences/com.googlecode.iterm2.plist: iterm2/com.googlecode.iterm2.plist

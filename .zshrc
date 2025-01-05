@@ -248,3 +248,4 @@ export PATH="$HOME/.jenv/bin:$PATH"
 # ALIASES
 # ----------------------
 source ~/.aliases
+source ~/completion-for-pnpm.zsh
