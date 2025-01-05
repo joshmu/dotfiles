@@ -1,4 +1,4 @@
-" list of available commands via note -> 'obcommands via dataview'
+" list of available commands via obsidian note look for -> 'obcommands via dataview'
 
 " Normal mode mapping
 imap jk <Esc>
@@ -78,3 +78,7 @@ nmap gT :tabprev<CR>
 " custom command to toggle markdown checkbox
 exmap toggle_checkbox :obcommand editor:toggle-checklist-status
 nmap <Space>d :toggle_checkbox<CR>
+
+" open 'right click' context menu
+exmap contextmenu obcommand editor:context-menu
+nmap gh :contextmenu<CR>
