@@ -39,6 +39,7 @@ alias pgpt='(cd /Users/joshmu/Desktop/code/projects/privateGPT && python private
 alias dep='npx qnm match'
 alias oo='cd "/Users/joshmu/Library/Mobile Documents/iCloud~md~obsidian/Documents/obsidian"'
 alias gen-api-key='openssl rand -base64 24 | tr -d '/+=' | head -c 32'
+alias ld='lazydocker'
 
 function notify() {
   local msg="$1"
