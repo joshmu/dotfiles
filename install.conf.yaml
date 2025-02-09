@@ -25,6 +25,7 @@
     ~/.oh-my-mu.json: oh-my-mu.json
     ~/.docker/config.json: docker-config.json
     ~/Library/Application Support/lazygit/config.yml: lazygit-config.yml
+    ~/Library/Application Support/lazydocker/config.yml: lazydocker-config.yml
     ~/Desktop/obsidian/.obsidian/snippets: obsidian/snippets
     ~/Desktop/obsidian/.obsidian.vimrc: obsidian/obsidian.vimrc
     # ~/Library/Mobile Documents/iCloud~md~obsidian/Documents/obsidian/.obsidian.vimrc: obsidian.vimrc
