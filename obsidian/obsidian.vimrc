@@ -82,3 +82,7 @@ nmap <Space>d :toggle_checkbox<CR>
 " open 'right click' context menu
 exmap contextmenu obcommand editor:context-menu
 nmap gh :contextmenu<CR>
+
+" shell command - open current file in cursor
+exmap open_file_in_cursor :obcommand obsidian-shellcommands:shell-command-cjzvhvijz4
+nmap <Space>oc :open_file_in_cursor<CR>

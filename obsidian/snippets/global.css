@@ -7,10 +7,10 @@
     overflow: auto;
 }
 .mermaid:hover svg {
-    max-width: 250%
+    max-width: 250%;
 }
 
 /* create more editing space */
 body {
-  --file-line-width:1000px
+    --file-line-width:1000px;
 }
