@@ -160,7 +160,7 @@ keybinding:
         prevScreenMode: '_'
         undo: 'z'
         redo: '<c-z>'
-        filteringMenu: '<c-s>'
+        filteringMenu: '<c-/>' # originally <c-s>
         diffingMenu: 'W'
         diffingMenu-alt: '<c-e>' # deprecated
         copyToClipboard: '<c-o>'
