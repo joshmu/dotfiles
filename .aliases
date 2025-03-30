@@ -40,7 +40,9 @@ alias dep='npx qnm match'
 alias oo='cd "/Users/joshmu/Library/Mobile Documents/iCloud~md~obsidian/Documents/obsidian"'
 alias gen-api-key='openssl rand -base64 24 | tr -d '/+=' | head -c 32'
 alias ld='lazydocker'
+alias lnpm='lazynpm'
 alias sqlitebrowser='open -a "DB Browser for SQLite"'
+alias my-branches='git for-each-ref --format="%(refname:short) %(authorname)" refs/remotes | grep "Josh Mu"'
 
 function notify() {
   local msg="$1"
