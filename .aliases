@@ -1,5 +1,5 @@
-# IMPORT DEV WORK
-source ~/.zshrc_secret
+# IMPORT PRIVATE ALIASES
+[ -f ~/.aliases_private ] && source ~/.aliases_private
 
 # ----------------------
 # ALIASES
