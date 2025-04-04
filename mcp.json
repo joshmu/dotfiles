@@ -1,0 +1,30 @@
+{
+	"mcpServers": {
+		"personal-mcp": {
+			"command": "npx",
+			"args": [
+				"tsx",
+				"/Users/joshmu/Documents/Cline/MCP/general-mcp-server/src/index.ts"
+			]
+		},
+		"sequential-thinking": {
+			"command": "npx",
+			"args": [
+				"-y",
+				"@modelcontextprotocol/server-sequential-thinking"
+			]
+		},
+		"atlassian-breville": {
+			"command": "uvx",
+			"args": [
+				"mcp-atlassian",
+				"--confluence-url=${CONFLUENCE_URL_BREVILLE}",
+				"--confluence-username=${CONFLUENCE_USERNAME_BREVILLE}",
+				"--confluence-token=${CONFLUENCE_TOKEN_BREVILLE}",
+				"--jira-url=${JIRA_URL_BREVILLE}",
+				"--jira-username=${JIRA_USERNAME_BREVILLE}",
+				"--jira-token=${JIRA_TOKEN_BREVILLE}"
+			]
+		}
+	}
+}
