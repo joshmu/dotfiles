@@ -3,3 +3,4 @@ dotbot/
 BrewfileOld
 nvim.bak
 **/*backups/**
+mcp.creds.json
