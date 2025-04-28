@@ -1,6 +1,6 @@
 dotbot/
 !dotbot/README.md
-BrewfileOld
+BrewfileOld*
 nvim.bak
 **/*backups/**
 mcp.creds.json
