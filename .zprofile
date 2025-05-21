@@ -7,3 +7,6 @@ export DOCKER_HOST=unix:///Users/joshmu/.docker/run/docker.sock
 # GPG SIGNING KEY
 export GPG_TTY=$(tty)
 
+# Disable telemetry across all tools which support it
+# https://consoledonottrack.com/
+export DO_NOT_TRACK=1
