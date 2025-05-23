@@ -158,7 +158,7 @@ return {
       for key, term in pairs(search_and_find) do
         vim.keymap.set('n', '<leader>' .. key .. 'h', builtin.help_tags, { desc = term .. ' [H]elp' })
         vim.keymap.set('n', '<leader>' .. key .. 'k', builtin.keymaps, { desc = term .. ' [K]eymaps' })
-        vim.keymap.set('n', '<leader>' .. key .. 'f', builtin.find_files, { desc = term .. ' [F]iles' })
+        -- vim.keymap.set('n', '<leader>' .. key .. 'f', builtin.find_files, { desc = term .. ' [F]iles' })
         vim.keymap.set('n', '<leader>' .. key .. 'b', builtin.builtin, { desc = term .. ' Telescope [B]uiltins' })
         -- vim.keymap.set('n', '<leader>' .. key .. 'w', builtin.grep_string, { desc = term .. ' current [W]ord' })
 
@@ -172,6 +172,14 @@ return {
         vim.keymap.set('n', '<leader>' .. key .. 'd', builtin.diagnostics, { desc = term .. ' [D]iagnostics' })
         vim.keymap.set('n', '<leader>' .. key .. 'r', builtin.resume, { desc = term .. ' [R]esume' })
         vim.keymap.set('n', '<leader>' .. key .. '.', builtin.oldfiles, { desc = term .. ' Recent Files ("." for repeat)' })
+
+        -- find files and include dotfiles
+        vim.keymap.set('n', '<leader>' .. key .. 'f', function()
+          require('telescope.builtin').find_files {
+            find_command = { 'rg', '--files', '--iglob', '!.git', '--hidden' },
+            previewer = false,
+          }
+        end, { desc = term .. ' [F]iles' })
 
         -- vim.keymap.set('n', '<leader>' .. key .. 'b', builtin.buffers, { desc = term .. ' Existing [B]uffers' })
 
