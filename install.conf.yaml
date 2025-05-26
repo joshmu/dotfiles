@@ -30,7 +30,9 @@
     ~/Desktop/obsidian/.obsidian/snippets: obsidian/snippets
     ~/Desktop/obsidian/.obsidian.vimrc: obsidian/obsidian.vimrc
     ~/.cursor/mcp.json: mcp.creds.json
+    ~/.codex: codex
     ~/Library/Application Support/Claude/claude_desktop_config.json: mcp.creds.json
+    ~/Library/Application Support/aichat: aichat
     # ~/Library/Mobile Documents/iCloud~md~obsidian/Documents/obsidian/.obsidian.vimrc: obsidian.vimrc
 
 - create:
