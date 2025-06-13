@@ -84,10 +84,11 @@ git:
   autoRefresh: true
   fetchAll: true # Pass --all flag when running git fetch. Set to false to fetch only origin (or the current branch's upstream remote if there is one)
   branchLogCmd: "git log --graph --color=always --abbrev-commit --decorate --date=relative --pretty=medium {{branchName}} --"
-  allBranchesLogCmd: "git log --graph --all --color=always --abbrev-commit --decorate --date=relative  --pretty=medium"
   overrideGpg: false # prevents lazygit from spawning a separate process when using GPG
   disableForcePushing: false
   parseEmoji: false
+  allBranchesLogCmds:
+    - git log --graph --all --color=always --abbrev-commit --decorate --date=relative  --pretty=medium
 os:
   shellFunctionsFile: ~/.aliases
   copyToClipboardCmd: "" # See 'Custom Command for Copying to Clipboard' section
@@ -249,11 +250,9 @@ customCommands:
     command: git commit -m "{{index .PromptResponses 0}}" --no-verify
     description: "commit --no-verify"
     context: "global"
-    subprocess: true
-    stream: true
+    output: terminal
   - key: <c-a>
     description: Pick AI commit msg
     command: ~/scripts/ai-generate-commit-msg.sh
     context: files
-    subprocess: true
-    showOutput: true
+    output: terminal
