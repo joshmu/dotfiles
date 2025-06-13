@@ -14,6 +14,11 @@ nmap <Space>ff :switcher_open<CR>
 exmap followLink :obcommand editor:follow-link
 nmap gd :followLink<CR>
 
+" go to link in new tab
+exmap followLinkNewTab :obcommand editor:open-link-in-new-leaf
+nmap gD :followLinkNewTab<CR>
+
+
 " go to backlinks
 exmap backlinks :obcommand backlink:open-backlinks
 nmap gr :backlinks<CR>
