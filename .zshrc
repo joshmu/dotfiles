@@ -256,3 +256,13 @@ fpath=(/Users/joshmu/.docker/completions $fpath)
 autoload -Uz compinit
 compinit
 # End of Docker CLI completions
+
+# FX - JSON PRETTY PRINTER - fx.wtf
+source <(fx --comp bash)
+
+# Added by LM Studio CLI (lms)
+export PATH="$PATH:/Users/joshmu/.lmstudio/bin"
+# End of LM Studio CLI section
+
+# Added by Windsurf
+export PATH="/Users/joshmu/.codeium/windsurf/bin:$PATH"
