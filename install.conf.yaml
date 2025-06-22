@@ -23,15 +23,17 @@
     ~/.p10k.zsh: zsh/p10k.zsh
     ~/.hyper.js: hyper.js
     ~/.oh-my-mu.json: oh-my-mu.json
-    ~/.docker/config.json: docker-config.json
+    # ~/.docker/config.json: docker-config.json
     ~/Library/Application Support/lazygit/config.yml: lazygit-config.yml
     ~/Library/Application Support/lazydocker/config.yml: lazydocker-config.yml
     ~/Users/joshmu/Library/Application Support/jesseduffield/lazynpm/config.yml: lazynpm-config.yml
     ~/Desktop/obsidian/.obsidian/snippets: obsidian/snippets
     ~/Desktop/obsidian/.obsidian.vimrc: obsidian/obsidian.vimrc
     ~/.cursor/mcp.json: mcp.creds.json
-    ~/.codex: codex
-    ~/Library/Application Support/Claude/claude_desktop_config.json: mcp.creds.json
+    ~/.codex/config.json: codex/config.json
+    ~/.codex/AGENTS.md: codex/AGENTS.md
+    ~/.codex/instructions.md: codex/instructions.md
+    ~/Library/Application Support/Claude/claude_desktop_config.json: claude_desktop_config.json
     ~/Library/Application Support/aichat: aichat
     ~/scripts: scripts
     # ~/Library/Mobile Documents/iCloud~md~obsidian/Documents/obsidian/.obsidian.vimrc: obsidian.vimrc

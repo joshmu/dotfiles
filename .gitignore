@@ -4,3 +4,7 @@ BrewfileOld*
 nvim.bak
 **/*backups/**
 mcp.creds.json
+
+# we ignore it but still symlink from our dotfiles folder
+claude_desktop_config.json
+cursor-mcp.json
