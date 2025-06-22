@@ -201,6 +201,9 @@ export PATH="$HOME/bin:$PATH"
 # The original version is saved in .zprofile.pysave
 export PATH="/Library/Frameworks/Python.framework/Versions/3.11/bin:${PATH}"
 
+# Obsidian local path
+export OBSIDIAN_PATH="/Users/joshmu/Desktop/obsidian"
+
 #source my zprofile again to guarantee all my aliases work
 # ls alias for colorls is failing
 # zshrc is loaded after zprofile
