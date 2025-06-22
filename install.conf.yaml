@@ -29,7 +29,7 @@
     ~/Library/Application Support/lazydocker/config.yml: lazydocker-config.yml
     ~/Desktop/obsidian/.obsidian/snippets: obsidian/snippets
     ~/Desktop/obsidian/.obsidian.vimrc: obsidian/obsidian.vimrc
-    ~/.cursor/mcp.json: cursor-mcp.json
+    ~/.cursor/mcp.json: cursor/mcp.json
     ~/.codex/config.json: codex/config.json
     ~/.codex/AGENTS.md: codex/AGENTS.md
     ~/.codex/instructions.md: codex/instructions.md

@@ -7,4 +7,7 @@ mcp.creds.json
 
 # we ignore it but still symlink from our dotfiles folder
 claude_desktop_config.json
-cursor-mcp.json
+cursor/mcp.json
+
+# private
+cursor/rules/tech-stack-info.mdc
