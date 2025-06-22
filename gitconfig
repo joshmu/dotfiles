@@ -1,8 +1,8 @@
 # This is Git's per-user configuration file.
 [user]
+	signingkey = 3C4A4E8B7575050D
 	email = hello@joshmu.dev
 	name = Josh Mu
-	signingkey = 3C4A4E8B7575050D
 
 [alias]
 	a = add
@@ -52,7 +52,7 @@
 	date = relative
 
 [format]
-	pretty = format:%C(auto,yellow)%h%C(auto,magenta)% G? %C(auto,blue)%>(12,trunc)%ad %C(auto,green)%<(12,trunc)%aN %C(auto,reset)%s%C(auto,red)% gD% D
+	# pretty = format:%C(auto,yellow)%h%C(auto,magenta)% G? %C(auto,blue)%>(12,trunc)%ad %C(auto,green)%<(12,trunc)%aN %C(auto,reset)%s%C(auto,red)% gD% D
 
 [push]
         autoSetupRemote = true
