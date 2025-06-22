@@ -19,6 +19,8 @@
     ~/.config/kitty/current-theme.conf: kitty/current-theme.conf
     ~/.config/karabiner:
     ~/.gitconfig:
+    ~/.bashrc: .bashrc
+    ~/.bash_profile: .bash_profile
     ~/.hushlogin: .hushlogin
     ~/.p10k.zsh: zsh/p10k.zsh
     ~/.hyper.js: hyper.js
