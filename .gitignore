@@ -11,3 +11,5 @@ cursor/mcp.json
 
 # private
 cursor/rules/tech-stack-info.mdc
+
+.claude-trace

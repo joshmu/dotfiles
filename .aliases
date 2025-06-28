@@ -71,6 +71,8 @@ alias yz='yazi'
 # ----------------------
 # AI
 # ----------------------
+alias cld=claude
+alias cldt=claude-trace
 function ai() {
   output=$(ollama run codellama "$@")
   echo "$output" | glow
