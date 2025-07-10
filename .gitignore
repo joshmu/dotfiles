@@ -13,3 +13,4 @@ cursor/mcp.json
 cursor/rules/tech-stack-info.mdc
 
 .claude-trace
+.env

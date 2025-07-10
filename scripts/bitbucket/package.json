@@ -1,0 +1,25 @@
+{
+  "name": "@breville/bitbucket-cli",
+  "version": "1.0.0",
+  "description": "Bitbucket CLI tools for Breville development",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "pr:create": "bun bitbucket-pr-create.ts",
+    "pr:update": "bun bitbucket-pr-update.ts",
+    "repos:list": "bun bitbucket-repos-list.ts",
+    "setup": "cp .env.example .env && echo 'Please edit .env with your credentials'"
+  },
+  "keywords": [
+    "bitbucket",
+    "cli",
+    "breville"
+  ],
+  "engines": {
+    "bun": ">=1.0.0"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}
