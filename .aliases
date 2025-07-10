@@ -253,5 +253,5 @@ function smart_diff() {
 }
 
 # Git worktree automation
-alias worktree='/Users/joshmu/.claude/scripts/worktree.ts'
-alias gw='/Users/joshmu/.claude/scripts/worktree.ts'
+alias worktree='/Users/joshmu/dotfiles/scripts/worktree.ts'
+alias gw='/Users/joshmu/dotfiles/scripts/worktree.ts'
