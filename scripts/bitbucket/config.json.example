@@ -1,0 +1,6 @@
+{
+  "username": "your-username",
+  "appPassword": "your-app-password",
+  "workspace": "brevilledigital",
+  "defaultBaseBranch": "master"
+}

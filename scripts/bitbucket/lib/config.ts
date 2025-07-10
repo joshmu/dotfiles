@@ -9,73 +9,67 @@ export interface BitbucketConfig {
   defaultBaseBranch: string;
 }
 
-function loadEnvFile(envPath: string): Record<string, string> {
-  const env: Record<string, string> = {};
-  
-  if (!existsSync(envPath)) {
-    return env;
+interface ConfigJson {
+  username: string;
+  appPassword: string;
+  workspace?: string;
+  defaultBaseBranch?: string;
+}
+
+function loadJsonConfig(configPath: string): ConfigJson | null {
+  if (!existsSync(configPath)) {
+    return null;
   }
 
-  const content = readFileSync(envPath, 'utf-8');
-  const lines = content.split('\n');
-
-  for (const line of lines) {
-    const trimmed = line.trim();
+  try {
+    const content = readFileSync(configPath, 'utf-8');
+    const config = JSON.parse(content) as ConfigJson;
     
-    // Skip empty lines and comments
-    if (!trimmed || trimmed.startsWith('#')) {
-      continue;
+    // Validate required fields
+    if (!config.username || !config.appPassword) {
+      console.error('❌ Invalid config.json: missing required fields (username, appPassword)');
+      process.exit(1);
     }
-
-    const [key, ...valueParts] = trimmed.split('=');
-    if (key && valueParts.length > 0) {
-      const value = valueParts.join('=').trim();
-      // Remove quotes if present
-      env[key.trim()] = value.replace(/^["']|["']$/g, '');
-    }
+    
+    return config;
+  } catch (error) {
+    console.error('❌ Error parsing config.json:', error);
+    process.exit(1);
   }
-
-  return env;
 }
 
 export function loadConfig(): BitbucketConfig {
   const scriptDir = new URL('..', import.meta.url).pathname;
-  const envPath = join(scriptDir, '.env');
+  const configPath = join(scriptDir, 'config.json');
   
-  // Load .env file if it exists
-  const fileEnv = loadEnvFile(envPath);
+  // Try to load config.json
+  const config = loadJsonConfig(configPath);
   
-  // Merge with process.env (process.env takes precedence)
-  const env = { ...fileEnv, ...process.env };
-
-  const username = env.BITBUCKET_USERNAME;
-  const appPassword = env.BITBUCKET_APP_PASSWORD;
-  const workspace = env.BITBUCKET_WORKSPACE || 'brevilledigital';
-  const defaultBaseBranch = env.BITBUCKET_DEFAULT_BASE_BRANCH || 'master';
-
-  if (!username || !appPassword) {
-    console.error('❌ Missing required environment variables');
+  if (!config) {
+    console.error('❌ Configuration file not found');
     console.error('');
-    console.error('Please set the following environment variables:');
-    console.error('  - BITBUCKET_USERNAME');
-    console.error('  - BITBUCKET_APP_PASSWORD');
+    console.error(`Please create a config.json file at: ${configPath}`);
     console.error('');
-    console.error('You can either:');
-    console.error(`  1. Create a .env file at: ${envPath}`);
-    console.error('  2. Set them as environment variables');
+    console.error('You can copy the example file:');
+    console.error('  cp config.json.example config.json');
     console.error('');
-    console.error('Example .env file:');
-    console.error('  BITBUCKET_USERNAME=your-username');
-    console.error('  BITBUCKET_APP_PASSWORD=your-app-password');
-    console.error('  BITBUCKET_WORKSPACE=brevilledigital');
+    console.error('Then edit it with your Bitbucket credentials:');
+    console.error('  {');
+    console.error('    "username": "your-username",');
+    console.error('    "appPassword": "your-app-password",');
+    console.error('    "workspace": "brevilledigital",');
+    console.error('    "defaultBaseBranch": "master"');
+    console.error('  }');
+    console.error('');
+    console.error('Create app password at: https://bitbucket.org/account/settings/app-passwords/');
     process.exit(1);
   }
 
   return {
-    username,
-    appPassword,
-    workspace,
-    defaultBaseBranch,
+    username: config.username,
+    appPassword: config.appPassword,
+    workspace: config.workspace || 'brevilledigital',
+    defaultBaseBranch: config.defaultBaseBranch || 'master',
   };
 }
 

@@ -14,3 +14,4 @@ cursor/rules/tech-stack-info.mdc
 
 .claude-trace
 .env
+config.json

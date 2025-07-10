@@ -6,8 +6,8 @@ Bun-based command-line tools for interacting with Bitbucket repositories, pull r
 
 1. **Setup credentials**:
    ```bash
-   cp .env.example .env
-   # Edit .env with your Bitbucket credentials
+   cp config.json.example config.json
+   # Edit config.json with your Bitbucket credentials
    ```
 
 2. **Create an app password**:
@@ -106,18 +106,17 @@ bun bitbucket-repos-list.ts --format simple
 
 ## 🔧 Configuration
 
-### Environment Variables
+### Configuration
 
-Create a `.env` file in this directory:
+Create a `config.json` file in this directory:
 
-```env
-# Required
-BITBUCKET_USERNAME=your-username
-BITBUCKET_APP_PASSWORD=your-app-password
-
-# Optional
-BITBUCKET_WORKSPACE=brevilledigital
-BITBUCKET_DEFAULT_BASE_BRANCH=master
+```json
+{
+  "username": "your-username",
+  "appPassword": "your-app-password",
+  "workspace": "brevilledigital",
+  "defaultBaseBranch": "master"
+}
 ```
 
 ### Auto-detection
@@ -138,7 +137,7 @@ bitbucket/
 │   ├── api.ts                  # Bitbucket API client
 │   ├── config.ts               # Configuration loader
 │   └── types.ts                # TypeScript types
-├── .env.example                # Example configuration
+├── config.json.example         # Example configuration
 └── README.md                   # This file
 ```
 
@@ -217,7 +216,7 @@ done
 
 ## 🔒 Security
 
-- Never commit your `.env` file
+- Never commit your `config.json` file
 - Use app passwords, not your account password
 - Limit app password permissions to only what's needed
-- Credentials are only stored locally in your `.env` file
+- Credentials are only stored locally in your `config.json` file
