@@ -251,3 +251,7 @@ function smart_diff() {
     git diff HEAD
   fi
 }
+
+# Git worktree automation
+alias worktree='/Users/joshmu/.claude/scripts/worktree.ts'
+alias gw='/Users/joshmu/.claude/scripts/worktree.ts'
