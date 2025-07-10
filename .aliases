@@ -18,6 +18,12 @@ alias v=nvim
 alias t=tmux
 alias localip='ipconfig getifaddr en0'
 alias plc='npx plop component'
+
+# Bitbucket CLI aliases
+alias bb-repos='~/dotfiles/scripts/bitbucket/bitbucket-repos-list.ts'
+alias bb-pr-create='~/dotfiles/scripts/bitbucket/bitbucket-pr-create.ts'
+alias bb-pr-update='~/dotfiles/scripts/bitbucket/bitbucket-pr-update.ts'
+alias bb-pr='~/dotfiles/scripts/bitbucket/bitbucket-pr-create.ts'
 alias hidedesktop='defaults write com.apple.finder CreateDesktop -bool false; killall Finder'
 alias showdesktop='defaults write com.apple.finder CreateDesktop -bool true; killall Finder'
 alias c=clear
