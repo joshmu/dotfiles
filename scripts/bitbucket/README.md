@@ -2,6 +2,22 @@
 
 Bun-based command-line tools for interacting with Bitbucket repositories, pull requests, and more.
 
+## ✨ Features
+
+- **Native Draft PR Support**: Create and manage draft pull requests using Bitbucket's native draft feature
+- **Markdown Descriptions**: Full support for markdown-formatted PR descriptions
+- **PR Templates**: Automatically load and use PR templates from standard locations
+- **Enhanced Error Handling**: Automatic retry logic for rate limits and transient failures
+- **Advanced PR Filtering**: Filter by state, draft status, author, search text, and more
+- **Flexible Sorting**: Sort PRs by creation date, update date, or title
+- **Interactive & CLI Modes**: Use interactively or with command-line arguments
+- **Non-Interactive Mode**: Use `--non-interactive` flag for automation and CI/CD
+- **Git Integration**: Automatically detects current repository and branch
+
+## Docs
+
+- [atlassian - api docs](https://developer.atlassian.com/cloud/bitbucket/rest/api-group-pullrequests/#api-group-pullrequests)
+
 ## 🚀 Quick Start
 
 1. **Setup credentials**:
@@ -25,7 +41,7 @@ Bun-based command-line tools for interacting with Bitbucket repositories, pull r
 
 ### 1. Create Pull Request (`bitbucket-pr-create.ts`)
 
-Create new pull requests interactively or with command-line arguments.
+Create new pull requests interactively or with command-line arguments. Now with **native draft PR support** and **markdown descriptions**!
 
 ```bash
 # Interactive mode (prompts for missing info)
@@ -38,8 +54,17 @@ bun bitbucket-pr-create.ts \
   -s feature/new-feature \
   -b develop
 
-# Create a draft PR
+# Create a draft PR (uses native Bitbucket draft feature)
 bun bitbucket-pr-create.ts -t "WIP: New feature" --draft
+
+# Create PR with markdown description
+bun bitbucket-pr-create.ts -t "Feature" -d "## Changes\n- Added new API\n- Fixed bug" --markdown
+
+# Create PR using template
+bun bitbucket-pr-create.ts -t "Add feature" --template
+
+# Create PR without template
+bun bitbucket-pr-create.ts -t "Quick fix" --no-template
 ```
 
 **Options:**
@@ -50,11 +75,15 @@ bun bitbucket-pr-create.ts -t "WIP: New feature" --draft
 - `-r, --repo` - Repository slug (defaults to current repo)
 - `-w, --workspace` - Workspace (defaults to env config)
 - `--close-source-branch` - Close source branch after merge
-- `--draft` - Create as draft PR
+- `--draft` - Create as draft PR (native Bitbucket feature)
+- `--markdown` - Enable markdown formatting for description
+- `--template` - Use PR template if available (default: true)
+- `--no-template` - Don't use PR template
+- `-n, --non-interactive` - Run without prompts, use defaults
 
 ### 2. Update Pull Request (`bitbucket-pr-update.ts`)
 
-Update existing pull requests.
+Update existing pull requests with support for **draft status changes** and **markdown descriptions**.
 
 ```bash
 # Update PR title
@@ -62,6 +91,15 @@ bun bitbucket-pr-update.ts -p 123 -t "Updated: Add new feature"
 
 # Update multiple fields
 bun bitbucket-pr-update.ts -p 123 -t "New title" -d "New description" -b develop
+
+# Convert PR to draft
+bun bitbucket-pr-update.ts -p 123 --convert-to-draft
+
+# Mark draft PR as ready for review
+bun bitbucket-pr-update.ts -p 123 --ready-for-review
+
+# Update with markdown description
+bun bitbucket-pr-update.ts -p 123 -d "## Updated\n- Fixed issues" --markdown
 
 # Interactive mode for PR #123
 bun bitbucket-pr-update.ts -p 123
@@ -74,8 +112,60 @@ bun bitbucket-pr-update.ts -p 123
 - `-b, --destination` - New destination branch
 - `-r, --repo` - Repository slug
 - `-w, --workspace` - Workspace
+- `--convert-to-draft` - Convert PR to draft
+- `--ready-for-review` - Mark draft PR as ready for review
+- `--markdown` - Enable markdown formatting for description
+- `-n, --non-interactive` - Run without prompts, skip optional fields
 
-### 3. List Repositories (`bitbucket-repos-list.ts`)
+### 3. List Pull Requests (`bitbucket-pr-list.ts`)
+
+List pull requests with **advanced filtering** and **sorting capabilities**.
+
+```bash
+# List all open PRs
+bun bitbucket-pr-list.ts
+
+# List only draft PRs
+bun bitbucket-pr-list.ts --draft
+
+# List only non-draft PRs
+bun bitbucket-pr-list.ts --no-draft
+
+# List merged PRs in JSON format
+bun bitbucket-pr-list.ts -s MERGED -f json
+
+# List PRs with custom limit
+bun bitbucket-pr-list.ts -l 20
+
+# List your own PRs
+bun bitbucket-pr-list.ts --my-prs
+
+# Filter by author
+bun bitbucket-pr-list.ts -a username
+
+# Search PRs by text
+bun bitbucket-pr-list.ts --search "bug fix"
+
+# Sort by updated date descending
+bun bitbucket-pr-list.ts --sort-by updated --sort-desc
+```
+
+**Options:**
+- `-r, --repo` - Repository slug (defaults to current repo)
+- `-w, --workspace` - Workspace
+- `-s, --state` - Filter by state: OPEN, MERGED, DECLINED, SUPERSEDED (default: OPEN)
+- `--draft` - Show only draft PRs
+- `--no-draft` - Show only non-draft PRs
+- `-l, --limit` - Limit number of results (default: 50)
+- `-f, --format` - Output format: table, json, simple (default: table)
+- `-a, --author` - Filter by author username
+- `--my-prs` - Show only your own PRs
+- `--search` - Search PRs by title or description
+- `--sort-by` - Sort by: created, updated, title (default: created)
+- `--sort-desc` - Sort in descending order
+- `-n, --non-interactive` - Run without prompts, fail if repo not specified
+
+### 4. List Repositories (`bitbucket-repos-list.ts`)
 
 List repositories in your workspace with various display options.
 
@@ -130,16 +220,105 @@ The scripts automatically detect:
 
 ```
 bitbucket/
-├── bitbucket-pr-create.ts      # Create PRs
-├── bitbucket-pr-update.ts      # Update PRs
+├── bitbucket-pr-create.ts      # Create PRs (with draft & markdown support)
+├── bitbucket-pr-update.ts      # Update PRs (with draft & markdown support)
+├── bitbucket-pr-list.ts        # List PRs with advanced filtering
 ├── bitbucket-repos-list.ts     # List repos
 ├── lib/
-│   ├── api.ts                  # Bitbucket API client
+│   ├── api.ts                  # Bitbucket API client (with retry logic)
 │   ├── config.ts               # Configuration loader
-│   └── types.ts                # TypeScript types
+│   ├── types.ts                # TypeScript types (enhanced)
+│   └── template.ts             # PR template handling
 ├── config.json.example         # Example configuration
+├── open-api.json               # Bitbucket API specification
 └── README.md                   # This file
 ```
+
+## 📝 PR Templates
+
+The scripts support PR templates from these locations (in order of precedence):
+- `.bitbucket/pull_request_template.md`
+- `.github/pull_request_template.md`
+- `pull_request_template.md`
+- `.bitbucket/PULL_REQUEST_TEMPLATE.md`
+- `.github/PULL_REQUEST_TEMPLATE.md`
+- `PULL_REQUEST_TEMPLATE.md`
+
+### Template Variables
+
+Templates can use these variables:
+- `{{branch}}` or `${branch}` - Source branch name
+- `{{sourceBranch}}` - Source branch name
+- `{{destinationBranch}}` - Target branch name
+- `{{author}}` - PR author username
+- `{{date}}` - Current date (YYYY-MM-DD)
+- `{{ticketNumber}}` - Extracted from branch name (e.g., JIRA-123)
+- `{{title}}` - PR title
+
+### Example Template
+
+```markdown
+## Summary
+{{title}}
+
+## Ticket
+{{ticketNumber}}
+
+## Changes
+- [ ] TODO: Describe changes
+
+## Testing
+- [ ] Unit tests pass
+- [ ] Manual testing completed
+
+## Checklist
+- [ ] Code follows style guidelines
+- [ ] Self-review completed
+- [ ] Comments added where needed
+```
+
+## 🤖 Non-Interactive Mode
+
+All scripts support a `--non-interactive` (or `-n`) flag that disables all prompts and uses defaults for unspecified values. This is essential for:
+- CI/CD pipelines
+- Automation scripts
+- Using from Claude Code or other tools
+- Batch operations
+
+### Examples
+
+```bash
+# Create PR without any prompts
+bitbucket-pr-create.ts \
+  -t "Add feature" \
+  -d "Description" \
+  -s feature/branch \
+  -r repo-name \
+  --non-interactive
+
+# Update PR without prompts
+bitbucket-pr-update.ts \
+  -p 123 \
+  -t "New title" \
+  -r repo-name \
+  --non-interactive
+
+# List PRs (fails if repo not detected)
+bitbucket-pr-list.ts --non-interactive
+```
+
+### Non-Interactive Defaults
+- `closeSourceBranch`: false
+- `isDraft`: false (unless --draft specified)
+- `useMarkdown`: true (when description provided)
+- `useTemplate`: true (unless --no-template)
+
+### Required Fields
+In non-interactive mode, these fields must be provided or detected:
+- Repository slug (via `-r` or git detection)
+- PR title (for create)
+- PR ID (for update)
+- Source branch (for create, via `-s` or git detection)
 
 ## 🛠️ Development
 
@@ -174,13 +353,24 @@ const pr = await api.createPullRequest(workspace, repo, {
 - App passwords are different from your account password
 
 ### Rate Limiting
-Bitbucket has API rate limits. If you hit them:
-- Wait a few minutes before retrying
-- Use pagination and limits for large operations
+Bitbucket has API rate limits. The scripts now include automatic retry logic:
+- Automatic exponential backoff for 429 errors
+- Maximum 3 retries with increasing delays
+- If you still hit limits, wait a few minutes before retrying
 
 ### Branch Not Found
 - Ensure the branch exists in the remote repository
 - Push your local branch before creating a PR
+
+### Draft PR Issues
+- Draft PRs are a native Bitbucket feature (not just title prefixes)
+- Ensure your Bitbucket instance supports draft PRs
+- Check PR state with `bun bitbucket-pr-list.ts --draft`
+
+### Markdown Formatting
+- Use the `--markdown` flag when creating/updating PRs
+- Bitbucket supports standard GitHub-flavored markdown
+- Preview your markdown locally before submitting
 
 ## 📝 Examples
 
@@ -195,11 +385,16 @@ git add .
 git commit -m "Add my feature"
 git push -u origin feature/my-feature
 
-# 3. Create PR
-bun bitbucket-pr-create.ts -t "Add my feature" -d "This implements..."
+# 3. Create draft PR with markdown
+bun bitbucket-pr-create.ts -t "Add my feature" \
+  -d "## Changes\n- Added new API endpoint\n- Updated tests\n\n## TODO\n- [ ] Documentation" \
+  --draft --markdown
 
-# 4. Update PR after review
-bun bitbucket-pr-update.ts -p 123 -t "Updated: Add my feature"
+# 4. Update PR after review and mark ready
+bun bitbucket-pr-update.ts -p 123 --ready-for-review
+
+# 5. Check PR status
+bun bitbucket-pr-list.ts --draft
 ```
 
 ### Batch Operations

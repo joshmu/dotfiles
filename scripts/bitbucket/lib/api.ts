@@ -13,61 +13,91 @@ export class BitbucketAPI {
   private config: BitbucketConfig;
   private baseUrl = 'https://api.bitbucket.org/2.0';
   private authHeader: string;
+  private maxRetries = 3;
+  private retryDelay = 1000; // Start with 1 second
 
   constructor(config?: BitbucketConfig) {
     this.config = config || loadConfig();
     this.authHeader = `Basic ${Buffer.from(`${this.config.username}:${this.config.appPassword}`).toString('base64')}`;
   }
 
+  private async sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
   private async request<T>(
     method: string,
     path: string,
-    body?: any
+    body?: any,
+    retryCount = 0
   ): Promise<T> {
     const url = `${this.baseUrl}${path}`;
     
-    const response = await fetch(url, {
-      method,
-      headers: {
-        'Authorization': this.authHeader,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: body ? JSON.stringify(body) : undefined,
-    });
-
-    const responseText = await response.text();
-    let responseData: any;
-    
     try {
-      responseData = responseText ? JSON.parse(responseText) : {};
-    } catch (e) {
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${responseText}`);
-      }
-      responseData = {};
-    }
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Authorization': this.authHeader,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: body ? JSON.stringify(body) : undefined,
+      });
 
-    if (!response.ok) {
-      const error = responseData as BitbucketError;
-      let errorMessage = `HTTP ${response.status}: `;
+      const responseText = await response.text();
+      let responseData: any;
       
-      if (error.error?.message) {
-        errorMessage += error.error.message;
-        if (error.error.fields) {
-          errorMessage += '\nField errors:';
-          for (const [field, errors] of Object.entries(error.error.fields)) {
-            errorMessage += `\n  - ${field}: ${errors.join(', ')}`;
-          }
+      try {
+        responseData = responseText ? JSON.parse(responseText) : {};
+      } catch (e) {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${responseText}`);
         }
-      } else {
-        errorMessage += JSON.stringify(responseData);
+        responseData = {};
       }
-      
-      throw new Error(errorMessage);
-    }
 
-    return responseData as T;
+      // Handle rate limiting and server errors with retry
+      if (response.status === 429 || response.status === 503) {
+        if (retryCount < this.maxRetries) {
+          const delay = this.retryDelay * Math.pow(2, retryCount); // Exponential backoff
+          console.log(`⏳ Rate limited or server unavailable. Retrying in ${delay}ms...`);
+          await this.sleep(delay);
+          return this.request<T>(method, path, body, retryCount + 1);
+        }
+      }
+
+      if (!response.ok) {
+        const error = responseData as BitbucketError;
+        let errorMessage = `HTTP ${response.status}: `;
+        
+        if (error.error?.message) {
+          errorMessage += error.error.message;
+          if (error.error.fields) {
+            errorMessage += '\nField errors:';
+            for (const [field, errors] of Object.entries(error.error.fields)) {
+              errorMessage += `\n  - ${field}: ${errors.join(', ')}`;
+            }
+          }
+        } else {
+          errorMessage += JSON.stringify(responseData);
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      return responseData as T;
+    } catch (error) {
+      // Network errors and other fetch failures
+      if (retryCount < this.maxRetries && error instanceof Error) {
+        if (error.message.includes('ECONNREFUSED') || error.message.includes('ETIMEDOUT')) {
+          const delay = this.retryDelay * Math.pow(2, retryCount);
+          console.log(`⏳ Network error. Retrying in ${delay}ms...`);
+          await this.sleep(delay);
+          return this.request<T>(method, path, body, retryCount + 1);
+        }
+      }
+      throw error;
+    }
   }
 
   async createPullRequest(
@@ -153,6 +183,23 @@ export class BitbucketAPI {
       'GET',
       `/repositories/${workspace}/${repoSlug}/refs/branches`
     );
+  }
+
+  async getAllBranches(
+    workspace: string,
+    repoSlug: string
+  ): Promise<any[]> {
+    const branches = [];
+    const firstPage = await this.getBranches(workspace, repoSlug);
+    branches.push(...firstPage.values);
+    
+    if (firstPage.next) {
+      for await (const branch of this.getAllPages<any>(firstPage.next)) {
+        branches.push(branch);
+      }
+    }
+    
+    return branches;
   }
 
   async *getAllPages<T>(

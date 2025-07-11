@@ -34,6 +34,10 @@ const { values, positionals } = parseArgs({
     format: {
       type: 'string',
     },
+    'non-interactive': {
+      type: 'boolean',
+      short: 'n',
+    },
   },
   strict: true,
   allowPositionals: true,
@@ -56,6 +60,7 @@ Options:
   -p, --show-private   Include private status
   -l, --limit <n>      Limit number of results (default: all)
   --format <fmt>       Output format: table, json, simple (default: table)
+  -n, --non-interactive   Run without prompts (for consistency with other scripts)
 
 Examples:
   # List all repositories
@@ -200,6 +205,9 @@ async function main() {
     console.error('\n❌ Error listing repositories:', error);
     process.exit(1);
   }
+  
+  // Ensure clean exit
+  process.exit(0);
 }
 
 // Run the main function

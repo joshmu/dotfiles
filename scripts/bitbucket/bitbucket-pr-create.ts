@@ -2,7 +2,8 @@
 import { parseArgs } from 'util';
 import { BitbucketAPI } from './lib/api';
 import { loadConfig, getCurrentRepo, getCurrentBranch } from './lib/config';
-import type { BitbucketPullRequestCreate } from './lib/types';
+import type { BitbucketPullRequestCreate, BitbucketMarkupContent } from './lib/types';
+import { loadPRTemplate, processTemplate, generateTemplateVariables } from './lib/template';
 
 // Parse command line arguments
 const { values, positionals } = parseArgs({
@@ -42,6 +43,19 @@ const { values, positionals } = parseArgs({
     draft: {
       type: 'boolean',
     },
+    markdown: {
+      type: 'boolean',
+    },
+    template: {
+      type: 'boolean',
+    },
+    'no-template': {
+      type: 'boolean',
+    },
+    'non-interactive': {
+      type: 'boolean',
+      short: 'n',
+    },
   },
   strict: true,
   allowPositionals: true,
@@ -65,7 +79,11 @@ Options:
   -r, --repo <repo>           Repository slug (defaults to current repo)
   -w, --workspace <ws>        Workspace (defaults to env or config)
   --close-source-branch       Close source branch after merge
-  --draft                     Create as draft PR (prepends "Draft: " to title)
+  --draft                     Create as draft PR
+  --markdown                  Enable markdown formatting for description
+  --template                  Use PR template if available (default: true)
+  --no-template               Don't use PR template
+  -n, --non-interactive       Run without prompts, use defaults for missing values
 
 Examples:
   # Interactive mode
@@ -76,6 +94,12 @@ Examples:
 
   # Create draft PR
   bun bitbucket-pr-create.ts -t "WIP: New feature" --draft
+
+  # Create PR with markdown description
+  bun bitbucket-pr-create.ts -t "Feature" -d "## Changes\n- Added feature" --markdown
+
+  # Non-interactive mode (no prompts)
+  bun bitbucket-pr-create.ts -t "Feature" -d "Description" -s feature/branch --non-interactive
 
 Environment Variables:
   BITBUCKET_USERNAME          Your Bitbucket username
@@ -118,43 +142,103 @@ async function main() {
     // Get repository and branch info
     const currentRepo = getCurrentRepo();
     const currentBranch = getCurrentBranch();
+    const nonInteractive = values['non-interactive'] || false;
 
     // Collect PR details
     const workspace = values.workspace || config.workspace;
-    const repo = values.repo || currentRepo || await prompt('Repository slug');
-    const sourceBranch = values.source || currentBranch || await prompt('Source branch');
+    const repo = values.repo || currentRepo || (nonInteractive ? null : await prompt('Repository slug'));
+    const sourceBranch = values.source || currentBranch || (nonInteractive ? null : await prompt('Source branch'));
     const destinationBranch = values.destination || config.defaultBaseBranch;
     
-    let title = values.title || await prompt('PR title');
+    // Check required fields in non-interactive mode
+    if (nonInteractive) {
+      if (!repo) {
+        console.error('❌ Repository slug is required in non-interactive mode (use -r or ensure git repo)');
+        process.exit(1);
+      }
+      if (!sourceBranch) {
+        console.error('❌ Source branch is required in non-interactive mode (use -s or ensure git branch)');
+        process.exit(1);
+      }
+    }
+    
+    const title = values.title || (nonInteractive ? null : await prompt('PR title'));
     if (!title) {
       console.error('❌ PR title is required');
       process.exit(1);
     }
 
-    // Handle draft PR
-    if (values.draft && !title.toLowerCase().startsWith('draft:') && !title.toLowerCase().startsWith('[draft]')) {
-      title = `Draft: ${title}`;
+    // Handle PR template
+    let description = values.description || '';
+    const useTemplate = values.template ?? (values['no-template'] ? false : true);
+    
+    if (!description && useTemplate) {
+      const template = loadPRTemplate();
+      if (template) {
+        const variables = generateTemplateVariables(
+          sourceBranch,
+          destinationBranch,
+          title,
+          config.username
+        );
+        description = processTemplate(template, variables);
+        console.log('📝 Using PR template');
+        
+        if (!nonInteractive) {
+          // Show template preview and ask for confirmation
+          console.log('\n--- Template Preview ---');
+          console.log(description.split('\n').slice(0, 10).join('\n'));
+          if (description.split('\n').length > 10) {
+            console.log('... (truncated)');
+          }
+          console.log('--- End Preview ---\n');
+        }
+        
+        const useTemplateContent = nonInteractive ? true : await promptYesNo('Use this template?', true);
+        if (!useTemplateContent) {
+          description = '';
+        }
+      }
     }
-
-    const description = values.description || await prompt('PR description (optional)', '');
-    const closeSourceBranch = values['close-source-branch'] ?? await promptYesNo('Close source branch after merge?', false);
+    
+    if (!description && !nonInteractive) {
+      description = await prompt('PR description (optional)', '');
+    }
+    
+    const isDraft = values.draft ?? (nonInteractive ? false : await promptYesNo('Create as draft PR?', false));
+    const useMarkdown = values.markdown ?? (nonInteractive ? true : (description ? await promptYesNo('Use markdown formatting?', false) : false));
+    const closeSourceBranch = values['close-source-branch'] ?? (nonInteractive ? false : await promptYesNo('Close source branch after merge?', false));
 
     // Validate branches exist
     console.log('\n🔍 Validating branches...');
     try {
-      const branches = await api.getBranches(workspace, repo);
-      const branchNames = branches.values.map(b => b.name);
+      const branches = await api.getAllBranches(workspace, repo);
+      const branchNames = branches.map(b => b.name);
       
       if (!branchNames.includes(sourceBranch)) {
         console.error(`❌ Source branch '${sourceBranch}' not found in repository`);
-        console.error(`Available branches: ${branchNames.join(', ')}`);
-        process.exit(1);
+        console.error(`First 10 branches: ${branchNames.slice(0, 10).join(', ')}...`);
+        if (nonInteractive) {
+          console.log('⚠️  Continuing in non-interactive mode...');
+        } else {
+          const proceed = await promptYesNo('Continue anyway?', false);
+          if (!proceed) {
+            process.exit(1);
+          }
+        }
       }
       
       if (!branchNames.includes(destinationBranch)) {
         console.error(`❌ Destination branch '${destinationBranch}' not found in repository`);
-        console.error(`Available branches: ${branchNames.join(', ')}`);
-        process.exit(1);
+        console.error(`First 10 branches: ${branchNames.slice(0, 10).join(', ')}...`);
+        if (nonInteractive) {
+          console.log('⚠️  Continuing in non-interactive mode...');
+        } else {
+          const proceed = await promptYesNo('Continue anyway?', false);
+          if (!proceed) {
+            process.exit(1);
+          }
+        }
       }
     } catch (error) {
       console.error('⚠️  Could not validate branches:', error);
@@ -170,8 +254,14 @@ async function main() {
     console.log(`   Source: ${sourceBranch}`);
     console.log(`   Destination: ${destinationBranch}`);
     console.log(`   Title: ${title}`);
+    if (isDraft) {
+      console.log(`   Status: Draft`);
+    }
     if (description) {
       console.log(`   Description: ${description.substring(0, 50)}...`);
+      if (useMarkdown) {
+        console.log(`   Format: Markdown`);
+      }
     }
 
     const prData: BitbucketPullRequestCreate = {
@@ -187,10 +277,24 @@ async function main() {
         },
       },
       close_source_branch: closeSourceBranch,
+      draft: isDraft,
     };
 
     if (description) {
-      prData.description = description;
+      // For markdown descriptions in interactive mode, use the structured format
+      // In non-interactive mode, just send the raw string to avoid JSON encoding issues
+      if (useMarkdown && !nonInteractive) {
+        // Send raw string for non-interactive mode
+        prData.description = description;
+      } else if (useMarkdown) {
+        // Use structured format for interactive mode
+        prData.description = {
+          raw: description,
+          markup: 'markdown',
+        };
+      } else {
+        prData.description = description;
+      }
     }
 
     const pr = await api.createPullRequest(workspace, repo, prData);
@@ -199,25 +303,41 @@ async function main() {
     console.log(`   PR #${pr.id}: ${pr.title}`);
     console.log(`   URL: ${pr.links.html.href}`);
     console.log(`   State: ${pr.state}`);
+    if (pr.draft) {
+      console.log(`   Draft: Yes`);
+    }
     
-    // Copy URL to clipboard if possible
-    try {
-      await Bun.write(Bun.stdout, `\n📋 URL copied to clipboard\n`);
-      const proc = Bun.spawn(['pbcopy'], {
-        stdin: 'pipe',
-      });
-      const writer = proc.stdin.getWriter();
-      await writer.write(new TextEncoder().encode(pr.links.html.href));
-      await writer.close();
-      await proc.exited;
-    } catch {
-      // Clipboard copy failed, not critical
+    // Copy URL to clipboard if possible (skip in non-interactive mode)
+    if (!nonInteractive) {
+      try {
+        const proc = Bun.spawn(['pbcopy'], {
+          stdin: 'pipe',
+        });
+        const writer = proc.stdin.getWriter();
+        await writer.write(new TextEncoder().encode(pr.links.html.href));
+        await writer.close();
+        
+        // Add timeout to prevent hanging
+        const timeout = setTimeout(() => {
+          proc.kill();
+        }, 1000);
+        
+        await proc.exited;
+        clearTimeout(timeout);
+        
+        console.log('\n📋 URL copied to clipboard');
+      } catch {
+        // Clipboard copy failed, not critical
+      }
     }
 
   } catch (error) {
     console.error('\n❌ Error creating pull request:', error);
     process.exit(1);
   }
+  
+  // Ensure clean exit
+  process.exit(0);
 }
 
 // Run the main function

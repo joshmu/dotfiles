@@ -12,6 +12,13 @@ export interface BitbucketUser {
   };
 }
 
+// Markdown content structure for descriptions
+export interface BitbucketMarkupContent {
+  raw: string;
+  markup: 'markdown';
+  html?: string;
+}
+
 export interface BitbucketBranch {
   name: string;
   target: {
@@ -88,6 +95,8 @@ export interface BitbucketPullRequest {
   closed_by?: BitbucketUser;
   created_on: string;
   updated_on: string;
+  draft: boolean;
+  queued?: boolean;
   links: {
     self: { href: string };
     html: { href: string };
@@ -100,7 +109,7 @@ export interface BitbucketPullRequest {
 
 export interface BitbucketPullRequestCreate {
   title: string;
-  description?: string;
+  description?: string | BitbucketMarkupContent;
   source: {
     branch: {
       name: string;
@@ -112,17 +121,19 @@ export interface BitbucketPullRequestCreate {
     };
   };
   close_source_branch?: boolean;
+  draft?: boolean;
   reviewers?: Array<{ uuid: string }>;
 }
 
 export interface BitbucketPullRequestUpdate {
   title?: string;
-  description?: string;
+  description?: string | BitbucketMarkupContent;
   destination?: {
     branch: {
       name: string;
     };
   };
+  draft?: boolean;
   reviewers?: Array<{ uuid: string }>;
 }
 

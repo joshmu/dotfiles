@@ -7,8 +7,9 @@
   "scripts": {
     "pr:create": "bun bitbucket-pr-create.ts",
     "pr:update": "bun bitbucket-pr-update.ts",
+    "pr:list": "bun bitbucket-pr-list.ts",
     "repos:list": "bun bitbucket-repos-list.ts",
-    "setup": "cp .env.example .env && echo 'Please edit .env with your credentials'"
+    "setup": "cp config.json.example config.json && echo 'Please edit config.json with your credentials'"
   },
   "keywords": [
     "bitbucket",
