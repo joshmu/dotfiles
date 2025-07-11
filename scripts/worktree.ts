@@ -130,13 +130,27 @@ async function createWorktree(
   const branchName = branch || `feature/${purpose}`;
   
   // Create worktree
+  // Fetch latest changes from origin
+  log.step(`Fetching latest changes from origin`);
+  const { success: fetchSuccess } = await exec(`git fetch origin`, repoPath);
+  if (!fetchSuccess) {
+    log.warn(`Failed to fetch from origin, continuing with local state`);
+  }
+
   if (existingBranch) {
     log.step(`Creating worktree for existing branch: ${branchName}`);
     const { success } = await exec(`git worktree add ${worktreePath} ${branchName}`, repoPath);
     if (!success) return false;
   } else {
-    log.step(`Creating worktree with new branch: ${branchName}`);
-    const { success } = await exec(`git worktree add -b ${branchName} ${worktreePath}`, repoPath);
+    // Get the default branch (usually master or main)
+    const { success: revSuccess, output: defaultBranch } = await exec(
+      `git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@'`,
+      repoPath
+    );
+    const baseBranch = revSuccess && defaultBranch ? `origin/${defaultBranch}` : 'origin/master';
+    
+    log.step(`Creating worktree with new branch: ${branchName} from ${baseBranch}`);
+    const { success } = await exec(`git worktree add -b ${branchName} ${worktreePath} ${baseBranch}`, repoPath);
     if (!success) return false;
   }
 
@@ -181,7 +195,7 @@ async function setupBrevilleArtifact(worktreePath: string): Promise<boolean> {
 
   // Install dependencies in breville-artifact
   const pkgManager = detectPackageManager(artifactPath);
-  const installCmd = pkgManager?.manager || "yarn";
+  const installCmd = `${pkgManager?.manager || "yarn"} install`;
   
   log.info(`Installing breville-artifact dependencies with ${installCmd}`);
   const { success: artifactInstall } = await exec(installCmd, artifactPath);
@@ -232,7 +246,7 @@ async function installDependencies(worktreePath: string): Promise<boolean> {
 
   // Install dependencies
   log.step(`Installing dependencies with ${manager}`);
-  const success = await execStream(manager, worktreePath);
+  const success = await execStream(`${manager} install`, worktreePath);
   
   if (success) {
     log.success("Dependencies installed successfully");
