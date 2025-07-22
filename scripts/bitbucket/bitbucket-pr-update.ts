@@ -42,9 +42,6 @@ const { values, positionals } = parseArgs({
     'ready-for-review': {
       type: 'boolean',
     },
-    markdown: {
-      type: 'boolean',
-    },
     'non-interactive': {
       type: 'boolean',
       short: 'n',
@@ -73,7 +70,6 @@ Options:
   -w, --workspace <ws>        Workspace (defaults to env or config)
   --convert-to-draft          Convert PR to draft
   --ready-for-review          Mark draft PR as ready for review
-  --markdown                  Enable markdown formatting for description
   -n, --non-interactive       Run without prompts, skip optional fields
 
 Examples:
@@ -186,7 +182,6 @@ async function main() {
     // Collect update details
     const updateData: BitbucketPullRequestUpdate = {};
     let hasUpdates = false;
-    let useMarkdown = values.markdown || false;
 
     // Title
     if (values.title !== undefined) {
@@ -204,36 +199,15 @@ async function main() {
 
     // Description
     if (values.description !== undefined) {
-      // For markdown descriptions in interactive mode, use the structured format
-      // In non-interactive mode, just send the raw string to avoid JSON encoding issues
-      if (useMarkdown && !nonInteractive) {
-        // Send raw string for non-interactive mode
-        updateData.description = values.description;
-      } else if (useMarkdown) {
-        // Use structured format for interactive mode
-        updateData.description = {
-          raw: values.description,
-          markup: 'markdown',
-        };
-      } else {
-        updateData.description = values.description;
-      }
+      // Send raw markdown string directly
+      updateData.description = values.description;
       hasUpdates = true;
     } else {
       if (!nonInteractive) {
         const newDescription = await prompt('New description (leave empty to keep current)', '');
         if (newDescription) {
-          if (!useMarkdown && currentPR.description) {
-            useMarkdown = await promptYesNo('Use markdown formatting?', false);
-          }
-          if (useMarkdown) {
-            updateData.description = {
-              raw: newDescription,
-              markup: 'markdown',
-            };
-          } else {
-            updateData.description = newDescription;
-          }
+          // Send raw markdown string directly
+          updateData.description = newDescription;
           hasUpdates = true;
         }
       }
@@ -317,11 +291,9 @@ async function main() {
       console.log(`   Title: "${currentPR.title}" → "${updateData.title}"`);
     }
     if (updateData.description !== undefined) {
-      const descText = typeof updateData.description === 'string' 
-        ? updateData.description 
-        : updateData.description.raw;
+      const descText = updateData.description;
       if (descText !== currentPR.description) {
-        console.log(`   Description: Updated${useMarkdown ? ' (Markdown)' : ''}`);
+        console.log(`   Description: Updated (Markdown)`);
       }
     }
     if (updateData.destination && updateData.destination.branch.name !== currentPR.destination.branch.name) {

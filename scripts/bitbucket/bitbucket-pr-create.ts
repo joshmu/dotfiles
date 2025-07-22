@@ -43,9 +43,6 @@ const { values, positionals } = parseArgs({
     draft: {
       type: 'boolean',
     },
-    markdown: {
-      type: 'boolean',
-    },
     template: {
       type: 'boolean',
     },
@@ -80,7 +77,6 @@ Options:
   -w, --workspace <ws>        Workspace (defaults to env or config)
   --close-source-branch       Close source branch after merge
   --draft                     Create as draft PR
-  --markdown                  Enable markdown formatting for description
   --template                  Use PR template if available (default: true)
   --no-template               Don't use PR template
   -n, --non-interactive       Run without prompts, use defaults for missing values
@@ -95,8 +91,8 @@ Examples:
   # Create draft PR
   bun bitbucket-pr-create.ts -t "WIP: New feature" --draft
 
-  # Create PR with markdown description
-  bun bitbucket-pr-create.ts -t "Feature" -d "## Changes\n- Added feature" --markdown
+  # Create PR with markdown description (markdown is always enabled)
+  bun bitbucket-pr-create.ts -t "Feature" -d "## Changes\n- Added feature"
 
   # Non-interactive mode (no prompts)
   bun bitbucket-pr-create.ts -t "Feature" -d "Description" -s feature/branch --non-interactive
@@ -206,7 +202,6 @@ async function main() {
     }
     
     const isDraft = values.draft ?? (nonInteractive ? false : await promptYesNo('Create as draft PR?', false));
-    const useMarkdown = values.markdown ?? (nonInteractive ? true : (description ? await promptYesNo('Use markdown formatting?', false) : false));
     const closeSourceBranch = values['close-source-branch'] ?? (nonInteractive ? false : await promptYesNo('Close source branch after merge?', false));
 
     // Validate branches exist
@@ -259,9 +254,7 @@ async function main() {
     }
     if (description) {
       console.log(`   Description: ${description.substring(0, 50)}...`);
-      if (useMarkdown) {
-        console.log(`   Format: Markdown`);
-      }
+      console.log(`   Format: Markdown`);
     }
 
     const prData: BitbucketPullRequestCreate = {
@@ -281,20 +274,8 @@ async function main() {
     };
 
     if (description) {
-      // For markdown descriptions in interactive mode, use the structured format
-      // In non-interactive mode, just send the raw string to avoid JSON encoding issues
-      if (useMarkdown && !nonInteractive) {
-        // Send raw string for non-interactive mode
-        prData.description = description;
-      } else if (useMarkdown) {
-        // Use structured format for interactive mode
-        prData.description = {
-          raw: description,
-          markup: 'markdown',
-        };
-      } else {
-        prData.description = description;
-      }
+      // Send raw markdown string - Bitbucket auto-detects markdown
+      prData.description = description;
     }
 
     const pr = await api.createPullRequest(workspace, repo, prData);
