@@ -82,11 +82,6 @@ alias cld=claude
 alias cldt=claude-trace
 alias gemini="npx https://github.com/google-gemini/gemini-cli"
 alias kimi="ccr code"
-alias deepseek="CCR_DEFAULT_MODEL='deepseek,deepseek-chat' ccr code"
-alias gemini-api="CCR_DEFAULT_MODEL='gemini,gemini-2.0-flash-exp' ccr code"
-alias grok="CCR_DEFAULT_MODEL='xai,grok-beta' ccr code"
-alias qwen="CCR_DEFAULT_MODEL='openrouter,qwen/qwen-2.5-72b-instruct' ccr code"
-alias openai="CCR_DEFAULT_MODEL='openai,gpt-4o' ccr code"
 function ai() {
   output=$(ollama run codellama "$@")
   echo "$output" | glow
