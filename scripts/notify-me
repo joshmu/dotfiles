@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# Default to using the script from the directory of this script
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TELEGRAM_SCRIPT="$SCRIPT_DIR/telegram/send-notification.sh"
+
+# Check if telegram script exists
+if [ ! -f "$TELEGRAM_SCRIPT" ]; then
+    echo "Error: Telegram notification script not found at $TELEGRAM_SCRIPT"
+    exit 1
+fi
+
+# Check if message was provided
+if [ $# -eq 0 ]; then
+    echo "Usage: notify-me <message>"
+    echo "Example: notify-me \"Build completed successfully\""
+    exit 1
+fi
+
+# Combine all arguments into a single message
+MESSAGE="$*"
+
+# Send notification with "Claude Notification" as title
+"$TELEGRAM_SCRIPT" --title "Claude Notification" --message "$MESSAGE"
