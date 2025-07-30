@@ -46,6 +46,10 @@ const { values, positionals } = parseArgs({
       type: 'boolean',
       short: 'n',
     },
+    'show': {
+      type: 'boolean',
+      short: 's',
+    },
   },
   strict: true,
   allowPositionals: true,
@@ -68,11 +72,15 @@ Options:
   -b, --destination <branch>  New destination branch
   -r, --repo <repo>           Repository slug (defaults to current repo)
   -w, --workspace <ws>        Workspace (defaults to env or config)
+  -s, --show                  Show PR details without updating
   --convert-to-draft          Convert PR to draft
   --ready-for-review          Mark draft PR as ready for review
   -n, --non-interactive       Run without prompts, skip optional fields
 
 Examples:
+  # Show PR details
+  bun bitbucket-pr-update.ts -p 123 --show
+
   # Update PR title
   bun bitbucket-pr-update.ts -p 123 -t "Updated: Add new feature"
 
@@ -165,6 +173,26 @@ async function main() {
     console.log(`   Author: ${currentPR.author.display_name}`);
     if (currentPR.description) {
       console.log(`   Description: ${currentPR.description.substring(0, 50)}...`);
+    }
+
+    // If --show flag is used, just display and exit
+    if (values.show) {
+      console.log('\n📊 Pull Request Details:');
+      console.log(`   ID: #${currentPR.id}`);
+      console.log(`   Title: ${currentPR.title}`);
+      console.log(`   State: ${currentPR.state}`);
+      console.log(`   Draft: ${currentPR.draft ? 'Yes' : 'No'}`);
+      console.log(`   Author: ${currentPR.author.display_name}`);
+      console.log(`   Created: ${new Date(currentPR.created_on).toLocaleString()}`);
+      console.log(`   Updated: ${new Date(currentPR.updated_on).toLocaleString()}`);
+      console.log(`   Source: ${currentPR.source.branch.name}`);
+      console.log(`   Destination: ${currentPR.destination.branch.name}`);
+      if (currentPR.description) {
+        console.log(`\n📝 Description:`);
+        console.log(currentPR.description);
+      }
+      console.log(`\n🔗 URL: ${currentPR.links.html.href}`);
+      process.exit(0);
     }
 
     // Check if PR is still open
