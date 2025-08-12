@@ -49,6 +49,10 @@ const { values, positionals } = parseArgs({
     'no-template': {
       type: 'boolean',
     },
+    reviewers: {
+      type: 'string',
+      multiple: true,
+    },
     'non-interactive': {
       type: 'boolean',
       short: 'n',
@@ -75,6 +79,7 @@ Options:
   -b, --destination <branch>  Destination branch (defaults to master)
   -r, --repo <repo>           Repository slug (defaults to current repo)
   -w, --workspace <ws>        Workspace (defaults to env or config)
+  --reviewers <id>            Add reviewers by account ID (can be used multiple times)
   --close-source-branch       Close source branch after merge
   --draft                     Create as draft PR
   --template                  Use PR template if available (default: true)
@@ -93,6 +98,9 @@ Examples:
 
   # Create PR with markdown description (markdown is always enabled)
   bun bitbucket-pr-create.ts -t "Feature" -d "## Changes\n- Added feature"
+
+  # Create PR with reviewers
+  bun bitbucket-pr-create.ts -t "Feature" --reviewers 5e0ae3863ebba10e937ecff0 --reviewers 60905f0ec87b550069a88204
 
   # Non-interactive mode (no prompts)
   bun bitbucket-pr-create.ts -t "Feature" -d "Description" -s feature/branch --non-interactive
@@ -207,12 +215,10 @@ async function main() {
     // Validate branches exist
     console.log('\n🔍 Validating branches...');
     try {
-      const branches = await api.getAllBranches(workspace, repo);
-      const branchNames = branches.map(b => b.name);
-      
-      if (!branchNames.includes(sourceBranch)) {
+      // Check source branch
+      const sourceExists = await api.checkBranchExists(workspace, repo, sourceBranch);
+      if (!sourceExists) {
         console.error(`❌ Source branch '${sourceBranch}' not found in repository`);
-        console.error(`First 10 branches: ${branchNames.slice(0, 10).join(', ')}...`);
         if (nonInteractive) {
           console.log('⚠️  Continuing in non-interactive mode...');
         } else {
@@ -223,9 +229,10 @@ async function main() {
         }
       }
       
-      if (!branchNames.includes(destinationBranch)) {
+      // Check destination branch
+      const destExists = await api.checkBranchExists(workspace, repo, destinationBranch);
+      if (!destExists) {
         console.error(`❌ Destination branch '${destinationBranch}' not found in repository`);
-        console.error(`First 10 branches: ${branchNames.slice(0, 10).join(', ')}...`);
         if (nonInteractive) {
           console.log('⚠️  Continuing in non-interactive mode...');
         } else {
@@ -234,12 +241,18 @@ async function main() {
             process.exit(1);
           }
         }
+      }
+      
+      if (sourceExists && destExists) {
+        console.log('✅ Both branches validated successfully');
       }
     } catch (error) {
       console.error('⚠️  Could not validate branches:', error);
-      const proceed = await promptYesNo('Continue anyway?', false);
-      if (!proceed) {
-        process.exit(1);
+      if (!nonInteractive) {
+        const proceed = await promptYesNo('Continue anyway?', false);
+        if (!proceed) {
+          process.exit(1);
+        }
       }
     }
 
@@ -255,6 +268,12 @@ async function main() {
     if (description) {
       console.log(`   Description: ${description.substring(0, 50)}...`);
       console.log(`   Format: Markdown`);
+    }
+    
+    // Handle reviewers
+    const reviewerIds = values.reviewers as string[] | undefined;
+    if (reviewerIds && reviewerIds.length > 0) {
+      console.log(`   Reviewers: ${reviewerIds.length} reviewer(s) added`);
     }
 
     const prData: BitbucketPullRequestCreate = {
@@ -276,6 +295,12 @@ async function main() {
     if (description) {
       // Send raw markdown string - Bitbucket auto-detects markdown
       prData.description = description;
+    }
+    
+    // Add reviewers if provided
+    if (reviewerIds && reviewerIds.length > 0) {
+      // Try using account_id format
+      prData.reviewers = reviewerIds.map(id => ({ account_id: id } as any));
     }
 
     const pr = await api.createPullRequest(workspace, repo, prData);

@@ -202,6 +202,23 @@ export class BitbucketAPI {
     return branches;
   }
 
+  async checkBranchExists(
+    workspace: string,
+    repoSlug: string,
+    branchName: string
+  ): Promise<boolean> {
+    try {
+      await this.request(
+        'GET',
+        `/repositories/${workspace}/${repoSlug}/refs/branches/${encodeURIComponent(branchName)}`
+      );
+      return true;
+    } catch (error) {
+      // Branch doesn't exist or API error
+      return false;
+    }
+  }
+
   async *getAllPages<T>(
     initialUrl: string
   ): AsyncGenerator<T, void, unknown> {
