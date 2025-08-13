@@ -1,0 +1,9 @@
+{
+  "apiKey": "YOUR_ELEVENLABS_API_KEY",
+  "voiceId": "JBFqnCBsd6RMkjVDRZzb",
+  "modelId": "eleven_turbo_v2_5",
+  "outputFormat": "mp3_44100_128",
+  "stability": 0.5,
+  "similarityBoost": 0.75,
+  "cacheDir": "~/.cache/elevenlabs"
+}
