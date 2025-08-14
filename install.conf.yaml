@@ -17,6 +17,7 @@
     ~/vscode-custom: vscode-custom
     ~/.config/kitty/kitty.conf: kitty/kitty.conf
     ~/.config/kitty/current-theme.conf: kitty/current-theme.conf
+    ~/.config/ghostty/config: ghostty
     ~/.config/karabiner:
     ~/.gitconfig:
     ~/.bashrc: .bashrc

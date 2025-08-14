@@ -1,0 +1,42 @@
+# Ghostty Terminal Configuration
+# Documentation: https://ghostty.org/docs/config/reference
+
+# Theme and appearance
+theme = catppuccin-mocha
+
+# Font configuration
+font-family = "MesloLGS Nerd Font Mono"
+font-size = 14
+
+# Window settings
+window-padding-x = 8
+window-padding-y = 8
+window-decoration = true
+
+# Terminal behavior
+scrollback-limit = 10000
+confirm-close-surface = false
+
+# Key bindings
+
+# Other useful key bindings
+keybind = cmd+t=new_tab
+keybind = cmd+w=close_surface
+keybind = cmd+shift+t=goto_tab:1
+keybind = cmd+1=goto_tab:1
+keybind = cmd+2=goto_tab:2
+keybind = cmd+3=goto_tab:3
+keybind = cmd+4=goto_tab:4
+keybind = cmd+5=goto_tab:5
+
+# support for claude code multiline
+keybind = shift+enter=text:\x1b\r
+
+# Mouse settings
+mouse-hide-while-typing = true
+copy-on-select = true
+
+# Shell integration
+shell-integration = detect
+shell-integration-features = cursor,sudo,title
+
