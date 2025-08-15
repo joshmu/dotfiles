@@ -270,5 +270,6 @@ export PATH="$PATH:/Users/joshmu/.lmstudio/bin"
 # Added by Windsurf
 export PATH="/Users/joshmu/.codeium/windsurf/bin:$PATH"
 
-# Claude Code notification sound
-export CLAUDE_NOTIFICATION_SOUND="Funk"
+# Added by me so that I can have a personal bin folder
+export PATH="$HOME/bin:$PATH"
+
