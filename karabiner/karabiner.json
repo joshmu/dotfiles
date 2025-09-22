@@ -5,6 +5,58 @@
             "complex_modifications": {
                 "rules": [
                     {
+                        "description": "SpaceFn + Keymaps (Esc > Tilde)",
+                        "manipulators": [
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "SpaceFN",
+                                        "type": "variable_if",
+                                        "value": 1
+                                    }
+                                ],
+                                "from": {
+                                    "key_code": "escape",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [{ "key_code": "grave_accent_and_tilde" }],
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "modifiers": { "optional": ["any"] },
+                                    "simultaneous": [
+                                        { "key_code": "spacebar" },
+                                        { "key_code": "escape" }
+                                    ],
+                                    "simultaneous_options": {
+                                        "key_down_order": "strict",
+                                        "key_up_order": "strict_inverse",
+                                        "to_after_key_up": [
+                                            {
+                                                "set_variable": {
+                                                    "name": "SpaceFN",
+                                                    "value": 0
+                                                }
+                                            }
+                                        ]
+                                    }
+                                },
+                                "parameters": { "basic.simultaneous_threshold_milliseconds": 500 },
+                                "to": [
+                                    {
+                                        "set_variable": {
+                                            "name": "SpaceFN",
+                                            "value": 1
+                                        }
+                                    },
+                                    { "key_code": "grave_accent_and_tilde" }
+                                ],
+                                "type": "basic"
+                            }
+                        ]
+                    },
+                    {
                         "description": "Caps to Ctrl and Esc When Held",
                         "manipulators": [
                             {
@@ -606,6 +658,27 @@
                         "vendor_id": 17498
                     },
                     "ignore": false
+                },
+                {
+                    "identifiers": {
+                        "is_keyboard": true,
+                        "product_id": 12325,
+                        "vendor_id": 14000
+                    },
+                    "simple_modifications": [
+                        {
+                            "from": { "key_code": "delete_forward" },
+                            "to": [{ "key_code": "delete_or_backspace" }]
+                        },
+                        {
+                            "from": { "key_code": "end" },
+                            "to": [{ "key_code": "backslash" }]
+                        },
+                        {
+                            "from": { "key_code": "page_up" },
+                            "to": [{ "key_code": "return_or_enter" }]
+                        }
+                    ]
                 }
             ],
             "fn_function_keys": [
