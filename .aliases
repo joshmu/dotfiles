@@ -124,7 +124,7 @@ alias aem-proxy="npx local-cors-proxy --proxyUrl https://mcstaging.breville.com 
 alias sdserver="ssh -N augw-tunnel"
 
 #alias python="usr/local/bin/python3"
-alias python="/Library/Frameworks/Python.framework/Versions/3.11/bin/python3"
+#alias python="/Library/Frameworks/Python.framework/Versions/3.11/bin/python3"
 
 alias aem-auth-deploy="~/bin/aem-tools-macos deploy -L yes -c ${AEM_CONF} -f $*"
 alias aem-quick-deploy="(cd core && mvn clean install -P fast) && (cd ui.apps && mvn clean install) && (cd all && mvn clean install) && aem-auth-deploy all/target/breville-aem-brands.all-1.0.0-SNAPSHOT.zip"

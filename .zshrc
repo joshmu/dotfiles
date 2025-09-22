@@ -199,7 +199,7 @@ export PATH="$HOME/bin:$PATH"
 
 # Setting PATH for Python 3.11
 # The original version is saved in .zprofile.pysave
-export PATH="/Library/Frameworks/Python.framework/Versions/3.11/bin:${PATH}"
+#export PATH="/Library/Frameworks/Python.framework/Versions/3.11/bin:${PATH}"
 
 # Obsidian local path
 export OBSIDIAN_PATH="/Users/joshmu/Desktop/obsidian"
@@ -272,4 +272,12 @@ export PATH="/Users/joshmu/.codeium/windsurf/bin:$PATH"
 
 # Added by me so that I can have a personal bin folder
 export PATH="$HOME/bin:$PATH"
+
+
+# PATH=~/.console-ninja/.bin:$PATH
+
+# python version management
+export PYENV_ROOT="$HOME/.pyenv"
+[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init - zsh)"
 
