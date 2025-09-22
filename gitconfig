@@ -11,34 +11,6 @@
 	s = status
 	find-merge = "!sh -c 'commit=$0 && branch=${1:-HEAD} && (git rev-list $commit..$branch --ancestry-path | cat -n; git rev-list $commit..$branch --first-parent | cat -n) | sort -k2 -s | uniq -f1 -d | sort -n | tail -1 | cut -f2'"
 	show-merge = "!sh -c 'merge=$(git find-merge $0 $1) && [ -n \"$merge\" ] && git show $merge'"
-	fzf = !"                                                                                                                                                                              \
-    function gfzf() {                                                                                                                                                                 \
-        local filter;                                                                                                                                                                 \
-        if [ -n $@ ] && [ -e $@ ]; then                                                                                                                                               \
-            filter=\"-- $@\";                                                                                                                                                         \
-        fi;                                                                                                                                                                           \
-        export LESS='-R'                                                                                                                                                              \
-        export BAT_PAGER='less -S -R -M -i';                                                                                                                                          \
-        git log                                                                                                                                                                       \
-            --color=always --abbrev=7 --glob=\"refs/heads/*\" --pretty=\"%C(yellow)%h %C(cyan)%cd %Cblue%aN%C(auto)%d %Creset%s\" --date=relative --date-order                                                                                                                                         \
-             $@ |                   \
-                fzf --ansi --no-sort --tiebreak=index                                                                                                                \
-                    --preview=\"f() { set -- \\$(echo -- \\$@ | rg -o '\\b[a-f0-9]{7,}\\b'); [ \\$# -eq 0 ] || git show --color=always \\$1 $filter | delta --line-numbers; }; f {}\" \
-                    --bind=\"ctrl-d:half-page-down,ctrl-u:half-page-up,ctrl-j:preview-down,ctrl-k:preview-up,ctrl-f:preview-page-down,ctrl-b:preview-page-up\"                        \
-                    --bind=\"ctrl-m:execute:                                                                                                                                          \
-                            (rg -o '\\b[a-f0-9]{7,}\\b' | head -1 |                                                                                                                   \
-                            xargs -I % -- git show --color=always %) << 'FZFEOF'\n                                                                                                    \
-                            {}                                                                                                                                                        \
-                            \nFZFEOF\"                                                                                                                                                \
-                    --bind=\"ctrl-y:execute-silent:                                                                                                                                   \
-                            (rg -o '\\b[a-f0-9]{7,}\\b' | head -1 | tr -d \\$'\\n' | clipboard) << 'FZFEOF'\n                                                                         \
-                            {}                                                                                                                                                        \
-                            \nFZFEOF\"                                                                                                                                                \
-                    --preview-window=right:50%;                                                                                                                                       \
-    };                                                                                                                                                                                \
-    gfzf                                                                                                                                                                              \
-"
-
 
 [color]
 	ui = auto
