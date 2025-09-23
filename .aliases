@@ -78,6 +78,7 @@ alias yz='yazi'
 # AI
 # ----------------------
 alias oc=opencode
+alias cc=claude
 alias cld=claude
 alias cldt=claude-trace
 alias gemini="npx https://github.com/google-gemini/gemini-cli"
