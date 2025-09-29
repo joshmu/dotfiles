@@ -164,8 +164,30 @@ return {
 
         -- vim.keymap.set('n', '<leader>' .. key .. 'w', builtin.live_grep, { desc = term .. ' grep [W]ord' })
         -- vim.keymap.set('n', '<leader>' .. key .. 'g', builtin.live_grep, { desc = term .. ' by [G]rep' })
-        vim.keymap.set('n', '<leader>' .. key .. 'w', require('telescope').extensions.live_grep_args.live_grep_args, { desc = term .. ' grep *args [W]ord' })
-        vim.keymap.set('n', '<leader>' .. key .. 'g', require('telescope').extensions.live_grep_args.live_grep_args, { desc = term .. ' by *args [G]rep' })
+        vim.keymap.set({ 'n', 'v' }, '<leader>' .. key .. 'w', function()
+          local mode = vim.fn.mode()
+          -- If in visual mode, use the visual selection
+          if mode == 'v' or mode == 'V' or mode == '^V' then
+            require('telescope-live-grep-args.shortcuts').grep_visual_selection({
+              postfix = ' --hidden ',
+            })
+          else
+            -- If not in visual mode, use the default behavior
+            require('telescope').extensions.live_grep_args.live_grep_args()
+          end
+        end, { desc = term .. ' grep *args [W]ord' })
+        vim.keymap.set({ 'n', 'v' }, '<leader>' .. key .. 'g', function()
+          local mode = vim.fn.mode()
+          -- If in visual mode, use the visual selection
+          if mode == 'v' or mode == 'V' or mode == '^V' then
+            require('telescope-live-grep-args.shortcuts').grep_visual_selection({
+              postfix = ' --hidden ',
+            })
+          else
+            -- If not in visual mode, use the default behavior
+            require('telescope').extensions.live_grep_args.live_grep_args()
+          end
+        end, { desc = term .. ' by *args [G]rep' })
 
         vim.keymap.set('n', '<leader>' .. key .. 's', builtin.git_status, { desc = term .. ' Git [S]tatus' })
 
@@ -211,6 +233,7 @@ return {
           prompt_title = 'Live Grep in Open Files',
         }
       end, { desc = '[S]earch [/] in Open Files' })
+
     end,
   },
 }
