@@ -29,7 +29,7 @@
 # resize-overlay-duration = 4s 200ms
 
 # Theme and appearance
-theme = catppuccin-mocha
+# theme = catppuccin-mocha
 
 # Font configuration
 font-family = "MesloLGS Nerd Font Mono"
