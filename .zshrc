@@ -260,6 +260,13 @@ autoload -Uz compinit
 compinit
 # End of Docker CLI completions
 
+# AWS CLI completion
+autoload -Uz bashcompinit compinit
+bashcompinit
+compinit
+# Point completion at aws_completer (works regardless of install path)
+complete -C "$(command -v aws_completer)" aws
+
 # FX - JSON PRETTY PRINTER - fx.wtf
 source <(fx --comp bash)
 
