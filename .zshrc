@@ -280,6 +280,9 @@ export PATH="/Users/joshmu/.codeium/windsurf/bin:$PATH"
 # Added by me so that I can have a personal bin folder
 export PATH="$HOME/bin:$PATH"
 
+# Use nvim for Pager
+export MANPAGER="nvim +Man!"
+export PAGER="nvim"
 
 # PATH=~/.console-ninja/.bin:$PATH
 
