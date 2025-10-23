@@ -282,7 +282,7 @@ export PATH="$HOME/bin:$PATH"
 
 # Use nvim for Pager
 export MANPAGER="nvim +Man!"
-export PAGER="nvim"
+export PAGER="nvimpager"
 
 # PATH=~/.console-ninja/.bin:$PATH
 
