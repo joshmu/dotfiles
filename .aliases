@@ -272,5 +272,11 @@ function smart_diff() {
 alias worktree='/Users/joshmu/dotfiles/scripts/worktree.ts'
 alias gw='/Users/joshmu/dotfiles/scripts/worktree.ts'
 
+# Check for merge conflicts before creating PR
+alias merge-check='~/dotfiles/scripts/check-merge-conflicts.sh'
+
+# Open PR creation page with custom target branch
+alias open-pr-with-target='~/dotfiles/scripts/open-pr-with-target.sh'
+
 # Update all git repos in current directory
 alias update-repos='/Users/joshmu/dotfiles/scripts/update-repos.ts'
