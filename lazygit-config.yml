@@ -1,6 +1,7 @@
 # https://github.com/jesseduffield/lazygit/blob/master/docs/Config.md
 gui:
   showNumstatInFilesView: true # If true, show the number of lines changed per file in the Files view
+  promptToReturnFromSubprocess: false # Skip "press enter to return" after terminal commands
 git:
   paging:
     colorArg: always
@@ -28,4 +29,13 @@ customCommands:
     description: Pick AI commit msg
     command: ~/scripts/ai-generate-commit-msg.sh
     context: files
+    output: terminal
+  - key: "O"
+    prompts:
+      - type: "input"
+        title: "Target branch for PR"
+        initialValue: ""
+    command: ~/dotfiles/scripts/open-pr-with-target.sh "{{index .PromptResponses 0}}"
+    description: "Open PR with custom target"
+    context: "localBranches"
     output: terminal
