@@ -35,7 +35,7 @@ customCommands:
       - type: "input"
         title: "Target branch for PR"
         initialValue: ""
-    command: ~/dotfiles/scripts/open-pr-with-target.sh "{{index .PromptResponses 0}}"
+    command: ~/dotfiles/scripts/open-pr-with-target.sh "{{index .PromptResponses 0}}" "{{.SelectedLocalBranch.Name}}"
     description: "Open PR with custom target"
     context: "localBranches"
     output: terminal
