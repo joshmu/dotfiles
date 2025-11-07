@@ -1,7 +1,7 @@
 # https://github.com/jesseduffield/lazygit/blob/master/docs/Config.md
+promptToReturnFromSubprocess: false # Skip "press enter to return" after terminal commands
 gui:
   showNumstatInFilesView: true # If true, show the number of lines changed per file in the Files view
-  promptToReturnFromSubprocess: false # Skip "press enter to return" after terminal commands
 git:
   paging:
     colorArg: always
