@@ -204,6 +204,11 @@ alias hypconf="nvim ~/.hyper.js"
 alias gconf="nvim ~/.gitconfig"
 alias tmuxconf="nvim ~/.tmux.conf"
 
+# Run claude from dotfiles directory, then return to original location
+function config() {
+  (cd ~/dotfiles && claude "$@")
+}
+
 # Notification alias
 alias notify-me='~/dotfiles/scripts/notify-me'
 
