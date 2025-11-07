@@ -35,7 +35,15 @@ alias chrome-cors='open -a Google\ Chrome --args --disable-web-security --user-d
 alias zen='/Users/joshmu/Desktop/code/projects/zen/src/main.js'
 alias tre='tree --prune -P '
 alias tree='tree -F '
-alias ls='colorls'
+# ColorLS integration (official pattern)
+if command -v colorls >/dev/null 2>&1; then
+    # Tab completion for colorls
+    source $(dirname $(gem which colorls))/tab_complete.sh 2>/dev/null
+
+    alias ls='colorls'
+else
+    alias ls='ls --color=auto'
+fi
 alias ios-runtimes='xcrun simctl list runtimes'
 alias node-process='node -p "process.arch"'
 alias remove-mail-logs='sudo rm /var/mail/joshmu'
@@ -49,6 +57,9 @@ alias ld='lazydocker'
 alias lnpm='lazynpm'
 alias sqlitebrowser='open -a "DB Browser for SQLite"'
 alias my-branches='git for-each-ref --format="%(refname:short) %(authorname)" refs/remotes | grep "Josh Mu"'
+
+# Home Assistant Backup Aliases
+alias ha-copy-backup-from-remote='latest=$(ssh homeassistant '\''ls -t /backup/*.tar | head -n1'\'') && scp homeassistant:"$latest" ~/Downloads/'
 
 function notify() {
   local msg="$1"
@@ -144,14 +155,20 @@ alias mvn-i-core="mvn clean install -P fast -f /Users/joshmu/work/breville/sourc
 alias mvn-i-ui="mvn clean install -f /Users/joshmu/work/breville/source/breville-aem-brands/ui.apps"
 alias mvn-i-all="mvn clean install -f /Users/joshmu/work/breville/source/breville-aem-brands/all"
 
+
+# ----------------------
+# AWS
+# ----------------------
+# list profiles and pick one (no deps)
+awsp() { local p; p=$(aws configure list-profiles | fzf) || return; export AWS_PROFILE="$p"; echo "AWS_PROFILE=$AWS_PROFILE"; }
+alias awsp-list='aws configure list-profiles'
+# quick clear
+alias aws-unset='unset AWS_PROFILE AWS_DEFAULT_REGION AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN'
+
+
 # ----------------------
 # DEV
 # ----------------------
-
-# alias aws='docker run --rm -it public.ecr.aws/aws-cli/aws-cli'
-# export AWS_DEFAULT_REGION=us-west-2
-# alias aws-resource-policies="aws logs describe-resource-policies"
-# alias aws-delete-resource-policy="aws logs delete-resource-policy --policy-name"
 
 # alias jenkins="aws ssm start-session --target i-01ed64d48bef70275 --document-name AWS-StartPortForwardingSession --parameters "localPortNumber=8080,portNumber=8080" --region us-west-2"
 
