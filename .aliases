@@ -89,12 +89,9 @@ alias yz='yazi'
 # AI
 # ----------------------
 alias oc=opencode
-alias cc=claude
 alias cld=claude
 alias cldc=claude --continue
 alias cldy=claude  --dangerously-skip-permissions
-alias cldcy=claude --continue  --dangerously-skip-permissions
-alias cldt=claude-trace
 alias gemini="npx https://github.com/google-gemini/gemini-cli"
 alias kimi="ccr code"
 function ai-local() {
