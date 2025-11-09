@@ -36,7 +36,7 @@ alias zen='/Users/joshmu/Desktop/code/projects/zen/src/main.js'
 alias tre='tree --prune -P '
 alias tree='tree -F '
 # ColorLS integration (official pattern)
-if command -v colorls >/dev/null 2>&1; then
+if colorls --version >/dev/null 2>&1; then
     # Tab completion for colorls
     source $(dirname $(gem which colorls))/tab_complete.sh 2>/dev/null
 
