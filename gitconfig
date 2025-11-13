@@ -1,6 +1,6 @@
 # This is Git's per-user configuration file.
 [user]
-	signingkey = 3C4A4E8B7575050D
+	signingkey = /Users/joshmu/.ssh/id_ed25519.pub
 	email = hello@joshmu.dev
 	name = Josh Mu
 
@@ -48,3 +48,11 @@
     diffFilter = delta --color-only --line-numbers
 [init]
 	defaultBranch = main
+[commit]
+	gpgsign = true
+[tag]
+	gpgSign = true
+[gpg]
+	format = ssh
+[gpg "ssh"]
+	allowedSignersFile = /Users/joshmu/.config/git/allowed_signers
