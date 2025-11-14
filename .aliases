@@ -94,6 +94,7 @@ alias cldc=claude --continue
 alias cldy=claude  --dangerously-skip-permissions
 alias gemini="npx https://github.com/google-gemini/gemini-cli"
 alias kimi="ccr code"
+alias agents='npx tsx ~/Desktop/code/agents/cli/index.ts'
 function ai-local() {
   output=$(ollama run codellama "$@")
   echo "$output" | glow
