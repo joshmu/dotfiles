@@ -51,19 +51,41 @@ function extractVideoId(url: string): string | null {
 
 async function fetchTranscript(videoId: string): Promise<TranscriptResponse> {
   const apiUrl = `https://www.youtubevideotranscripts.com/api/transcript?videoId=${videoId}`;
-  
+
   try {
     const response = await fetch(apiUrl);
-    
+
     if (!response.ok) {
       throw new Error(`API returned status ${response.status}`);
     }
-    
+
     const data = await response.json();
     return data;
   } catch (error) {
     throw new Error(`Failed to fetch transcript: ${error.message}`);
   }
+}
+
+async function fetchTranscriptViaPython(videoId: string): Promise<TranscriptResponse> {
+  const pythonScript = `
+import json
+from youtube_transcript_api import YouTubeTranscriptApi
+ytt = YouTubeTranscriptApi()
+transcript = ytt.fetch("${videoId}")
+result = [{"text": t.text, "start": t.start, "duration": t.duration} for t in transcript]
+print(json.dumps({"transcript": result}))
+`;
+  const proc = Bun.spawn(["python3", "-c", pythonScript], {
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  const exitCode = await proc.exited;
+  if (exitCode !== 0) {
+    const stderr = await new Response(proc.stderr).text();
+    throw new Error(`Python fallback failed: ${stderr.trim()}`);
+  }
+  const output = await new Response(proc.stdout).text();
+  return JSON.parse(output.trim());
 }
 
 function formatTranscript(data: TranscriptResponse): string {
@@ -116,51 +138,55 @@ async function main() {
     process.exit(1);
   }
   
+  let data: TranscriptResponse;
+  let usedFallback = false;
+
+  // Try primary API, fall back to Python if it fails
   try {
-    const data = await fetchTranscript(videoId);
-    
+    data = await fetchTranscript(videoId);
     if (data.error) {
+      throw new Error(data.error);
+    }
+  } catch (primaryError) {
+    try {
+      data = await fetchTranscriptViaPython(videoId);
+      usedFallback = true;
+    } catch (fallbackError) {
       const output: ScriptOutput = {
         success: false,
-        error: data.error,
+        error: `Primary API failed: ${primaryError.message}. Fallback also failed: ${fallbackError.message}`,
         videoId,
-        url
+        url,
       };
       console.log(JSON.stringify(output, null, 2));
       process.exit(1);
     }
-    
-    const transcriptText = formatTranscript(data);
-    
-    if (!transcriptText) {
-      const output: ScriptOutput = {
-        success: false,
-        error: "No transcript data found. The video may not have captions available.",
-        videoId,
-        url
-      };
-      console.log(JSON.stringify(output, null, 2));
-      process.exit(1);
-    }
-    
-    const output: ScriptOutput = {
-      success: true,
-      videoId,
-      url,
-      transcript: transcriptText
-    };
-    
-    console.log(JSON.stringify(output, null, 2));
-  } catch (error) {
+  }
+
+  const transcriptText = formatTranscript(data);
+
+  if (!transcriptText) {
     const output: ScriptOutput = {
       success: false,
-      error: error.message,
+      error: "No transcript data found. The video may not have captions available.",
       videoId,
-      url
+      url,
     };
     console.log(JSON.stringify(output, null, 2));
     process.exit(1);
   }
+
+  const output: ScriptOutput & { fallback?: boolean } = {
+    success: true,
+    videoId,
+    url,
+    transcript: transcriptText,
+  };
+  if (usedFallback) {
+    output.fallback = true;
+  }
+
+  console.log(JSON.stringify(output, null, 2));
 }
 
 main();
