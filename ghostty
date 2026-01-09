@@ -46,6 +46,13 @@ confirm-close-surface = false
 
 # Key bindings
 
+# macOS option key as alt (left option = alt, right option = special chars)
+macos-option-as-alt = left
+
+# Unbind alt+left/right so Claude Code can capture them
+keybind = alt+left=unbind
+keybind = alt+right=unbind
+
 # Other useful key bindings
 keybind = cmd+t=new_tab
 keybind = cmd+w=close_surface
