@@ -124,14 +124,17 @@ async function sonarFetch<T>(
   return response.json() as Promise<T>;
 }
 
-async function fetchOpenIssues(options: {
+interface FetchIssuesOptions {
   token: string;
   projectKey: string;
   branch?: string;
   types?: string[];
   statuses?: string;
-}): Promise<SonarIssue[]> {
-  const { token, projectKey, branch, types, statuses = DEFAULT_STATUSES } = options;
+  author?: string; // SCM account (git email)
+}
+
+async function fetchOpenIssues(options: FetchIssuesOptions): Promise<SonarIssue[]> {
+  const { token, projectKey, branch, types, statuses = DEFAULT_STATUSES, author } = options;
   const allIssues: SonarIssue[] = [];
   let page = 1;
   let hasMore = true;
@@ -142,6 +145,7 @@ async function fetchOpenIssues(options: {
       branch,
       statuses,
       types: types?.join(','),
+      author,
       ps: PAGE_SIZE,
       p: page,
     });
@@ -156,6 +160,46 @@ async function fetchOpenIssues(options: {
   }
 
   return allIssues;
+}
+
+// Get long-lived branches from project
+async function getLongLivedBranches(
+  token: string,
+  projectKey: string
+): Promise<Array<{ name: string; type: string; isMain: boolean }>> {
+  const data = await sonarFetch<{ branches: Array<{ name: string; type: string; isMain: boolean }> }>(
+    token,
+    'project_branches/list',
+    { project: projectKey }
+  );
+  return data.branches.filter((b) => b.type === 'LONG');
+}
+
+// Smart branch detection - returns the baseline branch to use
+async function getBaselineBranch(token: string, projectKey: string): Promise<string | null> {
+  const longLived = await getLongLivedBranches(token, projectKey);
+
+  if (longLived.length === 0) {
+    return null;
+  }
+
+  if (longLived.length === 1) {
+    return longLived[0].name;
+  }
+
+  // Multiple long-lived branches - prefer develop first (most common baseline)
+  const preferred = ['develop', 'main', 'master'];
+  for (const name of preferred) {
+    const found = longLived.find((b) => b.name === name);
+    if (found) return found.name;
+  }
+
+  // Return the main branch if marked
+  const main = longLived.find((b) => b.isMain);
+  if (main) return main.name;
+
+  // Can't auto-detect - return null to signal user should choose
+  return null;
 }
 
 async function waitForAnalysis(
@@ -266,12 +310,20 @@ Usage:
   sonar-verify <projectKey> <branch> --json       Output issues as JSON
   sonar-verify <projectKey> --branches            List all branches
   sonar-verify <projectKey> --delete <branch>     Delete branch from SonarCloud
+  sonar-verify <projectKey> --baseline            Show detected baseline branch
 
-Options:
-  --types=BUG,VULNERABILITY   Filter by issue types
+Filtering Options:
+  --types=BUG,VULNERABILITY,CODE_SMELL   Filter by issue types
+  --author=<email>                       Filter by git author (issues you caused)
+  --count                                Just show issue count (quick check)
+
+Output Options:
   --json                      Output as JSON (for scripting)
   --branches                  List all branches and their types
-  --delete <branch>           Delete a branch from SonarCloud
+  --baseline                  Show detected baseline branch for project
+
+Admin Options:
+  --delete <branch>           Delete branch from SonarCloud (release-* only)
   --help, -h                  Show this help
 
 Examples:
@@ -282,6 +334,10 @@ Examples:
   sonar-verify brevilledigital_xps-utils --branches
   sonar-verify brevilledigital_xps-utils --delete release-old-fix
 
+  # Issues I caused (by git author)
+  sonar-verify brevilledigital_xps-utils develop --author=jmu@solutiondigital.biz
+  sonar-verify brevilledigital_xps-utils develop --author=jmu@solutiondigital.biz --count
+
 Project Key Format:
   brevilledigital_<repo-name>  (found in sonar-project.properties)
 `);
@@ -289,16 +345,49 @@ Project Key Format:
   }
 
   const projectKey = args[0];
-  const branch = args[1] || 'main';
+  const branch = args[1] && !args[1].startsWith('--') ? args[1] : undefined;
   const issueKey = args[2] && !args[2].startsWith('--') ? args[2] : undefined;
   const jsonOutput = args.includes('--json');
+  const countOnly = args.includes('--count');
   const typesArg = args.find((a) => a.startsWith('--types='));
   const types = typesArg?.split('=')[1]?.split(',');
   const listBranches = args.includes('--branches');
+  const showBaseline = args.includes('--baseline');
   const deleteArg = args.find((a) => a.startsWith('--delete'));
   const branchToDelete = deleteArg ? args[args.indexOf(deleteArg) + 1] : undefined;
 
+  // User filtering options
+  const authorArg = args.find((a) => a.startsWith('--author='));
+  const author = authorArg?.split('=')[1];
+
   try {
+    // Show baseline branch
+    if (showBaseline) {
+      console.log(`\n🔍 Detecting baseline branch for ${projectKey}...\n`);
+      const longLived = await getLongLivedBranches(token, projectKey);
+
+      if (longLived.length === 0) {
+        console.log('❌ No long-lived branches found');
+        process.exit(1);
+      }
+
+      const baseline = await getBaselineBranch(token, projectKey);
+
+      console.log('Long-lived branches:');
+      for (const b of longLived) {
+        const marker = b.name === baseline ? ' ← baseline' : '';
+        const mainTag = b.isMain ? ' (main)' : '';
+        console.log(`  \x1b[32m${b.name}\x1b[0m${mainTag}${marker}`);
+      }
+
+      if (baseline) {
+        console.log(`\n✅ Auto-detected baseline: ${baseline}`);
+      } else {
+        console.log('\n⚠️  Multiple long-lived branches - specify branch manually');
+      }
+      return;
+    }
+
     // List branches
     if (listBranches) {
       console.log(`\n📋 Branches for ${projectKey}:\n`);
@@ -346,23 +435,43 @@ Project Key Format:
       return;
     }
 
+    // Auto-detect branch if not provided
+    let targetBranch = branch;
+    if (!targetBranch) {
+      const baseline = await getBaselineBranch(token, projectKey);
+      if (baseline) {
+        targetBranch = baseline;
+        console.log(`\n🎯 Auto-detected baseline: ${targetBranch}`);
+      } else {
+        console.error('\n❌ No branch specified and could not auto-detect baseline');
+        console.error('   Use --branches to list available branches');
+        process.exit(1);
+      }
+    }
+
+    // Build filter description for output
+    const filters: string[] = [];
+    if (types?.length) filters.push(`types=${types.join(',')}`);
+    if (author) filters.push(`author=${author}`);
+    const filterDesc = filters.length > 0 ? ` (${filters.join(', ')})` : '';
+
     if (issueKey) {
       // Verify specific issue
-      console.log(`\n🔍 Checking if ${issueKey} is resolved on ${branch}...\n`);
+      console.log(`\n🔍 Checking if ${issueKey} is resolved on ${targetBranch}...\n`);
 
-      const issues = await fetchOpenIssues({ token, projectKey, branch, types });
+      const issues = await fetchOpenIssues({ token, projectKey, branch: targetBranch, types, author });
       const targetIssue = issues.find((i) => i.key === issueKey);
 
       if (!targetIssue) {
         if (jsonOutput) {
-          console.log(JSON.stringify({ resolved: true, issueKey, branch }));
+          console.log(JSON.stringify({ resolved: true, issueKey, branch: targetBranch }));
         } else {
           console.log(`✅ Issue ${issueKey} is RESOLVED (not found in open issues)`);
         }
         process.exit(0);
       } else {
         if (jsonOutput) {
-          console.log(JSON.stringify({ resolved: false, issueKey, branch, issue: targetIssue }));
+          console.log(JSON.stringify({ resolved: false, issueKey, branch: targetBranch, issue: targetIssue }));
         } else {
           console.log(`❌ Issue ${issueKey} is still OPEN`);
           console.log(`   ${getFilePath(targetIssue.component, projectKey)}:${targetIssue.line || '?'}`);
@@ -372,9 +481,22 @@ Project Key Format:
       }
     } else {
       // List all open issues
-      console.log(`\n📋 Fetching issues for ${projectKey} on ${branch}...\n`);
+      if (!countOnly) {
+        console.log(`\n📋 Fetching issues for ${projectKey} on ${targetBranch}${filterDesc}...\n`);
+      }
 
-      const issues = await fetchOpenIssues({ token, projectKey, branch, types });
+      const issues = await fetchOpenIssues({ token, projectKey, branch: targetBranch, types, author });
+
+      // Count only mode - quick check
+      if (countOnly) {
+        if (jsonOutput) {
+          console.log(JSON.stringify({ count: issues.length, branch: targetBranch, filters }));
+        } else {
+          const emoji = issues.length === 0 ? '✅' : '⚠️';
+          console.log(`${emoji} ${issues.length} issues on ${targetBranch}${filterDesc}`);
+        }
+        process.exit(issues.length > 0 ? 1 : 0);
+      }
 
       if (jsonOutput) {
         console.log(JSON.stringify(issues, null, 2));
