@@ -307,3 +307,6 @@ alias open-pr-with-target='~/dotfiles/scripts/open-pr-with-target.sh'
 
 # Update all git repos in current directory
 alias update-repos='/Users/joshmu/dotfiles/scripts/update-repos.ts'
+
+# YouTube transcript extraction
+alias yt-transcript='~/dotfiles/scripts/yt-transcript.ts'
