@@ -11,6 +11,7 @@ alias trk='node ~/Google\ Drive/CCC/CCC\ HELPERS/morphCSV/trk.js'
 alias restartaudio='sudo killall coreaudiod'
 alias mongod='mongod --dbpath /System/Volumes/Data/data/db'
 alias mukill='pkill -a -i'
+alias rm='trash'
 #alias vim=nvim
 alias va='NVIM_APPNAME="nvim-astro" nvim'
 alias nv=nvim
