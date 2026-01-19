@@ -162,6 +162,20 @@ function isGitRepo(path: string): boolean {
   return existsSync(join(path, ".git"));
 }
 
+// Get the main repo path (resolves worktrees to their main repo)
+// Uses git rev-parse --git-common-dir which returns:
+// - Main repo: ".git" (relative)
+// - Worktree: "/path/to/main-repo/.git/worktrees/name" (absolute)
+async function getMainRepoPath(path: string): Promise<string | null> {
+  const { success, output } = await execQuiet("git rev-parse --git-common-dir", path);
+  if (!success || !output) return null;
+
+  // Resolve to absolute path, strip /worktrees/<name> suffix if present
+  const gitDir = resolve(path, output);
+  const mainGitDir = gitDir.replace(/\/worktrees\/[^/]+$/, "");
+  return dirname(mainGitDir);
+}
+
 // Main worktree creation function
 async function createWorktree(
   repoPath: string,
@@ -413,7 +427,7 @@ async function main(): Promise<void> {
       // Support both: gw create <purpose> and gw create <repo> <purpose>
       const hasRepoArg = args.length >= 3 && !args[1].startsWith("--");
       const purpose = hasRepoArg ? args[2] : args[1];
-      const repoPath = hasRepoArg && args[1] !== "." ? resolve(process.cwd(), args[1]) : process.cwd();
+      let repoPath = hasRepoArg && args[1] !== "." ? resolve(process.cwd(), args[1]) : process.cwd();
 
       // Parse options
       const options = {
@@ -431,6 +445,13 @@ async function main(): Promise<void> {
       if (!isGitRepo(repoPath)) {
         log.error(`Not a git repository: ${repoPath}`);
         process.exit(1);
+      }
+
+      // Resolve worktrees to main repo (prevents nested worktree creation)
+      const mainRepoPath = await getMainRepoPath(repoPath);
+      if (mainRepoPath && resolve(mainRepoPath) !== resolve(repoPath)) {
+        log.info(`Detected worktree, using main repo: ${mainRepoPath}`);
+        repoPath = mainRepoPath;
       }
 
       const repoName = basename(repoPath);
