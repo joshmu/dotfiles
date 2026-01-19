@@ -14,3 +14,23 @@
 body {
     --file-line-width:1000px;
 }
+
+/* charts plugin full width in PDF export - override plugin's hardcoded 500px */
+.print .block-language-chart {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+.print .block-language-chart canvas {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+@media print {
+    .block-language-chart {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    .block-language-chart canvas {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+}
