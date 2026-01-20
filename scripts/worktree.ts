@@ -425,7 +425,7 @@ async function main(): Promise<void> {
       }
 
       // Support both: gw create <purpose> and gw create <repo> <purpose>
-      const hasRepoArg = args.length >= 3 && !args[1].startsWith("--");
+      const hasRepoArg = args.length >= 3 && !args[1].startsWith("--") && !args[2].startsWith("--");
       const purpose = hasRepoArg ? args[2] : args[1];
       let repoPath = hasRepoArg && args[1] !== "." ? resolve(process.cwd(), args[1]) : process.cwd();
 
@@ -496,7 +496,7 @@ async function main(): Promise<void> {
       }
 
       // Support both: gw remove <purpose> and gw remove <repo> <purpose>
-      const hasRepoArg = args.length >= 3 && !args[1].startsWith("--");
+      const hasRepoArg = args.length >= 3 && !args[1].startsWith("--") && !args[2].startsWith("--");
       const purpose = hasRepoArg ? args[2] : args[1];
       const repoPath = hasRepoArg && args[1] !== "." ? resolve(process.cwd(), args[1]) : process.cwd();
 
