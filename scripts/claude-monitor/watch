@@ -1,0 +1,73 @@
+#!/bin/bash
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+printf '\e[?25l'
+stty -echo 2>/dev/null
+
+cleanup() {
+  printf '\e[?25h\e[J'
+  stty echo 2>/dev/null
+  rm -f /tmp/cm-watch-*.tmp 2>/dev/null
+  exit
+}
+trap cleanup INT TERM EXIT
+
+selected=0
+total=0
+last_fetch=0
+CACHE=/tmp/cm-watch-data.tmp
+DISPLAY_CACHE=/tmp/cm-watch-display.tmp
+
+fetch_data() {
+  "$DIR/render" > "$CACHE"
+  # Pre-extract display text (strip hidden pane field)
+  awk 'BEGIN{FS="\x1f"} {print $1}' "$CACHE" > "$DISPLAY_CACHE"
+  total=$(( $(wc -l < "$CACHE") - 2 ))
+  last_fetch=$(date +%s)
+}
+
+display() {
+  ((selected < 0)) && selected=0
+  ((selected >= total && total > 0)) && selected=$((total - 1))
+  ((total <= 0)) && selected=0
+
+  printf '\e[H'
+  local line_num=0
+  local highlight_line=$((selected + 2))
+  while IFS= read -r line; do
+    if ((line_num == highlight_line && total > 0)); then
+      printf '\e[7m%s\e[0m\n' "$line"
+    else
+      printf '%s\n' "$line"
+    fi
+    ((line_num++))
+  done < "$DISPLAY_CACHE"
+  printf '\e[J'
+}
+
+fetch_data
+display
+
+while true; do
+  now=$(date +%s)
+  if ((now - last_fetch >= 2)); then
+    fetch_data
+    display
+  fi
+
+  key=""
+  read -rsn1 -t1 key || true
+  [[ -z "$key" ]] && continue
+
+  case "$key" in
+    j) ((selected++)); display ;;
+    k) ((selected--)); display ;;
+    o|$'\n')
+      if [[ -f "$CACHE" ]]; then
+        pane=$(sed -n "$((selected + 3))p" "$CACHE" | awk 'BEGIN{FS="\x1f"} {print $2}')
+        [[ -n "$pane" && "$pane" != "" ]] && tmux switch-client -t "$pane" 2>/dev/null && cleanup
+      fi
+      ;;
+    q) break ;;
+  esac
+done

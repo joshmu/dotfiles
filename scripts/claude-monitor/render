@@ -1,0 +1,111 @@
+#!/bin/bash
+REGISTRY="$HOME/.claude/claude-monitor-sessions.json"
+PROJECTS_DIR="$HOME/.claude/projects"
+THRESHOLD_MINS=30
+
+printf "\033[1;36m  %-12s %-12s %-18s %-12s %s\033[0m\n" \
+  "SESSION" "TMUX" "PROJECT" "EVENT" "UPDATED"
+echo "──────────────────────────────────────────────────────────────────"
+
+# Load registry - source of truth for sessions
+registry=$(cat "$REGISTRY" 2>/dev/null || echo "{}")
+
+# Build transcript paths from registry, prune stale entries
+echo "$registry" | jq -r 'to_entries[] | "\(.key)\t\(.value.cwd // "")"' 2>/dev/null | while IFS=$'\t' read -r sid cwd; do
+  [[ -z "$cwd" ]] && continue
+  project_encoded=$(echo "$cwd" | tr '/.' '-')
+  transcript="$PROJECTS_DIR/$project_encoded/${sid}.jsonl"
+  if [[ -f "$transcript" ]]; then
+    echo "$transcript"
+  else
+    # Mark for cleanup
+    echo "$sid" >> /tmp/claude-monitor-stale-$$
+  fi
+done | xargs ls -t 2>/dev/null | while read transcript; do
+  [[ ! -f "$transcript" ]] && continue
+  session_id=$(basename "$transcript" .jsonl)
+  project_dir=$(dirname "$transcript")
+
+  # Get session data from registry (already loaded)
+  session_data=$(echo "$registry" | jq -c --arg sid "$session_id" '.[$sid]')
+
+  # Get project name from registry cwd
+  project_cwd=$(echo "$session_data" | jq -r '.cwd // empty')
+  [[ -n "$project_cwd" ]] && project=$(basename "$project_cwd") || project=$(basename "$project_dir" | sed 's/-Users-joshmu-//')
+
+  last_line=$(tail -1 "$transcript" 2>/dev/null)
+  event_type=$(echo "$last_line" | jq -r '.type // "?"' 2>/dev/null)
+
+  # Self-healing: if session ended (summary), mark for cleanup
+  if [[ "$event_type" == "summary" ]]; then
+    echo "$session_id" >> /tmp/claude-monitor-stale-$$
+    continue
+  fi
+
+  # All registry sessions are open
+  status_indicator="●"
+
+  # Get tmux info from registry
+  tmux_session=$(echo "$session_data" | jq -r '.tmux_session // "-"')
+  tmux_window=$(echo "$session_data" | jq -r '.tmux_window // empty')
+  tmux_pane=$(echo "$session_data" | jq -r '.tmux_pane // empty')
+  tmux_pane_index=$(echo "$session_data" | jq -r '.tmux_pane_index // empty')
+
+  tmux_info="-"
+  if [[ "$tmux_session" != "-" && "$tmux_session" != "null" ]]; then
+    if [[ -n "$tmux_pane_index" && "$tmux_pane_index" != "0" ]]; then
+      tmux_info="${tmux_session}:${tmux_window}.${tmux_pane_index}"
+    else
+      tmux_info="${tmux_session}:${tmux_window}"
+    fi
+  fi
+
+  # Calculate time since update
+  file_mtime=$(stat -f %m "$transcript" 2>/dev/null)
+  now_epoch=$(date "+%s")
+  diff=$((now_epoch - file_mtime))
+
+  ((diff < 60)) && updated="${diff}s" || { ((diff < 3600)) && updated="$((diff/60))m" || updated="$((diff/3600))h"; }
+
+  # Color based on recency
+  ((diff < 60)) && color="\033[32m" || { ((diff < 300)) && color="\033[33m" || color="\033[37m"; }
+
+  # Output with tmux_pane as hidden field for fzf (unit separator delimiter)
+  # Truncate all values to their column widths to prevent overflow
+  printf "${color}%s  %-11s %-12s %-18s %-12s %s\033[0m"$'\x1f'"%s\n" \
+    "$status_indicator" "${session_id:0:9}.." "${tmux_info:0:12}" "${project:0:18}" "${event_type:0:12}" "$updated" "$tmux_pane"
+
+  # Find subagents for this session
+  subagent_dir="$project_dir/$session_id/subagents"
+  if [[ -d "$subagent_dir" ]]; then
+    find "$subagent_dir" -name "agent-*.jsonl" -mmin -$THRESHOLD_MINS 2>/dev/null | while read subagent; do
+      agent_id=$(basename "$subagent" .jsonl | sed 's/agent-//')
+      sub_last=$(tail -1 "$subagent" 2>/dev/null)
+      sub_event=$(echo "$sub_last" | jq -r '.type // "?"' 2>/dev/null)
+
+      # Skip completed subagents (result = finished)
+      [[ "$sub_event" == "result" ]] && continue
+
+      sub_slug=$(echo "$sub_last" | jq -r '.slug // empty' 2>/dev/null)
+
+      sub_mtime=$(stat -f %m "$subagent" 2>/dev/null)
+      sub_diff=$((now_epoch - sub_mtime))
+      ((sub_diff < 60)) && sub_updated="${sub_diff}s" || { ((sub_diff < 3600)) && sub_updated="$((sub_diff/60))m" || sub_updated="$((sub_diff/3600))h"; }
+
+      ((sub_diff < 60)) && sub_color="\033[32m" || { ((sub_diff < 300)) && sub_color="\033[33m" || sub_color="\033[37m"; }
+
+      # Subagent row (indented, inherits parent tmux)
+      printf "${sub_color}  └─%-10s %-12s %-18s %-12s %s\033[0m"$'\x1f'"%s\n" \
+        "${agent_id:0:8}.." "${tmux_info:0:12}" "${sub_slug:0:18}" "${sub_event:0:12}" "$sub_updated" "$tmux_pane"
+    done
+  fi
+done
+
+# Cleanup stale registry entries (lazy pruning)
+stale_file="/tmp/claude-monitor-stale-$$"
+if [[ -f "$stale_file" ]]; then
+  while read -r sid; do
+    jq --arg sid "$sid" 'del(.[$sid])' "$REGISTRY" > "${REGISTRY}.tmp" && mv "${REGISTRY}.tmp" "$REGISTRY"
+  done < "$stale_file"
+  rm -f "$stale_file"
+fi

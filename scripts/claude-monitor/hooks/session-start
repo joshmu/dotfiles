@@ -1,0 +1,37 @@
+#!/bin/bash
+# Reads JSON from stdin, adds session to registry
+set -e
+
+REGISTRY="$HOME/.claude/claude-monitor-sessions.json"
+
+input=$(cat)
+session_id=$(echo "$input" | jq -r '.session_id // empty')
+cwd=$(echo "$input" | jq -r '.cwd // empty')
+
+[[ -z "$session_id" ]] && exit 0
+
+# Get tmux context if available
+tmux_session=""
+tmux_window=""
+tmux_pane_index=""
+if [[ -n "$TMUX" ]]; then
+  tmux_session=$(tmux display-message -p '#{session_name}' 2>/dev/null || true)
+  tmux_window=$(tmux display-message -p '#{window_index}' 2>/dev/null || true)
+  tmux_pane_index=$(tmux display-message -p '#{pane_index}' 2>/dev/null || true)
+fi
+
+# Read existing registry or create empty
+[[ -f "$REGISTRY" ]] && registry=$(cat "$REGISTRY") || registry="{}"
+
+# Add/update session entry
+registry=$(echo "$registry" | jq \
+  --arg sid "$session_id" \
+  --arg ts "$tmux_session" \
+  --arg tw "$tmux_window" \
+  --arg tp "${TMUX_PANE:-}" \
+  --arg tpi "$tmux_pane_index" \
+  --arg cwd "$cwd" \
+  --arg started "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  '.[$sid] = {tmux_session: $ts, tmux_window: $tw, tmux_pane: $tp, tmux_pane_index: $tpi, cwd: $cwd, started: $started}')
+
+echo "$registry" > "$REGISTRY"

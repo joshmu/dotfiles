@@ -1,0 +1,12 @@
+#!/bin/bash
+# Reads JSON from stdin, removes session from registry
+set -e
+
+REGISTRY="$HOME/.claude/claude-monitor-sessions.json"
+
+input=$(cat)
+session_id=$(echo "$input" | jq -r '.session_id // empty')
+
+[[ -z "$session_id" || ! -f "$REGISTRY" ]] && exit 0
+
+jq "del(.[\"$session_id\"])" "$REGISTRY" > "$REGISTRY.tmp" && mv "$REGISTRY.tmp" "$REGISTRY"

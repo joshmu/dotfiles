@@ -1,0 +1,36 @@
+#!/bin/bash
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Handle --watch flag for passive mode
+if [[ "$1" == "--watch" || "$1" == "-w" ]]; then
+  exec "$DIR/watch"
+fi
+
+# Interactive mode with fzf
+# j/k to navigate, Enter/o to jump to tmux pane, q to quit, r to refresh
+while true; do
+  selection=$("$DIR/render" | fzf --ansi --no-sort --header-lines=2 \
+    --layout=reverse \
+    --delimiter=$'\x1f' --with-nth=1 \
+    --bind 'j:down,k:up,o:accept,q:abort' \
+    --bind 'r:reload('"$DIR/render"')' \
+    --prompt='claude-monitor> ' \
+    --preview-window=hidden \
+    --expect=o,enter,q)
+
+  key=$(echo "$selection" | head -1)
+  line=$(echo "$selection" | tail -1)
+
+  [[ "$key" == "q" || -z "$line" ]] && break
+
+  # Extract tmux pane from hidden field (unit separator)
+  tmux_pane=$(echo "$line" | awk 'BEGIN{FS="\x1f"} {print $NF}')
+
+  if [[ -n "$tmux_pane" && "$tmux_pane" != "-" ]]; then
+    tmux switch-client -t "$tmux_pane" 2>/dev/null || echo "Could not switch to pane: $tmux_pane"
+    break
+  else
+    echo "No tmux pane registered for this session"
+    sleep 1
+  fi
+done
