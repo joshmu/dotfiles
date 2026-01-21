@@ -3,9 +3,9 @@ REGISTRY="$HOME/.claude/claude-monitor-sessions.json"
 PROJECTS_DIR="$HOME/.claude/projects"
 THRESHOLD_MINS=30
 
-printf "\033[1;36m  %-12s %-12s %-18s %-12s %s\033[0m\n" \
+printf "\033[1;36m  %-12s %-12s %-18s %-24s %s\033[0m\n" \
   "SESSION" "TMUX" "PROJECT" "EVENT" "UPDATED"
-echo "──────────────────────────────────────────────────────────────────"
+echo "──────────────────────────────────────────────────────────────────────────────────"
 
 # Load registry - source of truth for sessions
 registry=$(cat "$REGISTRY" 2>/dev/null || echo "{}")
@@ -35,6 +35,22 @@ done | xargs ls -t 2>/dev/null | while read transcript; do
 
   last_line=$(tail -1 "$transcript" 2>/dev/null)
   event_type=$(echo "$last_line" | jq -r '.type // "?"' 2>/dev/null)
+
+  # Extract content type for richer state display (last item = most recent activity)
+  if [[ "$event_type" == "assistant" || "$event_type" == "user" ]]; then
+    content_info=$(echo "$last_line" | jq -r '
+      .message.content[-1]? | if .type == "tool_use" then "tool_use:\(.name)" else .type end
+    ' 2>/dev/null)
+
+    if [[ -n "$content_info" && "$content_info" != "text" ]]; then
+      if [[ "$content_info" == tool_use:* ]]; then
+        tool_name="${content_info#tool_use:}"
+        event_type="${event_type}:${tool_name:0:8}"
+      else
+        event_type="${event_type}:${content_info}"
+      fi
+    fi
+  fi
 
   # Self-healing: if session ended (summary), mark for cleanup
   if [[ "$event_type" == "summary" ]]; then
@@ -72,8 +88,8 @@ done | xargs ls -t 2>/dev/null | while read transcript; do
 
   # Output with tmux_pane as hidden field for fzf (unit separator delimiter)
   # Truncate all values to their column widths to prevent overflow
-  printf "${color}%s  %-11s %-12s %-18s %-12s %s\033[0m"$'\x1f'"%s\n" \
-    "$status_indicator" "${session_id:0:9}.." "${tmux_info:0:12}" "${project:0:18}" "${event_type:0:12}" "$updated" "$tmux_pane"
+  printf "${color}%s  %-11s %-12s %-18s %-24s %s\033[0m"$'\x1f'"%s\n" \
+    "$status_indicator" "${session_id:0:9}.." "${tmux_info:0:12}" "${project:0:18}" "${event_type:0:24}" "$updated" "$tmux_pane"
 
   # Find subagents for this session
   subagent_dir="$project_dir/$session_id/subagents"
@@ -86,6 +102,22 @@ done | xargs ls -t 2>/dev/null | while read transcript; do
       # Skip completed subagents (result = finished)
       [[ "$sub_event" == "result" ]] && continue
 
+      # Extract content type for richer state display (last item = most recent activity)
+      if [[ "$sub_event" == "assistant" || "$sub_event" == "user" ]]; then
+        sub_content_info=$(echo "$sub_last" | jq -r '
+          .message.content[-1]? | if .type == "tool_use" then "tool_use:\(.name)" else .type end
+        ' 2>/dev/null)
+
+        if [[ -n "$sub_content_info" && "$sub_content_info" != "text" ]]; then
+          if [[ "$sub_content_info" == tool_use:* ]]; then
+            sub_tool_name="${sub_content_info#tool_use:}"
+            sub_event="${sub_event}:${sub_tool_name:0:8}"
+          else
+            sub_event="${sub_event}:${sub_content_info}"
+          fi
+        fi
+      fi
+
       sub_slug=$(echo "$sub_last" | jq -r '.slug // empty' 2>/dev/null)
 
       sub_mtime=$(stat -f %m "$subagent" 2>/dev/null)
@@ -95,8 +127,8 @@ done | xargs ls -t 2>/dev/null | while read transcript; do
       ((sub_diff < 60)) && sub_color="\033[32m" || { ((sub_diff < 300)) && sub_color="\033[33m" || sub_color="\033[37m"; }
 
       # Subagent row (indented, inherits parent tmux)
-      printf "${sub_color}  └─%-10s %-12s %-18s %-12s %s\033[0m"$'\x1f'"%s\n" \
-        "${agent_id:0:8}.." "${tmux_info:0:12}" "${sub_slug:0:18}" "${sub_event:0:12}" "$sub_updated" "$tmux_pane"
+      printf "${sub_color}  └─%-10s %-12s %-18s %-24s %s\033[0m"$'\x1f'"%s\n" \
+        "${agent_id:0:8}.." "${tmux_info:0:12}" "${sub_slug:0:18}" "${sub_event:0:24}" "$sub_updated" "$tmux_pane"
     done
   fi
 done
