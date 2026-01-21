@@ -30,8 +30,23 @@ cm -w
 - Subagents nested under parent sessions
 - tmux session:window location
 - Project name (or subagent slug)
-- Last event type
+- Last event with content type indicator
 - Time since last activity
+
+## Event Indicators
+
+The EVENT column shows the last event type with content details:
+
+| Event | Meaning |
+|-------|---------|
+| `assistant` | Claude responded with text |
+| `assistant:thinking` | Claude is thinking |
+| `assistant:Bash` | Claude using Bash tool |
+| `assistant:Read` | Claude reading files |
+| `user` | User sent a message |
+| `user:tool_result` | Tool results returned to Claude |
+| `progress` | Hook executing |
+| `system` | Local command |
 
 ## How it works
 
