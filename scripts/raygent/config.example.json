@@ -1,0 +1,17 @@
+{
+  "default": "work",
+  "workspaces": {
+    "work": {
+      "path": "/path/to/work/projects",
+      "keywords": ["work", "project", "client"]
+    },
+    "personal": {
+      "path": "/path/to/personal",
+      "keywords": ["personal", "config", "dotfiles", "scripts"]
+    },
+    "side-project": {
+      "path": "/path/to/side-project",
+      "keywords": ["side project", "hobby", "experiment"]
+    }
+  }
+}
