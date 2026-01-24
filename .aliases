@@ -97,6 +97,21 @@ alias ralph='~/.claude/scripts/ralph/ralph.sh'
 alias claude-monitor='~/dotfiles/scripts/claude-monitor/monitor'
 alias cm='~/dotfiles/scripts/claude-monitor/monitor'
 alias gemini="npx https://github.com/google-gemini/gemini-cli"
+
+# AI Image Generation
+function gen-img() {
+  if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+    echo "Usage: gen-img <prompt>"
+    echo "       gen-img \"a cat wearing a hat\""
+    echo "       gen-img a cat wearing a hat"
+    echo ""
+    echo "Generates an AI image using Replicate (Google Imagen 4)"
+    echo "Image saved to ~/Downloads with descriptive filename"
+    return 0
+  fi
+  ~/dotfiles/scripts/rayimg/gen-img.ts "$*"
+}
+function ai-img() { gen-img "$@"; }
 alias kimi="ccr code"
 alias agents='npx tsx ~/Desktop/code/agents/cli/index.ts'
 function ai-local() {
