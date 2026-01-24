@@ -94,6 +94,7 @@ alias cld=claude
 alias cldc=claude --continue
 alias cldy=claude  --dangerously-skip-permissions
 alias ralph='~/.claude/scripts/ralph/ralph.sh'
+alias ralph-prd='~/.claude/scripts/ralph-prd/ralph-prd.sh'
 alias claude-monitor='~/dotfiles/scripts/claude-monitor/monitor'
 alias cm='~/dotfiles/scripts/claude-monitor/monitor'
 alias gemini="npx https://github.com/google-gemini/gemini-cli"
