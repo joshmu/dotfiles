@@ -17,4 +17,6 @@
 export PATH="$HOME/.local/bin:$PATH"
 
 # Run in background, detached (log to file for debugging)
-nohup ~/dotfiles/scripts/raygent/raygent.ts "$1" >> /tmp/raygent.log 2>&1 &
+# Store prompt in variable to prevent shell interpretation of special chars (& etc)
+prompt="$1"
+nohup ~/dotfiles/scripts/raygent/raygent.ts "$prompt" >> /tmp/raygent.log 2>&1 &
