@@ -34,3 +34,28 @@ body {
         max-width: 100% !important;
     }
 }
+
+/* Wide iframes - Reading view */
+.markdown-preview-view iframe.wide {
+  width: 80vw;
+  max-width: calc(100vw - 2rem);
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 0;
+}
+
+/* Wide iframes - Live Preview / Source view (target the .cm-html-embed wrapper) */
+.cm-html-embed:has(iframe.wide) {
+  display: inline-block;
+  width: 80vw;
+  max-width: calc(100vw - 2rem);
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.cm-html-embed iframe.wide {
+  width: 100%;
+  border: 0;
+}
