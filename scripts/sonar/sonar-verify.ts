@@ -286,7 +286,7 @@ export async function verifyIssueResolved(options: {
   };
 }
 
-export { fetchOpenIssues, diffIssues, waitForAnalysis, getFilePath, fingerprint };
+export { fetchOpenIssues, diffIssues, waitForAnalysis, getFilePath, fingerprint, getLongLivedBranches };
 export type { SonarIssue, IssueDiff };
 
 // CLI
@@ -543,4 +543,7 @@ Project Key Format:
   }
 }
 
-main();
+// Only run if this is the main module (not when imported)
+if (import.meta.main) {
+  main();
+}

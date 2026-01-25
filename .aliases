@@ -189,6 +189,7 @@ alias aws-unset='unset AWS_PROFILE AWS_DEFAULT_REGION AWS_ACCESS_KEY_ID AWS_SECR
 # ----------------------
 alias sonar-verify='~/dotfiles/scripts/sonar/sonar-verify.ts'
 alias sonar-scan='~/dotfiles/scripts/sonar/sonar-scan.ts'
+alias sonar-compare='~/dotfiles/scripts/sonar/sonar-compare.ts'
 
 # ----------------------
 # DEV
