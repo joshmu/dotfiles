@@ -213,9 +213,21 @@ async function createWorktree(
     const { success } = await exec(`git worktree add ${worktreePath} ${branchName}`, repoPath);
     if (!success) return null;
   } else {
-    // Get the default branch (usually master or main)
-    const { output: defaultBranch } = await execQuiet(`git symbolic-ref refs/remotes/origin/HEAD`, repoPath);
-    const branch = defaultBranch?.replace("refs/remotes/origin/", "") || "main";
+    // Get the most recent base branch (main or master)
+    const { output: refs } = await execQuiet(`git branch -r`, repoPath);
+    const hasMain = refs.includes("origin/main");
+    const hasMaster = refs.includes("origin/master");
+
+    let branch = "main"; // default
+    if (hasMain && hasMaster) {
+      // Both exist - compare commit timestamps
+      const { output: mainTime } = await execQuiet(`git log -1 --format=%ct origin/main`, repoPath);
+      const { output: masterTime } = await execQuiet(`git log -1 --format=%ct origin/master`, repoPath);
+      branch = parseInt(mainTime || "0") >= parseInt(masterTime || "0") ? "main" : "master";
+      log.info(`Both main and master exist, using ${branch} (more recent)`);
+    } else if (hasMaster) {
+      branch = "master";
+    }
     const baseBranch = `origin/${branch}`;
 
     log.step(`Creating worktree with new branch: ${branchName} from ${baseBranch}`);
@@ -335,7 +347,7 @@ async function listWorktrees(): Promise<void> {
 }
 
 // Remove worktree
-async function removeWorktree(repoPath: string, repoName: string, purpose: string): Promise<boolean> {
+async function removeWorktree(repoPath: string, repoName: string, purpose: string, force: boolean = false): Promise<boolean> {
   const worktreesBaseDir = getWorktreesBaseDir(repoPath);
   const worktreePath = join(worktreesBaseDir, repoName, purpose);
 
@@ -345,7 +357,8 @@ async function removeWorktree(repoPath: string, repoName: string, purpose: strin
   }
 
   log.step(`Removing worktree: ${worktreePath}`);
-  const { success } = await exec(`git worktree remove ${worktreePath}`, repoPath);
+  const forceFlag = force ? " --force" : "";
+  const { success } = await exec(`git worktree remove${forceFlag} ${worktreePath}`, repoPath);
 
   if (success) {
     log.success("Worktree removed successfully");
@@ -382,6 +395,9 @@ ${colors.cyan}Sync Options:${colors.reset}
   --overwrite          Overwrite existing files
   --strict             Fail if patterns match nothing
   --json               Machine-readable output
+
+${colors.cyan}Remove Options:${colors.reset}
+  --force, -f          Force removal even with modified/untracked files
 
 ${colors.cyan}Examples:${colors.reset}
   gw create dark-mode
@@ -489,16 +505,20 @@ async function main(): Promise<void> {
     }
 
     case "remove": {
-      if (args.length < 2) {
+      // Parse --force/-f flag
+      const force = args.includes("--force") || args.includes("-f");
+      const filteredArgs = args.filter((a) => a !== "--force" && a !== "-f");
+
+      if (filteredArgs.length < 2) {
         log.error("Missing required argument: <purpose>");
         showHelp();
         process.exit(1);
       }
 
       // Support both: gw remove <purpose> and gw remove <repo> <purpose>
-      const hasRepoArg = args.length >= 3 && !args[1].startsWith("--") && !args[2].startsWith("--");
-      const purpose = hasRepoArg ? args[2] : args[1];
-      const repoPath = hasRepoArg && args[1] !== "." ? resolve(process.cwd(), args[1]) : process.cwd();
+      const hasRepoArg = filteredArgs.length >= 3 && !filteredArgs[1].startsWith("--") && !filteredArgs[2].startsWith("--");
+      const purpose = hasRepoArg ? filteredArgs[2] : filteredArgs[1];
+      const repoPath = hasRepoArg && filteredArgs[1] !== "." ? resolve(process.cwd(), filteredArgs[1]) : process.cwd();
 
       if (!existsSync(repoPath)) {
         log.error(`Repository not found: ${repoPath}`);
@@ -506,7 +526,7 @@ async function main(): Promise<void> {
       }
 
       const repoName = basename(repoPath);
-      const removed = await removeWorktree(repoPath, repoName, purpose);
+      const removed = await removeWorktree(repoPath, repoName, purpose, force);
       if (!removed) process.exit(1);
       break;
     }
