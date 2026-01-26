@@ -330,3 +330,6 @@ alias update-repos='/Users/joshmu/dotfiles/scripts/update-repos.ts'
 
 # YouTube transcript extraction
 alias yt-transcript='~/dotfiles/scripts/yt-transcript.ts'
+
+# AI Harness
+alias wp="~/.claude/poc/worker-planner/wp.ts"
