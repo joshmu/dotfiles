@@ -48,7 +48,6 @@ All scripts in `scripts/` are TypeScript files using Bun runtime with shebang `#
 - `yt-transcript.ts` - YouTube transcript extraction
 - `open-pr-with-target.sh` - PR creation with custom target branch
 - `check-merge-conflicts.sh` - Pre-PR merge conflict checker
-- `ai-generate-commit-msg.sh` - AI-powered commit message generation
 - `notify-me` - System notification utility (used with `pbcopy` for clipboard)
 
 ## Architecture & Patterns
@@ -70,7 +69,7 @@ The repository uses **dotbot** (git submodule at `./dotbot/`) with configuration
 ### Lazygit Customization
 Custom keybindings in `lazygit-config.yml`:
 - `W` - Commit with `--no-verify` flag
-- `Ctrl+A` - Pick AI-generated commit message
+- `C` - Generate commit message with Claude Code (pipes staged diff to claude CLI)
 - `O` - Open PR with custom target branch (uses selected branch, not checked out branch)
 
 ### Git Workflow Tools
@@ -127,7 +126,7 @@ notify "message text"  # function defined in .aliases
 
 ### AI Integrations
 - Claude Code CLI: `claude`, `claude --continue`, `claude-trace`
-- AI commit messages: `Ctrl+A` in lazygit or `~/scripts/ai-generate-commit-msg.sh`
+- AI commit messages: `C` in lazygit (uses Claude Code CLI with haiku model)
 - Ollama integration: `aio`/`ai-start` to launch local LLM with web UI
 
 ## Important Notes
