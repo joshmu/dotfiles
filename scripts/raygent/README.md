@@ -11,14 +11,16 @@ flowchart LR
     end
 
     subgraph Raygent
-        R --> RA[Router Agent]
+        R --> EM{Exact Match?}
+        EM -->|Yes| SC[Session Config]
+        EM -->|No| RA[Router Agent]
         RA -->|Claude Haiku| AI{AI Router}
-        AI -->|JSON Schema| SC[Session Config]
+        AI -->|JSON Schema| SC
         SC --> TM[tmux Manager]
     end
 
     subgraph Output
-        TM -->|create session| TMUX[(tmux)]
+        TM -->|create/reuse session| TMUX[(tmux)]
         TM -->|send keys| CC[Claude Code]
     end
 ```
@@ -26,10 +28,11 @@ flowchart LR
 ## Flow
 
 1. **Raycast** triggers with user prompt
-2. **Router Agent** calls Claude Haiku with `--json-schema` for structured output
-3. **AI** determines session name + workspace from `config.json` keywords
-4. **tmux** creates detached session in workspace directory
-5. **Claude Code** launches with original prompt (headless)
+2. **Exact Match** checks `exactKeywords` for deterministic routing (skips AI)
+3. **Router Agent** (fallback) calls Claude Haiku with `--json-schema` for structured output
+4. **AI** determines session name + workspace from `config.json` keywords
+5. **tmux** creates session or adds pane to existing session (if `tmuxSession` set)
+6. **Claude Code** launches with original prompt (headless)
 
 ## Setup
 
@@ -57,10 +60,25 @@ cp config.example.json config.json
     "personal": {
       "path": "/path/to/personal",
       "keywords": ["personal", "dotfiles"]
+    },
+    "review": {
+      "path": "/path/to/work",
+      "keywords": ["review", "pr"],
+      "exactKeywords": ["review-pr", "pr-review"],
+      "tmuxSession": "review"
     }
   }
 }
 ```
+
+### Workspace Options
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `path` | string | Working directory for the session |
+| `keywords` | string[] | Keywords for AI router matching |
+| `exactKeywords` | string[] | Deterministic matching (bypasses AI router) |
+| `tmuxSession` | string | Fixed session name; reuses session with new panes |
 
 ## Usage
 

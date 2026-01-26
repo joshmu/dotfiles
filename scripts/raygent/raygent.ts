@@ -8,8 +8,8 @@
  * 3. Send claude command with prompt
  */
 
-import { generateSessionConfig } from './lib/router-agent';
-import { createSession, sendKeys, generateUniqueName } from './lib/tmux';
+import { generateSessionConfig, loadConfig, findExactMatch, type SessionConfig } from './lib/router-agent';
+import { createSession, sendKeys, generateUniqueName, hasSession, createPane } from './lib/tmux';
 
 async function main() {
   const prompt = process.argv[2];
@@ -20,20 +20,44 @@ async function main() {
   }
 
   try {
-    // 1. Generate name + cwd via Sonnet
-    const config = await generateSessionConfig(prompt);
+    // Check for exact keyword match first (skip router)
+    const cfg = await loadConfig();
+    const exactMatch = findExactMatch(prompt, cfg);
 
-    // 2. Ensure unique session name
-    const sessionName = generateUniqueName(config.name);
+    let sessionConfig: SessionConfig;
+    if (exactMatch) {
+      sessionConfig = {
+        name: exactMatch.workspace,
+        cwd: exactMatch.config.path,
+        tmuxSession: exactMatch.config.tmuxSession,
+      };
+    } else {
+      sessionConfig = await generateSessionConfig(prompt);
+    }
 
-    // 3. Create tmux session in correct directory
-    createSession(sessionName, config.cwd);
-
-    // 4. Send claude command - escape quotes in prompt
     const escapedPrompt = prompt.replace(/"/g, '\\"');
-    sendKeys(sessionName, `claude "${escapedPrompt}"`);
 
-    console.log(`Started: ${sessionName} @ ${config.cwd}`);
+    let target: string;
+
+    if (sessionConfig.tmuxSession) {
+      // Fixed session mode
+      if (hasSession(sessionConfig.tmuxSession)) {
+        target = createPane(sessionConfig.tmuxSession, sessionConfig.cwd);
+        console.log(`Added pane to: ${sessionConfig.tmuxSession} @ ${sessionConfig.cwd}`);
+      } else {
+        createSession(sessionConfig.tmuxSession, sessionConfig.cwd);
+        target = sessionConfig.tmuxSession;
+        console.log(`Started: ${sessionConfig.tmuxSession} @ ${sessionConfig.cwd}`);
+      }
+    } else {
+      // Default mode: unique session names
+      const sessionName = generateUniqueName(sessionConfig.name);
+      createSession(sessionName, sessionConfig.cwd);
+      target = sessionName;
+      console.log(`Started: ${sessionName} @ ${sessionConfig.cwd}`);
+    }
+
+    sendKeys(target, `claude "${escapedPrompt}"`);
   } catch (error) {
     console.error('Error:', error instanceof Error ? error.message : error);
     process.exit(1);

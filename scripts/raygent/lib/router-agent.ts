@@ -3,27 +3,40 @@ import { join, dirname } from 'path';
 const TIMEOUT_MS = 60000;
 const CONFIG_PATH = join(dirname(import.meta.dir), 'config.json');
 
-interface WorkspaceConfig {
+export interface WorkspaceConfig {
   path: string;
   keywords: string[];
+  exactKeywords?: string[];
+  tmuxSession?: string;
 }
 
-interface Config {
+export interface Config {
   default: string;
   workspaces: Record<string, WorkspaceConfig>;
 }
 
-interface SessionConfig {
+export interface SessionConfig {
   name: string;
   cwd: string;
+  tmuxSession?: string;
 }
 
-async function loadConfig(): Promise<Config> {
+export async function loadConfig(): Promise<Config> {
   try {
     return JSON.parse(await Bun.file(CONFIG_PATH).text());
   } catch {
     throw new Error(`Failed to load config from ${CONFIG_PATH}. Copy config.example.json to config.json`);
   }
+}
+
+export function findExactMatch(prompt: string, config: Config): { workspace: string; config: WorkspaceConfig } | null {
+  const lowerPrompt = prompt.toLowerCase();
+  for (const [name, ws] of Object.entries(config.workspaces)) {
+    if (ws.exactKeywords?.some(kw => lowerPrompt.includes(kw.toLowerCase()))) {
+      return { workspace: name, config: ws };
+    }
+  }
+  return null;
 }
 
 function sanitizeName(name: string): string {
@@ -83,22 +96,24 @@ export async function generateSessionConfig(prompt: string): Promise<SessionConf
 
     if (await proc.exited !== 0) {
       console.error(`[router] Claude exited with non-zero code`);
-      return { name: fallbackName(), cwd: defaultCwd };
+      return { name: fallbackName(), cwd: defaultCwd, tmuxSession: undefined };
     }
 
     const parsed = JSON.parse(output).structured_output;
     if (!parsed) {
       console.error(`[router] No structured_output in response`);
-      return { name: fallbackName(), cwd: defaultCwd };
+      return { name: fallbackName(), cwd: defaultCwd, tmuxSession: undefined };
     }
 
+    const matchedWorkspace = config.workspaces[parsed.workspace];
     return {
       name: sanitizeName(parsed.name || '') || fallbackName(),
-      cwd: config.workspaces[parsed.workspace]?.path || defaultCwd,
+      cwd: matchedWorkspace?.path || defaultCwd,
+      tmuxSession: matchedWorkspace?.tmuxSession,
     };
   } catch (err) {
     console.error(`[router] Error:`, err);
-    return { name: fallbackName(), cwd: defaultCwd };
+    return { name: fallbackName(), cwd: defaultCwd, tmuxSession: undefined };
   }
 }
 

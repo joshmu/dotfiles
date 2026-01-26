@@ -12,6 +12,12 @@
     "side-project": {
       "path": "/path/to/side-project",
       "keywords": ["side project", "hobby", "experiment"]
+    },
+    "review-tasks": {
+      "path": "/path/to/work/projects",
+      "keywords": ["review", "pr", "code review"],
+      "exactKeywords": ["review-pr", "pr-review"],
+      "tmuxSession": "review-tasks"
     }
   }
 }
