@@ -60,7 +60,7 @@ combined=$(printf "%s\n%s" "$sessions" "$zoxide_dirs" | grep -v '^$')
 
 # fzf with expect for ctrl-k
 result=$(echo -e "$combined" | fzf --ansi --reverse --disabled \
-    --header "(╯°□°)╯︵ ┻━┻" \
+    --header "(╯°□°)╯︵ ┻━┻" --header-first \
     --bind 'j:down,k:up' \
     --bind '/:enable-search' \
     --bind 'ctrl-o:accept' \
