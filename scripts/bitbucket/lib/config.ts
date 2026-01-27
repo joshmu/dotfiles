@@ -57,7 +57,7 @@ export function loadConfig(): BitbucketConfig {
     console.error('  {');
     console.error('    "username": "your-username",');
     console.error('    "appPassword": "your-app-password",');
-    console.error('    "workspace": "brevilledigital",');
+    console.error('    "workspace": "your-workspace",');
     console.error('    "defaultBaseBranch": "master"');
     console.error('  }');
     console.error('');
@@ -68,7 +68,7 @@ export function loadConfig(): BitbucketConfig {
   return {
     username: config.username,
     appPassword: config.appPassword,
-    workspace: config.workspace || 'brevilledigital',
+    workspace: config.workspace || 'your-workspace',
     defaultBaseBranch: config.defaultBaseBranch || 'master',
   };
 }

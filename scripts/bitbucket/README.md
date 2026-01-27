@@ -204,7 +204,7 @@ Create a `config.json` file in this directory:
 {
   "username": "your-username",
   "appPassword": "your-app-password",
-  "workspace": "brevilledigital",
+  "workspace": "your-workspace",
   "defaultBaseBranch": "master"
 }
 ```

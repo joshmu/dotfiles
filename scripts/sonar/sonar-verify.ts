@@ -19,8 +19,8 @@
  *   SONAR_TOKEN=xxx sonar-verify <projectKey> <branch> --verify <issueKey>
  *
  * Examples:
- *   sonar-verify brevilledigital_xps-utils main
- *   sonar-verify brevilledigital_xps-utils feature/fix AYxAbC123
+ *   sonar-verify your-org_your-repo main
+ *   sonar-verify your-org_your-repo feature/fix AYxAbC123
  */
 
 // Types
@@ -327,19 +327,19 @@ Admin Options:
   --help, -h                  Show this help
 
 Examples:
-  sonar-verify brevilledigital_xps-utils
-  sonar-verify brevilledigital_xps-utils main
-  sonar-verify brevilledigital_xps-utils feature/fix AYxAbC123
-  sonar-verify brevilledigital_xps-utils main --types=BUG --json
-  sonar-verify brevilledigital_xps-utils --branches
-  sonar-verify brevilledigital_xps-utils --delete release-old-fix
+  sonar-verify your-org_your-repo
+  sonar-verify your-org_your-repo main
+  sonar-verify your-org_your-repo feature/fix AYxAbC123
+  sonar-verify your-org_your-repo main --types=BUG --json
+  sonar-verify your-org_your-repo --branches
+  sonar-verify your-org_your-repo --delete release-old-fix
 
   # Issues I caused (by git author)
-  sonar-verify brevilledigital_xps-utils develop --author=jmu@solutiondigital.biz
-  sonar-verify brevilledigital_xps-utils develop --author=jmu@solutiondigital.biz --count
+  sonar-verify your-org_your-repo develop --author=you@example.com
+  sonar-verify your-org_your-repo develop --author=you@example.com --count
 
 Project Key Format:
-  brevilledigital_<repo-name>  (found in sonar-project.properties)
+  your-org_<repo-name>  (found in sonar-project.properties)
 `);
     process.exit(0);
   }

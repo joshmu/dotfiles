@@ -1,7 +1,7 @@
 {
-  "name": "@breville/bitbucket-cli",
+  "name": "bitbucket-cli",
   "version": "1.0.0",
-  "description": "Bitbucket CLI tools for Breville development",
+  "description": "Bitbucket CLI tools",
   "private": true,
   "type": "module",
   "scripts": {
@@ -13,8 +13,7 @@
   },
   "keywords": [
     "bitbucket",
-    "cli",
-    "breville"
+    "cli"
   ],
   "engines": {
     "bun": ">=1.0.0"
