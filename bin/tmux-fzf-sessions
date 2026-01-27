@@ -139,6 +139,7 @@ const fzf = Bun.spawn(
     "--preview-window=right:60%",
     "--preview",
     `item=$(echo {} | sed "s/\\x1b\\[[0-9;]*m//g"); if [[ "$item" != /* ]]; then name=$(echo "$item" | sed "s/ 󰚩.*$//"); printf "\\e[38;5;245m"; tmux capture-pane -pt "$name" -p 2>/dev/null | tail -40; printf "\\e[0m" || echo "No preview"; else printf "\\e[38;5;245m"; ls -la "$item" 2>/dev/null; printf "\\e[0m" || echo "Directory"; fi`,
+    "--print-query",
     "--expect=ctrl-k,ctrl-o,enter",
   ],
   {
@@ -152,9 +153,21 @@ fzf.stdin.write(combined);
 fzf.stdin.end();
 
 const result = await new Response(fzf.stdout).text();
-const lines = result.trim().split("\n");
-const key = lines[0];
-const selected = stripAnsi(lines.slice(1).join("\n"));
+const lines = result.split("\n");
+const query = lines[0] || "";
+const key = lines[1] || "";
+const selected = stripAnsi(lines.slice(2).join("\n").trim());
+
+// No selection but query typed AND enter pressed - create new session from query
+if (!selected && query && key === "enter") {
+  const sessionName = query.replace(/[^a-zA-Z0-9_-]/g, "_");
+  const sessionExists = (await $`tmux has-session -t ${sessionName}`.quiet().nothrow()).exitCode === 0;
+  if (!sessionExists) {
+    await $`tmux new-session -ds ${sessionName} -c ${process.env.HOME}`.quiet();
+  }
+  await $`tmux switch-client -t ${sessionName}`.quiet();
+  process.exit(0);
+}
 
 if (!selected) process.exit(0);
 
