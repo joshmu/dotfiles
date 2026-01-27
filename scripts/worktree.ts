@@ -231,7 +231,8 @@ async function createWorktree(
     const baseBranch = `origin/${branch}`;
 
     log.step(`Creating worktree with new branch: ${branchName} from ${baseBranch}`);
-    const { success } = await exec(`git worktree add -b ${branchName} ${worktreePath} ${baseBranch}`, repoPath);
+    // --no-track prevents auto-tracking origin/master; upstream set explicitly on first push with -u
+    const { success } = await exec(`git worktree add -b ${branchName} ${worktreePath} ${baseBranch} --no-track`, repoPath);
     if (!success) return null;
   }
 
