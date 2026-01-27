@@ -13,7 +13,7 @@ const MAGENTA = "\x1b[35m";
 const RESET = "\x1b[0m";
 
 const stripAnsi = (str: string) => str.replace(/\x1b\[[0-9;]*m/g, "");
-const cleanSessionName = (name: string) => name.replace(/ 󰄬$/, "").replace(/ 󰚩( 󰚩)*$/, "");
+const cleanSessionName = (name: string) => name.replace(/ 󰚩( 󰚩)*$/, "");
 
 const currentSession = async () => {
   try {
@@ -103,14 +103,12 @@ for (const cpid of claudePids.split("\n")) {
   }
 }
 
-// Build session list
+// Build session list (yellow = current, green = other)
 const sessions = parseSessionsByActivity(sessionsData).map((name) => {
   const claudeCount = claudeSessions.get(name) || 0;
   const claudeIndicator = claudeCount > 0 ? ` ${MAGENTA}${"󰚩 ".repeat(claudeCount).trim()}${RESET}` : "";
-  const isCurrent = name === current;
-  const color = isCurrent ? YELLOW : GREEN;
-  const marker = isCurrent ? " 󰄬" : "";
-  return `${color}${name}${claudeIndicator}${marker}${RESET}`;
+  const color = name === current ? YELLOW : GREEN;
+  return `${color}${name}${claudeIndicator}${RESET}`;
 });
 
 // Build zoxide list (already fetched in parallel)
@@ -140,7 +138,7 @@ const fzf = Bun.spawn(
     "ctrl-o:accept",
     "--preview-window=right:60%",
     "--preview",
-    `item=$(echo {} | sed "s/\\x1b\\[[0-9;]*m//g"); if [[ "$item" != /* ]]; then name=$(echo "$item" | sed "s/ 󰚩.*$//" | sed "s/ 󰄬//"); printf "\\e[38;5;245m"; tmux capture-pane -pt "$name" -p 2>/dev/null | tail -40; printf "\\e[0m" || echo "No preview"; else printf "\\e[38;5;245m"; ls -la "$item" 2>/dev/null; printf "\\e[0m" || echo "Directory"; fi`,
+    `item=$(echo {} | sed "s/\\x1b\\[[0-9;]*m//g"); if [[ "$item" != /* ]]; then name=$(echo "$item" | sed "s/ 󰚩.*$//"); printf "\\e[38;5;245m"; tmux capture-pane -pt "$name" -p 2>/dev/null | tail -40; printf "\\e[0m" || echo "No preview"; else printf "\\e[38;5;245m"; ls -la "$item" 2>/dev/null; printf "\\e[0m" || echo "Directory"; fi`,
     "--expect=ctrl-k,ctrl-o,enter",
   ],
   {
