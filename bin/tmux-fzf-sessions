@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+# tmux-fzf-sessions - fzf session picker with zoxide integration
+# Enter: switch to session/create from directory
+# Ctrl+K: kill selected session (safely switches away first if current)
+
+current_session() {
+    tmux display-message -p '#S' 2>/dev/null
+}
+
+# Handle --kill flag (called internally)
+if [[ "$1" == "--kill" && -n "$2" ]]; then
+    target="${2#\* }"  # Remove "* " prefix
+    current=$(current_session)
+
+    if [[ "$target" == "$current" ]]; then
+        # Get most recently active session (excluding current), sorted by activity descending
+        other=$(tmux list-sessions -F '#{session_activity}:#{session_name}' | \
+            grep -v ":${current}$" | sort -rn | head -1 | cut -d: -f2)
+        if [[ -n "$other" ]]; then
+            tmux switch-client -t "$other"
+            tmux kill-session -t "$target"
+        fi
+    else
+        tmux kill-session -t "$target"
+    fi
+    exit 0
+fi
+
+# Collect sessions (sorted by activity, marked with *)
+sessions=$(tmux list-sessions -F "#{session_activity}:* #{session_name}" 2>/dev/null | sort -rn | cut -d: -f2)
+
+# Collect zoxide directories (frecency sorted)
+zoxide_dirs=$(zoxide query -l 2>/dev/null | head -20)
+
+# Combine: sessions first, then zoxide dirs
+combined=$(printf "%s\n%s" "$sessions" "$zoxide_dirs" | grep -v '^$')
+
+# fzf with expect for ctrl-k
+result=$(echo "$combined" | fzf --reverse \
+    --header "Enter: switch | Ctrl+K: kill session" \
+    --preview-window=right:60% \
+    --preview 'if [[ {} == \** ]]; then tmux capture-pane -pt $(echo {} | sed "s/^\* //") -p 2>/dev/null | tail -40 || echo "No preview"; else ls -la {} 2>/dev/null || echo "Directory"; fi' \
+    --expect=ctrl-k)
+
+key=$(echo "$result" | head -1)
+selected=$(echo "$result" | tail -n +2)
+
+[[ -z "$selected" ]] && exit 0
+
+# Ctrl+K: kill session
+if [[ "$key" == "ctrl-k" ]]; then
+    if [[ "$selected" == \** ]]; then
+        "$0" --kill "$selected"
+    fi
+    exit 0
+fi
+
+# Enter: switch or create
+if [[ "$selected" == \** ]]; then
+    session_name="${selected#\* }"
+    tmux switch-client -t "$session_name"
+    exit 0
+fi
+
+# Directory selected - create/switch to session
+selected_name=$(basename "$selected" | tr . _)
+
+if [[ -z "$TMUX" ]] && [[ -z "$(pgrep tmux)" ]]; then
+    tmux new-session -s "$selected_name" -c "$selected"
+    exit 0
+fi
+
+if ! tmux has-session -t="$selected_name" 2>/dev/null; then
+    tmux new-session -ds "$selected_name" -c "$selected"
+fi
+
+tmux switch-client -t "$selected_name"

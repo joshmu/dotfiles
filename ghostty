@@ -74,3 +74,4 @@ copy-on-select = true
 shell-integration = detect
 shell-integration-features = cursor,sudo,title
 
+

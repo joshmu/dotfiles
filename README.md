@@ -55,6 +55,7 @@ All scripts in `scripts/` are TypeScript files using Bun runtime with shebang `#
 ### Symlink Management
 The repository uses **dotbot** (git submodule at `./dotbot/`) with configuration in `install.conf.yaml`. Running `./install` creates symlinks from home directory to this repo:
 - Shell configs: `~/.zshrc`, `~/.aliases`, `~/.zprofile`, `~/.bashrc`
+- Custom scripts: `~/dotfiles/bin/` (added to PATH in `.zshrc`)
 - Editor configs: `~/.config/nvim`, `~/.vimrc`, `~/.tmux.conf`
 - Git: `~/.gitconfig`, `~/Library/Application Support/lazygit/config.yml`
 - Terminal: `~/.config/kitty/`, ghostty config
