@@ -59,8 +59,11 @@ done)
 combined=$(printf "%s\n%s" "$sessions" "$zoxide_dirs" | grep -v '^$')
 
 # fzf with expect for ctrl-k
-result=$(echo -e "$combined" | fzf --ansi --reverse \
-    --header "Enter: switch | Ctrl+K: kill session" \
+result=$(echo -e "$combined" | fzf --ansi --reverse --disabled \
+    --header "(╯°□°)╯︵ ┻━┻" \
+    --bind 'j:down,k:up' \
+    --bind '/:enable-search' \
+    --bind 'ctrl-o:accept' \
     --preview-window=right:60% \
     --preview 'item=$(echo {} | sed "s/\x1b\[[0-9;]*m//g"); if [[ "$item" == \** ]]; then name=$(echo "$item" | sed "s/^\* //" | sed "s/ (attached)$//"); printf "\e[38;5;245m"; tmux capture-pane -pt "$name" -p 2>/dev/null | tail -40; printf "\e[0m" || echo "No preview"; else printf "\e[38;5;245m"; ls -la "$item" 2>/dev/null; printf "\e[0m" || echo "Directory"; fi' \
     --expect=ctrl-k)
