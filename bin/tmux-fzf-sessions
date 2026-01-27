@@ -3,13 +3,25 @@
 # Enter: switch to session/create from directory
 # Ctrl+K: kill selected session (safely switches away first if current)
 
+# Colors
+GREEN='\033[32m'
+YELLOW='\033[33m'
+BLUE='\033[34m'
+RESET='\033[0m'
+
 current_session() {
     tmux display-message -p '#S' 2>/dev/null
 }
 
+# Strip ANSI codes for processing
+strip_ansi() {
+    sed 's/\x1b\[[0-9;]*m//g'
+}
+
 # Handle --kill flag (called internally)
 if [[ "$1" == "--kill" && -n "$2" ]]; then
-    target="${2#\* }"  # Remove "* " prefix
+    target=$(echo "${2#\* }" | strip_ansi)  # Remove "* " prefix and colors
+    target="${target% (attached)}"  # Remove "(attached)" suffix if present
     current=$(current_session)
 
     if [[ "$target" == "$current" ]]; then
@@ -26,24 +38,35 @@ if [[ "$1" == "--kill" && -n "$2" ]]; then
     exit 0
 fi
 
-# Collect sessions (sorted by activity, marked with *)
-sessions=$(tmux list-sessions -F "#{session_activity}:* #{session_name}" 2>/dev/null | sort -rn | cut -d: -f2)
+# Get current session for highlighting
+current=$(current_session)
 
-# Collect zoxide directories (frecency sorted)
-zoxide_dirs=$(zoxide query -l 2>/dev/null | head -20)
+# Collect sessions (sorted by activity, colored)
+sessions=$(tmux list-sessions -F "#{session_activity}:#{session_name}" 2>/dev/null | sort -rn | while IFS=: read -r activity name; do
+    if [[ "$name" == "$current" ]]; then
+        echo -e "${YELLOW}* ${name} (attached)${RESET}"
+    else
+        echo -e "${GREEN}* ${name}${RESET}"
+    fi
+done)
+
+# Collect zoxide directories (frecency sorted, colored)
+zoxide_dirs=$(zoxide query -l 2>/dev/null | head -20 | while read -r dir; do
+    echo -e "${BLUE}${dir}${RESET}"
+done)
 
 # Combine: sessions first, then zoxide dirs
 combined=$(printf "%s\n%s" "$sessions" "$zoxide_dirs" | grep -v '^$')
 
 # fzf with expect for ctrl-k
-result=$(echo "$combined" | fzf --reverse \
+result=$(echo -e "$combined" | fzf --ansi --reverse \
     --header "Enter: switch | Ctrl+K: kill session" \
     --preview-window=right:60% \
-    --preview 'if [[ {} == \** ]]; then tmux capture-pane -pt $(echo {} | sed "s/^\* //") -p 2>/dev/null | tail -40 || echo "No preview"; else ls -la {} 2>/dev/null || echo "Directory"; fi' \
+    --preview 'item=$(echo {} | sed "s/\x1b\[[0-9;]*m//g"); if [[ "$item" == \** ]]; then name=$(echo "$item" | sed "s/^\* //" | sed "s/ (attached)$//"); printf "\e[38;5;245m"; tmux capture-pane -pt "$name" -p 2>/dev/null | tail -40; printf "\e[0m" || echo "No preview"; else printf "\e[38;5;245m"; ls -la "$item" 2>/dev/null; printf "\e[0m" || echo "Directory"; fi' \
     --expect=ctrl-k)
 
 key=$(echo "$result" | head -1)
-selected=$(echo "$result" | tail -n +2)
+selected=$(echo "$result" | tail -n +2 | strip_ansi)
 
 [[ -z "$selected" ]] && exit 0
 
@@ -58,6 +81,7 @@ fi
 # Enter: switch or create
 if [[ "$selected" == \** ]]; then
     session_name="${selected#\* }"
+    session_name="${session_name% (attached)}"  # Remove "(attached)" suffix
     tmux switch-client -t "$session_name"
     exit 0
 fi
