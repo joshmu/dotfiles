@@ -7,6 +7,7 @@
 GREEN='\033[32m'
 YELLOW='\033[33m'
 BLUE='\033[34m'
+MAGENTA='\033[35m'
 RESET='\033[0m'
 
 current_session() {
@@ -20,8 +21,10 @@ strip_ansi() {
 
 # Handle --kill flag (called internally)
 if [[ "$1" == "--kill" && -n "$2" ]]; then
-    target=$(echo "${2#\* }" | strip_ansi)  # Remove "* " prefix and colors
-    target="${target% (attached)}"  # Remove "(attached)" suffix if present
+    target=$(echo "$2" | strip_ansi)  # Remove colors
+    target="${target% 󰄬}"  # Remove attached indicator
+    target="${target% 󰚩}"  # Remove claude indicator
+    target="${target% 󰚩 󰄬}"  # Remove both indicators
     current=$(current_session)
 
     if [[ "$target" == "$current" ]]; then
@@ -38,15 +41,29 @@ if [[ "$1" == "--kill" && -n "$2" ]]; then
     exit 0
 fi
 
+# Check if session has claude running in any pane
+has_claude() {
+    local session="$1"
+    tmux list-panes -t "$session" -F '#{pane_pid}' 2>/dev/null | while read -r pid; do
+        if pgrep -P "$pid" -f "claude" >/dev/null 2>&1; then
+            echo "yes"
+            return
+        fi
+    done
+}
+
 # Get current session for highlighting
 current=$(current_session)
 
 # Collect sessions (sorted by activity, colored)
 sessions=$(tmux list-sessions -F "#{session_activity}:#{session_name}" 2>/dev/null | sort -rn | while IFS=: read -r activity name; do
+    claude_indicator=""
+    [[ -n "$(has_claude "$name")" ]] && claude_indicator=" ${MAGENTA}󰚩${RESET}"
+
     if [[ "$name" == "$current" ]]; then
-        echo -e "${YELLOW}* ${name} (attached)${RESET}"
+        echo -e "${YELLOW}${name}${claude_indicator} 󰄬${RESET}"
     else
-        echo -e "${GREEN}* ${name}${RESET}"
+        echo -e "${GREEN}${name}${claude_indicator}${RESET}"
     fi
 done)
 
@@ -65,7 +82,7 @@ result=$(echo -e "$combined" | fzf --ansi --reverse --disabled \
     --bind '/:enable-search' \
     --bind 'ctrl-o:accept' \
     --preview-window=right:60% \
-    --preview 'item=$(echo {} | sed "s/\x1b\[[0-9;]*m//g"); if [[ "$item" == \** ]]; then name=$(echo "$item" | sed "s/^\* //" | sed "s/ (attached)$//"); printf "\e[38;5;245m"; tmux capture-pane -pt "$name" -p 2>/dev/null | tail -40; printf "\e[0m" || echo "No preview"; else printf "\e[38;5;245m"; ls -la "$item" 2>/dev/null; printf "\e[0m" || echo "Directory"; fi' \
+    --preview 'item=$(echo {} | sed "s/\x1b\[[0-9;]*m//g"); if [[ "$item" != /* ]]; then name=$(echo "$item" | sed "s/ 󰚩//" | sed "s/ 󰄬//"); printf "\e[38;5;245m"; tmux capture-pane -pt "$name" -p 2>/dev/null | tail -40; printf "\e[0m" || echo "No preview"; else printf "\e[38;5;245m"; ls -la "$item" 2>/dev/null; printf "\e[0m" || echo "Directory"; fi' \
     --expect=ctrl-k)
 
 key=$(echo "$result" | head -1)
@@ -73,18 +90,20 @@ selected=$(echo "$result" | tail -n +2 | strip_ansi)
 
 [[ -z "$selected" ]] && exit 0
 
-# Ctrl+K: kill session
+# Ctrl+K: kill session (only for sessions, not directories)
 if [[ "$key" == "ctrl-k" ]]; then
-    if [[ "$selected" == \** ]]; then
+    if [[ "$selected" != /* ]]; then  # Not a directory path
         "$0" --kill "$selected"
     fi
     exit 0
 fi
 
 # Enter: switch or create
-if [[ "$selected" == \** ]]; then
-    session_name="${selected#\* }"
-    session_name="${session_name% (attached)}"  # Remove "(attached)" suffix
+if [[ "$selected" != /* ]]; then  # Session (not a directory path)
+    session_name="$selected"
+    session_name="${session_name% 󰄬}"  # Remove attached indicator
+    session_name="${session_name% 󰚩}"  # Remove claude indicator
+    session_name="${session_name% 󰚩 󰄬}"  # Remove both indicators
     tmux switch-client -t "$session_name"
     exit 0
 fi
