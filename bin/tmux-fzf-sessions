@@ -13,6 +13,7 @@ const MAGENTA = "\x1b[35m";
 const RESET = "\x1b[0m";
 
 const stripAnsi = (str: string) => str.replace(/\x1b\[[0-9;]*m/g, "");
+const cleanSessionName = (name: string) => name.replace(/ 󰄬$/, "").replace(/ 󰚩( 󰚩)*$/, "");
 
 const currentSession = async () => {
   try {
@@ -33,19 +34,21 @@ const run = async (cmd: string[]) => {
   }
 };
 
+const parseSessionsByActivity = (data: string) =>
+  data
+    .split("\n")
+    .filter(Boolean)
+    .sort((a, b) => parseInt(b.split(":")[0]) - parseInt(a.split(":")[0]))
+    .map((line) => line.split(":")[1]);
+
 // Handle --kill flag
 if (process.argv[2] === "--kill" && process.argv[3]) {
-  let target = stripAnsi(process.argv[3]);
-  target = target.replace(/ 󰄬$/, "").replace(/ 󰚩( 󰚩)*$/, "");
+  const target = cleanSessionName(stripAnsi(process.argv[3]));
   const current = await currentSession();
 
   if (target === current) {
-    const sessions = await run(["tmux", "list-sessions", "-F", "#{session_activity}:#{session_name}"]);
-    const other = sessions
-      .split("\n")
-      .filter((l) => !l.endsWith(`:${current}`))
-      .sort((a, b) => parseInt(b.split(":")[0]) - parseInt(a.split(":")[0]))[0]
-      ?.split(":")[1];
+    const sessionsData = await run(["tmux", "list-sessions", "-F", "#{session_activity}:#{session_name}"]);
+    const other = parseSessionsByActivity(sessionsData).find((s) => s !== current);
     if (other) {
       await $`tmux switch-client -t ${other}`.quiet();
       await $`tmux kill-session -t ${target}`.quiet();
@@ -56,25 +59,40 @@ if (process.argv[2] === "--kill" && process.argv[3]) {
   process.exit(0);
 }
 
+// Fetch all data in parallel
+const [paneData, claudePids, allProcs, sessionsData, zoxideData, current] = await Promise.all([
+  run(["tmux", "list-panes", "-a", "-F", "#{session_name}:#{pane_pid}"]),
+  run(["pgrep", "-x", "claude"]),
+  run(["ps", "-A", "-o", "pid=,ppid="]), // All process parents in one call
+  run(["tmux", "list-sessions", "-F", "#{session_activity}:#{session_name}"]),
+  run(["zoxide", "query", "-l"]),
+  currentSession(),
+]);
+
 // Build pane_pid -> session map
 const paneToSession = new Map<string, string>();
-const paneData = await run(["tmux", "list-panes", "-a", "-F", "#{session_name}:#{pane_pid}"]);
 for (const line of paneData.split("\n")) {
   const [session, pid] = line.split(":");
   if (session && pid) paneToSession.set(pid, session);
 }
 
-// Find Claude processes and count per session
+// Build pid -> ppid map (in-memory tree walking, no subprocess calls)
+const pidToParent = new Map<string, string>();
+for (const line of allProcs.split("\n")) {
+  const [pid, ppid] = line.trim().split(/\s+/);
+  if (pid && ppid) pidToParent.set(pid, ppid);
+}
+
+// Find Claude processes and count per session (in-memory, no subprocess calls)
 const claudeSessions = new Map<string, number>();
-const claudePids = await run(["pgrep", "-x", "claude"]);
+const MAX_PARENT_DEPTH = 5;
 
 for (const cpid of claudePids.split("\n")) {
   if (!cpid || !/^\d+$/.test(cpid)) continue;
 
   let ppid = cpid;
-  for (let i = 0; i < 5; i++) {
-    ppid = await run(["ps", "-o", "ppid=", "-p", ppid]);
-    ppid = ppid.trim();
+  for (let i = 0; i < MAX_PARENT_DEPTH; i++) {
+    ppid = pidToParent.get(ppid) || "";
     if (!ppid || ppid === "1") break;
 
     const session = paneToSession.get(ppid);
@@ -85,29 +103,18 @@ for (const cpid of claudePids.split("\n")) {
   }
 }
 
-// Get current session
-const current = await currentSession();
-
 // Build session list
-const sessionsData = await run(["tmux", "list-sessions", "-F", "#{session_activity}:#{session_name}"]);
-const sessions = sessionsData
-  .split("\n")
-  .filter(Boolean)
-  .sort((a, b) => parseInt(b.split(":")[0]) - parseInt(a.split(":")[0]))
-  .map((line) => {
-    const name = line.split(":")[1];
-    const claudeCount = claudeSessions.get(name) || 0;
-    const claudeIndicator = claudeCount > 0 ? ` ${MAGENTA}${Array(claudeCount).fill("󰚩").join(" ")}${RESET}` : "";
+const sessions = parseSessionsByActivity(sessionsData).map((name) => {
+  const claudeCount = claudeSessions.get(name) || 0;
+  const claudeIndicator = claudeCount > 0 ? ` ${MAGENTA}${"󰚩 ".repeat(claudeCount).trim()}${RESET}` : "";
+  const isCurrent = name === current;
+  const color = isCurrent ? YELLOW : GREEN;
+  const marker = isCurrent ? " 󰄬" : "";
+  return `${color}${name}${claudeIndicator}${marker}${RESET}`;
+});
 
-    if (name === current) {
-      return `${YELLOW}${name}${claudeIndicator} 󰄬${RESET}`;
-    }
-    return `${GREEN}${name}${claudeIndicator}${RESET}`;
-  });
-
-// Build zoxide list
-const zoxideDirs = await run(["zoxide", "query", "-l"]);
-const directories = zoxideDirs
+// Build zoxide list (already fetched in parallel)
+const directories = zoxideData
   .split("\n")
   .filter(Boolean)
   .slice(0, 20)
@@ -153,31 +160,31 @@ const selected = stripAnsi(lines.slice(1).join("\n"));
 
 if (!selected) process.exit(0);
 
+const isSession = !selected.startsWith("/");
+
 // Ctrl+K: kill session
-if (key === "ctrl-k" && !selected.startsWith("/")) {
+if (key === "ctrl-k" && isSession) {
   await $`${process.argv[1]} --kill ${selected}`.quiet();
   process.exit(0);
 }
 
 // Enter: switch or create
-if (!selected.startsWith("/")) {
-  let sessionName = selected.replace(/ 󰄬$/, "").replace(/ 󰚩( 󰚩)*$/, "");
-  await $`tmux switch-client -t ${sessionName}`.quiet();
+if (isSession) {
+  await $`tmux switch-client -t ${cleanSessionName(selected)}`.quiet();
   process.exit(0);
 }
 
 // Directory selected - create/switch to session
 const selectedName = selected.split("/").pop()?.replace(/\./g, "_") || "session";
-const inTmux = process.env.TMUX;
-const tmuxRunning = await run(["pgrep", "tmux"]);
+const tmuxActive = process.env.TMUX || (await run(["pgrep", "tmux"]));
 
-if (!inTmux && !tmuxRunning) {
+if (!tmuxActive) {
   await $`tmux new-session -s ${selectedName} -c ${selected}`.quiet();
   process.exit(0);
 }
 
-const hasSession = await run(["tmux", "has-session", "-t", selectedName]);
-if (!hasSession) {
+const sessionExists = (await $`tmux has-session -t ${selectedName}`.quiet().nothrow()).exitCode === 0;
+if (!sessionExists) {
   await $`tmux new-session -ds ${selectedName} -c ${selected}`.quiet();
 }
 
