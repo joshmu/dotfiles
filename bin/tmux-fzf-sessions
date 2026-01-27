@@ -1,123 +1,184 @@
-#!/usr/bin/env bash
-# tmux-fzf-sessions - fzf session picker with zoxide integration
-# Enter: switch to session/create from directory
-# Ctrl+K: kill selected session (safely switches away first if current)
+#!/usr/bin/env bun
+// tmux-fzf-sessions - fzf session picker with zoxide integration
+// Enter: switch to session/create from directory
+// Ctrl+K: kill selected session (safely switches away first if current)
 
-# Colors
-GREEN='\033[32m'
-YELLOW='\033[33m'
-BLUE='\033[34m'
-MAGENTA='\033[35m'
-RESET='\033[0m'
+import { $ } from "bun";
 
-current_session() {
-    tmux display-message -p '#S' 2>/dev/null
+// Colors
+const GREEN = "\x1b[32m";
+const YELLOW = "\x1b[33m";
+const BLUE = "\x1b[34m";
+const MAGENTA = "\x1b[35m";
+const RESET = "\x1b[0m";
+
+const stripAnsi = (str: string) => str.replace(/\x1b\[[0-9;]*m/g, "");
+
+const currentSession = async () => {
+  try {
+    const result = await $`tmux display-message -p '#S'`.quiet().text();
+    return result.trim();
+  } catch {
+    return "";
+  }
+};
+
+const run = async (cmd: string[]) => {
+  try {
+    const proc = Bun.spawn(cmd, { stdout: "pipe", stderr: "pipe" });
+    const text = await new Response(proc.stdout).text();
+    return text.trim();
+  } catch {
+    return "";
+  }
+};
+
+// Handle --kill flag
+if (process.argv[2] === "--kill" && process.argv[3]) {
+  let target = stripAnsi(process.argv[3]);
+  target = target.replace(/ 󰄬$/, "").replace(/ 󰚩( 󰚩)*$/, "");
+  const current = await currentSession();
+
+  if (target === current) {
+    const sessions = await run(["tmux", "list-sessions", "-F", "#{session_activity}:#{session_name}"]);
+    const other = sessions
+      .split("\n")
+      .filter((l) => !l.endsWith(`:${current}`))
+      .sort((a, b) => parseInt(b.split(":")[0]) - parseInt(a.split(":")[0]))[0]
+      ?.split(":")[1];
+    if (other) {
+      await $`tmux switch-client -t ${other}`.quiet();
+      await $`tmux kill-session -t ${target}`.quiet();
+    }
+  } else {
+    await $`tmux kill-session -t ${target}`.quiet();
+  }
+  process.exit(0);
 }
 
-# Strip ANSI codes for processing
-strip_ansi() {
-    sed 's/\x1b\[[0-9;]*m//g'
+// Build pane_pid -> session map
+const paneToSession = new Map<string, string>();
+const paneData = await run(["tmux", "list-panes", "-a", "-F", "#{session_name}:#{pane_pid}"]);
+for (const line of paneData.split("\n")) {
+  const [session, pid] = line.split(":");
+  if (session && pid) paneToSession.set(pid, session);
 }
 
-# Handle --kill flag (called internally)
-if [[ "$1" == "--kill" && -n "$2" ]]; then
-    target=$(echo "$2" | strip_ansi)  # Remove colors
-    target="${target% 󰄬}"  # Remove attached indicator
-    target="${target% 󰚩}"  # Remove claude indicator
-    target="${target% 󰚩 󰄬}"  # Remove both indicators
-    current=$(current_session)
+// Find Claude processes and count per session
+const claudeSessions = new Map<string, number>();
+const claudePids = await run(["pgrep", "-x", "claude"]);
 
-    if [[ "$target" == "$current" ]]; then
-        # Get most recently active session (excluding current), sorted by activity descending
-        other=$(tmux list-sessions -F '#{session_activity}:#{session_name}' | \
-            grep -v ":${current}$" | sort -rn | head -1 | cut -d: -f2)
-        if [[ -n "$other" ]]; then
-            tmux switch-client -t "$other"
-            tmux kill-session -t "$target"
-        fi
-    else
-        tmux kill-session -t "$target"
-    fi
-    exit 0
-fi
+for (const cpid of claudePids.split("\n")) {
+  if (!cpid || !/^\d+$/.test(cpid)) continue;
 
-# Check if session has claude running in any pane
-has_claude() {
-    local session="$1"
-    tmux list-panes -t "$session" -F '#{pane_pid}' 2>/dev/null | while read -r pid; do
-        if pgrep -P "$pid" -f "claude" >/dev/null 2>&1; then
-            echo "yes"
-            return
-        fi
-    done
+  let ppid = cpid;
+  for (let i = 0; i < 5; i++) {
+    ppid = await run(["ps", "-o", "ppid=", "-p", ppid]);
+    ppid = ppid.trim();
+    if (!ppid || ppid === "1") break;
+
+    const session = paneToSession.get(ppid);
+    if (session) {
+      claudeSessions.set(session, (claudeSessions.get(session) || 0) + 1);
+      break;
+    }
+  }
 }
 
-# Get current session for highlighting
-current=$(current_session)
+// Get current session
+const current = await currentSession();
 
-# Collect sessions (sorted by activity, colored)
-sessions=$(tmux list-sessions -F "#{session_activity}:#{session_name}" 2>/dev/null | sort -rn | while IFS=: read -r activity name; do
-    claude_indicator=""
-    [[ -n "$(has_claude "$name")" ]] && claude_indicator=" ${MAGENTA}󰚩${RESET}"
+// Build session list
+const sessionsData = await run(["tmux", "list-sessions", "-F", "#{session_activity}:#{session_name}"]);
+const sessions = sessionsData
+  .split("\n")
+  .filter(Boolean)
+  .sort((a, b) => parseInt(b.split(":")[0]) - parseInt(a.split(":")[0]))
+  .map((line) => {
+    const name = line.split(":")[1];
+    const claudeCount = claudeSessions.get(name) || 0;
+    const claudeIndicator = claudeCount > 0 ? ` ${MAGENTA}${Array(claudeCount).fill("󰚩").join(" ")}${RESET}` : "";
 
-    if [[ "$name" == "$current" ]]; then
-        echo -e "${YELLOW}${name}${claude_indicator} 󰄬${RESET}"
-    else
-        echo -e "${GREEN}${name}${claude_indicator}${RESET}"
-    fi
-done)
+    if (name === current) {
+      return `${YELLOW}${name}${claudeIndicator} 󰄬${RESET}`;
+    }
+    return `${GREEN}${name}${claudeIndicator}${RESET}`;
+  });
 
-# Collect zoxide directories (frecency sorted, colored)
-zoxide_dirs=$(zoxide query -l 2>/dev/null | head -20 | while read -r dir; do
-    echo -e "${BLUE}${dir}${RESET}"
-done)
+// Build zoxide list
+const zoxideDirs = await run(["zoxide", "query", "-l"]);
+const directories = zoxideDirs
+  .split("\n")
+  .filter(Boolean)
+  .slice(0, 20)
+  .map((dir) => `${BLUE}${dir}${RESET}`);
 
-# Combine: sessions first, then zoxide dirs
-combined=$(printf "%s\n%s" "$sessions" "$zoxide_dirs" | grep -v '^$')
+// Combine and run fzf
+const combined = [...sessions, ...directories].join("\n");
 
-# fzf with expect for ctrl-k
-result=$(echo -e "$combined" | fzf --ansi --reverse --disabled \
-    --header "(╯°□°)╯︵ ┻━┻" --header-first \
-    --bind 'j:down,k:up' \
-    --bind '/:enable-search' \
-    --bind 'ctrl-o:accept' \
-    --preview-window=right:60% \
-    --preview 'item=$(echo {} | sed "s/\x1b\[[0-9;]*m//g"); if [[ "$item" != /* ]]; then name=$(echo "$item" | sed "s/ 󰚩//" | sed "s/ 󰄬//"); printf "\e[38;5;245m"; tmux capture-pane -pt "$name" -p 2>/dev/null | tail -40; printf "\e[0m" || echo "No preview"; else printf "\e[38;5;245m"; ls -la "$item" 2>/dev/null; printf "\e[0m" || echo "Directory"; fi' \
-    --expect=ctrl-k)
+const fzf = Bun.spawn(
+  [
+    "fzf",
+    "--ansi",
+    "--reverse",
+    "--disabled",
+    "--header",
+    "(╯°□°)╯︵ ┻━┻",
+    "--header-first",
+    "--bind",
+    "j:down,k:up",
+    "--bind",
+    "/:enable-search",
+    "--bind",
+    "ctrl-o:accept",
+    "--preview-window=right:60%",
+    "--preview",
+    `item=$(echo {} | sed "s/\\x1b\\[[0-9;]*m//g"); if [[ "$item" != /* ]]; then name=$(echo "$item" | sed "s/ 󰚩.*$//" | sed "s/ 󰄬//"); printf "\\e[38;5;245m"; tmux capture-pane -pt "$name" -p 2>/dev/null | tail -40; printf "\\e[0m" || echo "No preview"; else printf "\\e[38;5;245m"; ls -la "$item" 2>/dev/null; printf "\\e[0m" || echo "Directory"; fi`,
+    "--expect=ctrl-k,ctrl-o,enter",
+  ],
+  {
+    stdin: "pipe",
+    stdout: "pipe",
+    stderr: "inherit",
+  }
+);
 
-key=$(echo "$result" | head -1)
-selected=$(echo "$result" | tail -n +2 | strip_ansi)
+fzf.stdin.write(combined);
+fzf.stdin.end();
 
-[[ -z "$selected" ]] && exit 0
+const result = await new Response(fzf.stdout).text();
+const lines = result.trim().split("\n");
+const key = lines[0];
+const selected = stripAnsi(lines.slice(1).join("\n"));
 
-# Ctrl+K: kill session (only for sessions, not directories)
-if [[ "$key" == "ctrl-k" ]]; then
-    if [[ "$selected" != /* ]]; then  # Not a directory path
-        "$0" --kill "$selected"
-    fi
-    exit 0
-fi
+if (!selected) process.exit(0);
 
-# Enter: switch or create
-if [[ "$selected" != /* ]]; then  # Session (not a directory path)
-    session_name="$selected"
-    session_name="${session_name% 󰄬}"  # Remove attached indicator
-    session_name="${session_name% 󰚩}"  # Remove claude indicator
-    session_name="${session_name% 󰚩 󰄬}"  # Remove both indicators
-    tmux switch-client -t "$session_name"
-    exit 0
-fi
+// Ctrl+K: kill session
+if (key === "ctrl-k" && !selected.startsWith("/")) {
+  await $`${process.argv[1]} --kill ${selected}`.quiet();
+  process.exit(0);
+}
 
-# Directory selected - create/switch to session
-selected_name=$(basename "$selected" | tr . _)
+// Enter: switch or create
+if (!selected.startsWith("/")) {
+  let sessionName = selected.replace(/ 󰄬$/, "").replace(/ 󰚩( 󰚩)*$/, "");
+  await $`tmux switch-client -t ${sessionName}`.quiet();
+  process.exit(0);
+}
 
-if [[ -z "$TMUX" ]] && [[ -z "$(pgrep tmux)" ]]; then
-    tmux new-session -s "$selected_name" -c "$selected"
-    exit 0
-fi
+// Directory selected - create/switch to session
+const selectedName = selected.split("/").pop()?.replace(/\./g, "_") || "session";
+const inTmux = process.env.TMUX;
+const tmuxRunning = await run(["pgrep", "tmux"]);
 
-if ! tmux has-session -t="$selected_name" 2>/dev/null; then
-    tmux new-session -ds "$selected_name" -c "$selected"
-fi
+if (!inTmux && !tmuxRunning) {
+  await $`tmux new-session -s ${selectedName} -c ${selected}`.quiet();
+  process.exit(0);
+}
 
-tmux switch-client -t "$selected_name"
+const hasSession = await run(["tmux", "has-session", "-t", selectedName]);
+if (!hasSession) {
+  await $`tmux new-session -ds ${selectedName} -c ${selected}`.quiet();
+}
+
+await $`tmux switch-client -t ${selectedName}`.quiet();
