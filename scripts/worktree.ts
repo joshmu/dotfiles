@@ -176,6 +176,41 @@ async function getMainRepoPath(path: string): Promise<string | null> {
   return dirname(mainGitDir);
 }
 
+// Detect the best base branch (main or master) from remote or local
+async function detectBaseBranch(repoPath: string): Promise<{ branch: string; isRemote: boolean } | null> {
+  const { output: remoteRefs } = await execQuiet(`git branch -r`, repoPath);
+  const hasRemoteMain = remoteRefs.includes("origin/main");
+  const hasRemoteMaster = remoteRefs.includes("origin/master");
+
+  if (hasRemoteMain || hasRemoteMaster) {
+    const branch = await selectBranch(repoPath, hasRemoteMain, hasRemoteMaster, "origin/");
+    log.info(`Using remote ${branch} as base`);
+    return { branch: `origin/${branch}`, isRemote: true };
+  }
+
+  const { output: localRefs } = await execQuiet(`git branch`, repoPath);
+  const hasLocalMain = localRefs.includes("main");
+  const hasLocalMaster = localRefs.includes("master");
+
+  if (!hasLocalMain && !hasLocalMaster) return null;
+
+  const branch = await selectBranch(repoPath, hasLocalMain, hasLocalMaster, "");
+  log.info(`No remote found, using local ${branch} as base`);
+  return { branch, isRemote: false };
+}
+
+// Select between main and master branches, preferring the more recent if both exist
+async function selectBranch(repoPath: string, hasMain: boolean, hasMaster: boolean, prefix: string): Promise<string> {
+  if (!hasMain) return "master";
+  if (!hasMaster) return "main";
+
+  const { output: mainTime } = await execQuiet(`git log -1 --format=%ct ${prefix}main`, repoPath);
+  const { output: masterTime } = await execQuiet(`git log -1 --format=%ct ${prefix}master`, repoPath);
+  const branch = parseInt(mainTime || "0") >= parseInt(masterTime || "0") ? "main" : "master";
+  log.info(`Both main and master exist, using ${branch} (more recent)`);
+  return branch;
+}
+
 // Main worktree creation function
 async function createWorktree(
   repoPath: string,
@@ -213,26 +248,15 @@ async function createWorktree(
     const { success } = await exec(`git worktree add ${worktreePath} ${branchName}`, repoPath);
     if (!success) return null;
   } else {
-    // Get the most recent base branch (main or master)
-    const { output: refs } = await execQuiet(`git branch -r`, repoPath);
-    const hasMain = refs.includes("origin/main");
-    const hasMaster = refs.includes("origin/master");
-
-    let branch = "main"; // default
-    if (hasMain && hasMaster) {
-      // Both exist - compare commit timestamps
-      const { output: mainTime } = await execQuiet(`git log -1 --format=%ct origin/main`, repoPath);
-      const { output: masterTime } = await execQuiet(`git log -1 --format=%ct origin/master`, repoPath);
-      branch = parseInt(mainTime || "0") >= parseInt(masterTime || "0") ? "main" : "master";
-      log.info(`Both main and master exist, using ${branch} (more recent)`);
-    } else if (hasMaster) {
-      branch = "master";
+    const baseResult = await detectBaseBranch(repoPath);
+    if (!baseResult) {
+      log.error(`No main or master branch found (local or remote)`);
+      return null;
     }
-    const baseBranch = `origin/${branch}`;
 
-    log.step(`Creating worktree with new branch: ${branchName} from ${baseBranch}`);
-    // --no-track prevents auto-tracking origin/master; upstream set explicitly on first push with -u
-    const { success } = await exec(`git worktree add -b ${branchName} ${worktreePath} ${baseBranch} --no-track`, repoPath);
+    log.step(`Creating worktree with new branch: ${branchName} from ${baseResult.branch}`);
+    const noTrackFlag = baseResult.isRemote ? " --no-track" : "";
+    const { success } = await exec(`git worktree add -b ${branchName} ${worktreePath} ${baseResult.branch}${noTrackFlag}`, repoPath);
     if (!success) return null;
   }
 
