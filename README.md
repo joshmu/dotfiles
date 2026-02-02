@@ -48,7 +48,12 @@ All scripts in `scripts/` are TypeScript files using Bun runtime with shebang `#
 - `yt-transcript.ts` - YouTube transcript extraction
 - `open-pr-with-target.sh` - PR creation with custom target branch
 - `check-merge-conflicts.sh` - Pre-PR merge conflict checker
-- `notify-me` - System notification utility (used with `pbcopy` for clipboard)
+- `notify-me` - System notification utility
+- `bitbucket/` - Bitbucket CLI tools (`bb-repos`, `bb-pr-create`, `bb-pr-update`)
+- `sonar/` - SonarCloud tools (`sonar-verify`, `sonar-scan`, `sonar-compare`)
+- `claude-monitor/` - Claude session monitoring (`cm` alias)
+- `rayimg/gen-img.ts` - AI image generation via Replicate (`gen-img` alias)
+- `telegram/` - Telegram notifications
 
 ## Architecture & Patterns
 
@@ -70,7 +75,7 @@ The repository uses **dotbot** (git submodule at `./dotbot/`) with configuration
 ### Lazygit Customization
 Custom keybindings in `lazygit-config.yml`:
 - `W` - Commit with `--no-verify` flag
-- `C` - Generate commit message with Claude Code (pipes staged diff to claude CLI)
+- `C` - Generate commit message with Claude Code (haiku model, pipes staged diff)
 - `O` - Open PR with custom target branch (uses selected branch, not checked out branch)
 
 ### Git Workflow Tools
@@ -117,7 +122,12 @@ Key aliases from `.aliases`:
 - `c`, `cl` → `clear`
 - `cc`, `cld` → `claude`
 - `gw` → git worktree automation
-- `notify-me` → system notifications
+- `y`, `yz` → yazi file explorer (changes cwd on exit)
+- `awsp` → AWS profile switcher (fzf-based)
+- `cm` → claude-monitor session dashboard
+- `gen-img` → AI image generation
+- `bb-*` → Bitbucket CLI tools
+- `sonar-*` → SonarCloud tools
 
 ### Notifications
 System notifications via AppleScript wrapper in `scripts/notify-me` or shell function:
