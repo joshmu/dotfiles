@@ -1,9 +1,25 @@
 #!/usr/bin/env bun
-// tmux-fzf-sessions - fzf session picker with zoxide integration
-// Enter: switch to session/create from directory
-// Ctrl+K: kill selected session (safely switches away first if current)
+/**
+ * tmux-fzf-sessions - Interactive tmux session picker using fzf
+ *
+ * Features:
+ * - Lists all tmux sessions sorted by last activity
+ * - Shows Claude process indicators (󰚩) for sessions running Claude
+ * - Highlights current session in yellow, others in green
+ * - Optional zoxide directory listing for quick session creation
+ *
+ * Keybindings:
+ * - Enter: Switch to selected session, or create new session from typed query
+ * - Ctrl+K: Kill selected session (safely switches away first if current)
+ * - Ctrl+O: Accept selection (alternative to Enter)
+ * - j/k: Navigate up/down
+ * - /: Enable search mode
+ */
 
 import { $ } from "bun";
+
+// Config
+const SHOW_ZOXIDE = false;
 
 // Colors
 const GREEN = "\x1b[32m";
@@ -65,7 +81,7 @@ const [paneData, claudePids, allProcs, sessionsData, zoxideData, current] = awai
   run(["pgrep", "-x", "claude"]),
   run(["ps", "-A", "-o", "pid=,ppid="]), // All process parents in one call
   run(["tmux", "list-sessions", "-F", "#{session_activity}:#{session_name}"]),
-  run(["zoxide", "query", "-l"]),
+  SHOW_ZOXIDE ? run(["zoxide", "query", "-l"]) : Promise.resolve(""),
   currentSession(),
 ]);
 
@@ -112,11 +128,13 @@ const sessions = parseSessionsByActivity(sessionsData).map((name) => {
 });
 
 // Build zoxide list (already fetched in parallel)
-const directories = zoxideData
-  .split("\n")
-  .filter(Boolean)
-  .slice(0, 20)
-  .map((dir) => `${BLUE}${dir}${RESET}`);
+const directories = SHOW_ZOXIDE
+  ? zoxideData
+      .split("\n")
+      .filter(Boolean)
+      .slice(0, 20)
+      .map((dir) => `${BLUE}${dir}${RESET}`)
+  : [];
 
 // Combine and run fzf
 const combined = [...sessions, ...directories].join("\n");
