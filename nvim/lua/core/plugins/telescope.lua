@@ -1,10 +1,3 @@
--- NOTE: Plugins can specify dependencies.
---
--- The dependencies are proper plugin specifications as well - anything
--- you do for a plugin at the top level, you can do for a dependency.
---
--- Use the `dependencies` key to specify the dependencies of a particular plugin
-
 return {
   { -- Fuzzy Finder (files, lsp, etc)
     'nvim-telescope/telescope.nvim',
@@ -73,45 +66,7 @@ return {
             },
           },
           sorting_strategy = 'ascending',
-          --- other configs
-        }, --
-        -- defaults = {
-        --   layout_config = {
-        --     bottom_pane = {
-        --       height = 25,
-        --       preview_cutoff = 120,
-        --       prompt_position = 'top',
-        --     },
-        --     center = {
-        --       height = 0.4,
-        --       preview_cutoff = 40,
-        --       prompt_position = 'top',
-        --       width = 0.5,
-        --     },
-        --     cursor = {
-        --       height = 0.9,
-        --       preview_cutoff = 40,
-        --       width = 0.8,
-        --     },
-        --     horizontal = {
-        --       height = 0.9,
-        --       -- preview_cutoff = 120,
-        --       preview_cutoff = 80,
-        --       prompt_position = 'bottom',
-        --       width = 0.8,
-        --     },
-        --     vertical = {
-        --       height = 0.9,
-        --       preview_cutoff = 40,
-        --       prompt_position = 'bottom',
-        --       width = 0.8,
-        --     },
-        --   },
-        --   mappings = {
-        --     i = { ['<c-enter>'] = 'to_fuzzy_refine' },
-        --   },
-        -- },
-        -- pickers = {}
+        },
         extensions = {
           ['ui-select'] = {
             require('telescope.themes').get_dropdown(),
@@ -151,68 +106,36 @@ return {
       -- See `:help telescope.builtin`
       local builtin = require 'telescope.builtin'
 
-      local search_and_find = {
-        s = '[S]earch',
-        f = '[F]ind',
-      }
-      for key, term in pairs(search_and_find) do
-        vim.keymap.set('n', '<leader>' .. key .. 'h', builtin.help_tags, { desc = term .. ' [H]elp' })
-        vim.keymap.set('n', '<leader>' .. key .. 'k', builtin.keymaps, { desc = term .. ' [K]eymaps' })
-        -- vim.keymap.set('n', '<leader>' .. key .. 'f', builtin.find_files, { desc = term .. ' [F]iles' })
-        vim.keymap.set('n', '<leader>' .. key .. 'b', builtin.builtin, { desc = term .. ' Telescope [B]uiltins' })
-        -- vim.keymap.set('n', '<leader>' .. key .. 'w', builtin.grep_string, { desc = term .. ' current [W]ord' })
-
-        -- vim.keymap.set('n', '<leader>' .. key .. 'w', builtin.live_grep, { desc = term .. ' grep [W]ord' })
-        -- vim.keymap.set('n', '<leader>' .. key .. 'g', builtin.live_grep, { desc = term .. ' by [G]rep' })
-        vim.keymap.set({ 'n', 'v' }, '<leader>' .. key .. 'w', function()
-          local mode = vim.fn.mode()
-          -- If in visual mode, use the visual selection
-          if mode == 'v' or mode == 'V' or mode == '^V' then
-            require('telescope-live-grep-args.shortcuts').grep_visual_selection({
-              postfix = ' --hidden ',
-            })
-          else
-            -- If not in visual mode, use the default behavior
-            require('telescope').extensions.live_grep_args.live_grep_args()
-          end
-        end, { desc = term .. ' grep *args [W]ord' })
-        vim.keymap.set({ 'n', 'v' }, '<leader>' .. key .. 'g', function()
-          local mode = vim.fn.mode()
-          -- If in visual mode, use the visual selection
-          if mode == 'v' or mode == 'V' or mode == '^V' then
-            require('telescope-live-grep-args.shortcuts').grep_visual_selection({
-              postfix = ' --hidden ',
-            })
-          else
-            -- If not in visual mode, use the default behavior
-            require('telescope').extensions.live_grep_args.live_grep_args()
-          end
-        end, { desc = term .. ' by *args [G]rep' })
-
-        vim.keymap.set('n', '<leader>' .. key .. 's', builtin.git_status, { desc = term .. ' Git [S]tatus' })
-
-        vim.keymap.set('n', '<leader>' .. key .. 'd', builtin.diagnostics, { desc = term .. ' [D]iagnostics' })
-        vim.keymap.set('n', '<leader>' .. key .. 'r', builtin.resume, { desc = term .. ' [R]esume' })
-        vim.keymap.set('n', '<leader>' .. key .. '.', builtin.oldfiles, { desc = term .. ' Recent Files ("." for repeat)' })
-
-        -- find files and include dotfiles
-        vim.keymap.set('n', '<leader>' .. key .. 'f', function()
-          require('telescope.builtin').find_files {
-            find_command = { 'rg', '--files', '--iglob', '!.git', '--hidden' },
-            previewer = false,
-          }
-        end, { desc = term .. ' [F]iles' })
-
-        -- vim.keymap.set('n', '<leader>' .. key .. 'b', builtin.buffers, { desc = term .. ' Existing [B]uffers' })
-
-        -- zoxide
-        vim.keymap.set('n', '<leader>' .. key .. 'z', require('telescope').extensions.zoxide.list, { desc = term .. ' [Z]oxide' })
-
-        -- Shortcut for searching your Neovim configuration files
-        vim.keymap.set('n', '<leader>' .. key .. 'n', function()
-          builtin.find_files { cwd = vim.fn.stdpath 'config' }
-        end, { desc = term .. ' [N]eovim files' })
+      local function grep_with_args()
+        local mode = vim.fn.mode()
+        if mode == 'v' or mode == 'V' or mode == '^V' then
+          require('telescope-live-grep-args.shortcuts').grep_visual_selection({
+            postfix = ' --hidden ',
+          })
+        else
+          require('telescope').extensions.live_grep_args.live_grep_args()
+        end
       end
+
+      vim.keymap.set('n', '<leader>fh', builtin.help_tags, { desc = 'Find [H]elp' })
+      vim.keymap.set('n', '<leader>fk', builtin.keymaps, { desc = 'Find [K]eymaps' })
+      vim.keymap.set('n', '<leader>fb', builtin.builtin, { desc = 'Find Telescope [B]uiltins' })
+      vim.keymap.set({ 'n', 'v' }, '<leader>fg', grep_with_args, { desc = 'Find [G]rep' })
+      vim.keymap.set({ 'n', 'v' }, '<leader>fw', grep_with_args, { desc = 'Find [W]ord (grep)' })
+      vim.keymap.set('n', '<leader>fs', builtin.git_status, { desc = 'Find Git [S]tatus' })
+      vim.keymap.set('n', '<leader>fd', builtin.diagnostics, { desc = 'Find [D]iagnostics' })
+      vim.keymap.set('n', '<leader>fr', builtin.resume, { desc = 'Find [R]esume' })
+      vim.keymap.set('n', '<leader>f.', builtin.oldfiles, { desc = 'Find Recent Files' })
+      vim.keymap.set('n', '<leader>ff', function()
+        require('telescope.builtin').find_files {
+          find_command = { 'rg', '--files', '--iglob', '!.git', '--hidden' },
+          previewer = false,
+        }
+      end, { desc = 'Find [F]iles' })
+      vim.keymap.set('n', '<leader>fz', require('telescope').extensions.zoxide.list, { desc = 'Find [Z]oxide' })
+      vim.keymap.set('n', '<leader>fn', function()
+        builtin.find_files { cwd = vim.fn.stdpath 'config' }
+      end, { desc = 'Find [N]eovim files' })
 
       vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
 

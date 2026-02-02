@@ -268,8 +268,6 @@ return {
           end,
         },
       }
-
-      require('ufo').setup()
     end,
   },
 }

@@ -20,41 +20,16 @@ require('lazy').setup({
   -- Use `opts = {}` to force a plugin to be loaded.
   --
 
-  -- modular approach: using `require 'path/name'` will
-  -- include a plugin definition from file lua/path/name.lua
-
-  require 'core/plugins/gitsigns',
-
-  require 'core/plugins/which-key',
-
-  require 'core/plugins/telescope',
-
-  require 'core/plugins/lspconfig',
-
-  require 'core/plugins/conform',
-
-  require 'core/plugins/cmp',
-
-  require 'core/plugins/colorscheme',
-
-  require 'core/plugins/todo-comments',
-
-  require 'core/plugins/mini',
-
-  require 'core/plugins/treesitter',
-
-  -- The following two comments only work if you have downloaded the kickstart repo, not just copy pasted the
-  -- init.lua. If you want these files, they are in the repository, so you can just download them and
-  -- place them in the correct locations.
-
-  -- NOTE: Next step on your Neovim journey: Add/Configure additional plugins for Kickstart
-  --
-  --  Here are some example plugins that I've included in the Kickstart repository.
-  --  Uncomment any of the lines below to enable them (you will need to restart nvim).
-  --
-  -- require 'core.plugins.debug',
-  -- require 'core.plugins.indent_line',
-  -- require 'core.plugins.lint',
+  require 'core.plugins.gitsigns',
+  require 'core.plugins.which-key',
+  require 'core.plugins.telescope',
+  require 'core.plugins.lspconfig',
+  require 'core.plugins.conform',
+  require 'core.plugins.cmp',
+  require 'core.plugins.colorscheme',
+  require 'core.plugins.todo-comments',
+  require 'core.plugins.mini',
+  require 'core.plugins.treesitter',
   require 'core.plugins.autopairs',
   require 'core.plugins.neo-tree',
 
