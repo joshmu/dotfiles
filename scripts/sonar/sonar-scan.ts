@@ -17,7 +17,7 @@
  * Requirements:
  *   - sonar-project.properties in repo root
  *   - SONAR_TOKEN environment variable
- *   - npx sonarqube-scanner available
+ *   - npx @sonar/scan available
  */
 
 import { spawn } from 'child_process';
@@ -49,7 +49,7 @@ Environment:
 
 Notes:
   - Requires sonar-project.properties in repo root
-  - Uses npx sonarqube-scanner under the hood
+  - Uses npx @sonar/scan under the hood
   - Waits for API propagation after scan (configurable)
 `);
   process.exit(0);
@@ -99,7 +99,7 @@ async function runScanner(branch: string): Promise<string | null> {
   return new Promise((resolve, reject) => {
     console.log(`\n🔍 Running SonarCloud scan on branch: ${branch}\n`);
 
-    const proc = spawn('npx', ['sonarqube-scanner', `-Dsonar.branch.name=${branch}`], {
+    const proc = spawn('npx', ['@sonar/scan', `-Dsonar.branch.name=${branch}`], {
       stdio: ['inherit', 'pipe', 'pipe'],
       env: { ...process.env, SONAR_TOKEN: token },
     });
