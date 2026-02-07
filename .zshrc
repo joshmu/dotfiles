@@ -8,13 +8,6 @@ source ~/dotfiles/zsh/eval-cache.zsh
 cached_eval "brew-shellenv" "/opt/homebrew/bin/brew shellenv"
 if type brew &>/dev/null; then
    FPATH=$(brew --prefix)/share/zsh/site-functions:$FPATH
-
-   autoload -Uz compinit
-   # only update completions every 24 hours - https://medium.com/@dannysmith/little-thing-2-speeding-up-zsh-f1860390f92
-   for dump in ~/.zcompdump(N.mh+24); do
-     compinit
-   done
-   compinit -C
 fi
 
 # OH MY POSH
@@ -210,14 +203,7 @@ export PATH="$HOME/bin:$PATH"
 # Obsidian local path
 export OBSIDIAN_PATH="/Users/joshmu/Desktop/obsidian"
 
-#source my zprofile again to guarantee all my aliases work
-# ls alias for colorls is failing
-# zshrc is loaded after zprofile
-# todo: need to fix this mapping
-source ~/.zprofile
-
-autoload -U +X bashcompinit && bashcompinit
-complete -o nospace -C /opt/homebrew/bin/terraform terraform
+# terraform completion (bashcompinit loaded in consolidated compinit below)
 
 # pnpm
 export PNPM_HOME="/Users/joshmu/Library/pnpm"
@@ -261,17 +247,8 @@ source ~/completion-for-pnpm.zsh
 
 . "$HOME/.local/bin/env"
 # The following lines have been added by Docker Desktop to enable Docker CLI completions.
+# Docker CLI completions (fpath only, compinit consolidated below)
 fpath=(/Users/joshmu/.docker/completions $fpath)
-autoload -Uz compinit
-compinit
-# End of Docker CLI completions
-
-# AWS CLI completion
-autoload -Uz bashcompinit compinit
-bashcompinit
-compinit
-# Point completion at aws_completer (works regardless of install path)
-complete -C "$(command -v aws_completer)" aws
 
 # FX - JSON PRETTY PRINTER - fx.wtf
 cached_eval "fx-completion" "fx --comp bash"
@@ -296,5 +273,23 @@ export PAGER="nvimpager"
 export PYENV_ROOT="$HOME/.pyenv"
 [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
 eval "$(pyenv init - zsh)"
+
+# ----------------------
+# COMPLETION SYSTEM (consolidated — single compinit call)
+# ----------------------
+autoload -Uz compinit bashcompinit
+for dump in ~/.zcompdump(N.mh+24); do
+  compinit
+  bashcompinit
+  break
+done
+compinit -C
+bashcompinit
+
+# Terraform completion
+complete -o nospace -C /opt/homebrew/bin/terraform terraform
+
+# AWS CLI completion
+complete -C "$(command -v aws_completer)" aws
 
 export GPG_TTY=$(tty)

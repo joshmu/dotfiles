@@ -36,11 +36,15 @@ alias chrome-cors='open -a Google\ Chrome --args --disable-web-security --user-d
 alias zen='/Users/joshmu/Desktop/code/projects/zen/src/main.js'
 alias tre='tree --prune -P '
 alias tree='tree -F '
-# ColorLS integration (official pattern)
-if colorls --version >/dev/null 2>&1; then
-    # Tab completion for colorls
-    source $(dirname $(gem which colorls))/tab_complete.sh 2>/dev/null
-
+# ColorLS integration (cached gem path to avoid Ruby spawns on every shell)
+if command -v colorls &>/dev/null; then
+    _colorls_cache="$HOME/.cache/zsh/colorls-tab-path"
+    if [[ ! -f "$_colorls_cache" ]]; then
+        mkdir -p "$HOME/.cache/zsh"
+        dirname "$(gem which colorls)" > "$_colorls_cache" 2>/dev/null
+    fi
+    [[ -f "$_colorls_cache" ]] && source "$(cat "$_colorls_cache")/tab_complete.sh" 2>/dev/null
+    unset _colorls_cache
     alias ls='colorls'
 else
     alias ls='ls --color=auto'
