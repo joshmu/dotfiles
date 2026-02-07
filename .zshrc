@@ -1,8 +1,11 @@
-# zsh perf check (also run zprof at end of file)
-# zmodload zsh/zprof
+# zsh profiling toggle (enable with: zprof-enable, disable with: zprof-disable)
+[[ -f "$HOME/.cache/zsh/enable-zprof" ]] && zmodload zsh/zprof
+
+# eval cache helper (caches subprocess output to ~/.cache/zsh/)
+source ~/dotfiles/zsh/eval-cache.zsh
 
 # HOMEBREW
-eval "$(/opt/homebrew/bin/brew shellenv)"
+cached_eval "brew-shellenv" "/opt/homebrew/bin/brew shellenv"
 if type brew &>/dev/null; then
    FPATH=$(brew --prefix)/share/zsh/site-functions:$FPATH
 
@@ -16,7 +19,7 @@ fi
 
 # OH MY POSH
 #eval "$(oh-my-posh init zsh)"
-eval "$(oh-my-posh init zsh --config ~/.oh-my-mu.json)"
+cached_eval "oh-my-posh" "oh-my-posh init zsh --config ~/.oh-my-mu.json"
 
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
 # Initialization code that may require console input (password prompts, [y/n]
@@ -224,20 +227,20 @@ case ":$PATH:" in
 esac
 # pnpm end
 
-# zsh perf check
-# zprof
+# zsh profiling output (if enabled)
+[[ -f "$HOME/.cache/zsh/enable-zprof" ]] && zprof
 
 
 
-# GH COPLOT (https://github.com/github/gh-copilot)
-eval "$(gh copilot alias -- zsh)"
+# GH COPILOT (https://github.com/github/gh-copilot)
+cached_eval "gh-copilot" "gh copilot alias -- zsh"
 
 # Zoxide
-eval "$(zoxide init zsh)"
+cached_eval "zoxide" "zoxide init zsh"
 
 # UV - python package manager
-eval "$(uv generate-shell-completion zsh)"
-eval "$(uvx --generate-shell-completion zsh)"
+cached_eval "uv-completion" "uv generate-shell-completion zsh"
+cached_eval "uvx-completion" "uvx --generate-shell-completion zsh"
 
 # nvm
 export NVM_DIR="$HOME/.nvm"
@@ -271,7 +274,7 @@ compinit
 complete -C "$(command -v aws_completer)" aws
 
 # FX - JSON PRETTY PRINTER - fx.wtf
-source <(fx --comp bash)
+cached_eval "fx-completion" "fx --comp bash"
 
 # Added by LM Studio CLI (lms)
 export PATH="$PATH:/Users/joshmu/.lmstudio/bin"

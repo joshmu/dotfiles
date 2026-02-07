@@ -315,3 +315,7 @@ alias yt-transcript='~/dotfiles/scripts/yt-transcript.ts'
 
 # AI Harness
 alias wp="~/.claude/poc/worker-planner-v2/wp.ts"
+
+# Zsh profiling helpers
+alias zprof-enable='mkdir -p ~/.cache/zsh && touch ~/.cache/zsh/enable-zprof && echo "Restart shell to profile"'
+alias zprof-disable='rm -f ~/.cache/zsh/enable-zprof && echo "Restart shell to apply"'
