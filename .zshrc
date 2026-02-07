@@ -228,15 +228,8 @@ cached_eval "zoxide" "zoxide init zsh"
 cached_eval "uv-completion" "uv generate-shell-completion zsh"
 cached_eval "uvx-completion" "uvx --generate-shell-completion zsh"
 
-# nvm (--no-use skips slow auto-detect, manually add default node to PATH)
-export NVM_DIR="$HOME/.nvm"
-[ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh" --no-use
-[ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"
-# Add default node to PATH since --no-use skips this
-if [ -f "$NVM_DIR/alias/default" ]; then
-  DEFAULT_NODE_VER=$(cat "$NVM_DIR/alias/default")
-  [ -d "$NVM_DIR/versions/node/$DEFAULT_NODE_VER/bin" ] && PATH="$NVM_DIR/versions/node/$DEFAULT_NODE_VER/bin:$PATH"
-fi
+# fnm - Fast Node Manager (auto-switches on cd, reads .nvmrc files)
+eval "$(fnm env --use-on-cd --version-file-strategy=recursive --shell zsh)"
 
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
 export SDKMAN_DIR="/Users/joshmu/.sdkman"

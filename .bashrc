@@ -6,9 +6,8 @@ export PS1="MU - \W: "
 ### Added by the Heroku Toolbelt
 export PATH="/usr/local/heroku/bin:$PATH"
 
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+# fnm - Fast Node Manager (auto-switches on cd, reads .nvmrc files)
+eval "$(fnm env --use-on-cd --version-file-strategy=recursive --shell bash)"
 
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
 
