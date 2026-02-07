@@ -181,7 +181,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 
 # rbenv
 export PATH="$HOME/.rbenv/bin:$PATH"
-eval "$(rbenv init - zsh)"
+eval "$(rbenv init - --no-rehash zsh)"
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
@@ -228,10 +228,15 @@ cached_eval "zoxide" "zoxide init zsh"
 cached_eval "uv-completion" "uv generate-shell-completion zsh"
 cached_eval "uvx-completion" "uvx --generate-shell-completion zsh"
 
-# nvm
+# nvm (--no-use skips slow auto-detect, manually add default node to PATH)
 export NVM_DIR="$HOME/.nvm"
-[ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"  # This loads nvm
-[ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"  # This loads nvm bash_completion
+[ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh" --no-use
+[ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"
+# Add default node to PATH since --no-use skips this
+if [ -f "$NVM_DIR/alias/default" ]; then
+  DEFAULT_NODE_VER=$(cat "$NVM_DIR/alias/default")
+  [ -d "$NVM_DIR/versions/node/$DEFAULT_NODE_VER/bin" ] && PATH="$NVM_DIR/versions/node/$DEFAULT_NODE_VER/bin:$PATH"
+fi
 
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
 export SDKMAN_DIR="/Users/joshmu/.sdkman"
@@ -272,7 +277,7 @@ export PAGER="nvimpager"
 # python version management
 export PYENV_ROOT="$HOME/.pyenv"
 [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init - zsh)"
+eval "$(pyenv init - --no-rehash zsh)"
 
 # ----------------------
 # COMPLETION SYSTEM (consolidated — single compinit call)
