@@ -229,7 +229,7 @@ cached_eval "uv-completion" "uv generate-shell-completion zsh"
 cached_eval "uvx-completion" "uvx --generate-shell-completion zsh"
 
 # fnm - Fast Node Manager (auto-switches on cd, reads .nvmrc files)
-eval "$(fnm env --use-on-cd --version-file-strategy=recursive --shell zsh)"
+eval "$(fnm env --use-on-cd --version-file-strategy=recursive --log-level=quiet --shell zsh)"
 
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
 export SDKMAN_DIR="/Users/joshmu/.sdkman"
