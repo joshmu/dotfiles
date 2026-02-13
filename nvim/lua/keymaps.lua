@@ -97,7 +97,7 @@ vim.keymap.set('n', '<leader>gl', function()
   end
 end, { desc = 'Line diff' })
 
-vim.keymap.set('n', 'gh', vim.lsp.buf.hover, { desc = 'Hover symbol details' })
+vim.keymap.set('n', 'gh', function() vim.lsp.buf.hover() end, { desc = 'Hover symbol details' })
 
 -- dismiss notifications
 vim.keymap.set('n', '<leader><Esc>', function()
