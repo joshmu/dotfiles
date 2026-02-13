@@ -94,7 +94,7 @@ alias yz='yazi'
 # AI
 # ----------------------
 alias oc=opencode
-alias cld=claude
+alias cld='claude --allow-dangerously-skip-permissions'
 alias cldc=claude --continue
 alias cldy=claude  --dangerously-skip-permissions
 alias ralph='~/.claude/scripts/ralph/ralph.sh'
