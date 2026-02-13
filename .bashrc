@@ -19,3 +19,5 @@ eval "$(fnm env --use-on-cd --version-file-strategy=recursive --log-level=quiet 
 export PATH="$PATH:/Users/joshmu/.lmstudio/bin"
 # End of LM Studio CLI section
 
+
+[[ "$TERM_PROGRAM" == "kiro" ]] && . "$(kiro --locate-shell-integration-path bash)"

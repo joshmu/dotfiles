@@ -291,3 +291,5 @@ complete -o nospace -C /opt/homebrew/bin/terraform terraform
 complete -C "$(command -v aws_completer)" aws
 
 export GPG_TTY=$(tty)
+
+[[ "$TERM_PROGRAM" == "kiro" ]] && . "$(kiro --locate-shell-integration-path zsh)"
