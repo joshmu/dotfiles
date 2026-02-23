@@ -1,0 +1,7 @@
+{
+  "name": "tmux-fzf-sessions",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}
