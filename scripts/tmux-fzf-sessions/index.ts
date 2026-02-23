@@ -259,11 +259,11 @@ if (process.argv[2] === "--preview" && process.argv[3]) {
     for (const target of claudeTargets) {
       process.stdout.write(renderPaneSeparator(target) + "\n");
       const paneContent = await run([
-        "tmux", "capture-pane", "-pt", target, "-p",
+        "tmux", "capture-pane", "-ept", target, "-p",
       ]);
       const contentLines = paneContent.split("\n");
       process.stdout.write(
-        `${DIM}${contentLines.slice(-linesPerPane).join("\n")}${RESET}\n`,
+        contentLines.slice(-linesPerPane).join("\n") + "\n",
       );
     }
   } else {
@@ -271,11 +271,11 @@ if (process.argv[2] === "--preview" && process.argv[3]) {
     const captureTarget =
       claudeTargets.length === 1 ? claudeTargets[0] : sessionName;
     const paneContent = await run([
-      "tmux", "capture-pane", "-pt", captureTarget, "-p",
+      "tmux", "capture-pane", "-ept", captureTarget, "-p",
     ]);
     const contentLines = paneContent.split("\n");
     process.stdout.write(
-      `${DIM}${contentLines.slice(-maxLines).join("\n")}${RESET}\n`,
+      contentLines.slice(-maxLines).join("\n") + "\n",
     );
   }
 
@@ -303,7 +303,7 @@ const fzf = Bun.spawn(
     "ctrl-o:accept",
     "--bind",
     `ctrl-k:execute-silent(${SCRIPT_PATH} --kill {})+reload(${SCRIPT_PATH} --list)`,
-    "--preview-window=right:60%",
+    "--preview-window=right:75%",
     "--preview",
     `${SCRIPT_PATH} --preview {}`,
     "--print-query",
