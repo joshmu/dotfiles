@@ -111,6 +111,7 @@ function gen-img() {
   ~/dotfiles/scripts/rayimg/gen-img.ts "$*"
 }
 function ai-img() { gen-img "$@"; }
+alias img="chafa"
 alias kimi="ccr code"
 alias agents='npx tsx ~/Desktop/code/agents/cli/index.ts'
 function ai-local() {
