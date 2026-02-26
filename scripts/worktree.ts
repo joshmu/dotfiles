@@ -234,7 +234,10 @@ async function createWorktree(
   await mkdir(worktreesDir, { recursive: true });
 
   // Determine branch name
-  const branchName = branch || `feature/${purpose}`;
+  // Skip feature/ prefix if purpose already has a conventional branch prefix
+  const BRANCH_PREFIXES = ['feature/', 'feat/', 'fix/', 'hotfix/', 'chore/', 'docs/', 'refactor/', 'test/', 'ci/', 'build/', 'perf/', 'release/'];
+  const hasPrefix = BRANCH_PREFIXES.some((p) => purpose.startsWith(p));
+  const branchName = branch || (hasPrefix ? purpose : `feature/${purpose}`);
 
   // Fetch latest changes from origin
   log.step(`Fetching latest changes from origin`);
@@ -410,7 +413,7 @@ ${colors.cyan}Commands:${colors.reset}
   ${colors.green}help${colors.reset}                              Show this help
 
 ${colors.cyan}Create Options:${colors.reset}
-  --branch <name>      Specify branch name (default: feature/<purpose>)
+  --branch <name>      Specify branch name (default: feature/<purpose>, or <purpose> if it has a prefix like fix/, feat/, etc.)
   --existing-branch    Use existing branch instead of creating new
   --no-env             Skip local file sync
 
