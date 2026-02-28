@@ -27,7 +27,7 @@ bun run gen-img.ts "a cat wearing a top hat"
 
 ## Model
 
-Currently uses **Google Imagen 4** via Replicate.
+Currently uses **Flux 2 Pro** via Replicate.
 
 ### Free Models
 

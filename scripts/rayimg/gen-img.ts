@@ -5,7 +5,7 @@
  * Flow:
  * 1. Accept prompt from argument
  * 2. Generate descriptive filename via Claude Haiku
- * 3. Call Replicate API (Google Imagen 4) to generate image
+ * 3. Call Replicate API (Flux 2 Pro) to generate image
  * 4. Poll for completion, download image
  * 5. Save to ~/Downloads/{generated-name}.jpg
  * 6. Show notification and copy path to clipboard
@@ -29,7 +29,7 @@ const getImageUrl = (output: string | string[]): string =>
   Array.isArray(output) ? output[0] : output;
 
 const DOWNLOADS_DIR = join(process.env.HOME!, "Downloads");
-const REPLICATE_MODEL = "google/imagen-4";
+const REPLICATE_MODEL = "black-forest-labs/flux-2-pro";
 const CLAUDE_PATH = join(process.env.HOME!, ".local/bin/claude");
 
 function loadConfig(): Config {
@@ -90,7 +90,7 @@ async function createPrediction(apiKey: string, prompt: string): Promise<string>
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      input: { prompt },
+      input: { prompt, output_format: "jpg" },
     }),
   });
 
