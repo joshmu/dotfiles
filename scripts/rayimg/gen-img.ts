@@ -174,11 +174,47 @@ async function copyToClipboard(text: string): Promise<void> {
   await proc.exited;
 }
 
+function printHelp(): void {
+  console.log(`gen-img - AI Image Generation
+
+USAGE
+  gen-img.ts <prompt>
+  gen-img.ts --help
+
+DESCRIPTION
+  Generates an image from a text prompt using the Replicate API.
+
+  Model:    Flux 2 Pro (black-forest-labs/flux-2-pro)
+  Output:   ~/Downloads/{descriptive-name}.jpg
+  Format:   JPEG
+
+BEHAVIOR
+  1. Generates a descriptive filename via Claude Haiku
+  2. Sends prompt to Replicate API (Flux 2 Pro)
+  3. Polls until image is ready (up to 60s)
+  4. Downloads image to ~/Downloads/
+  5. Copies file path to clipboard
+  6. Shows macOS notification
+  7. Prints the output path to stdout
+
+EXAMPLES
+  gen-img.ts "a cat wearing a top hat"
+  gen-img.ts "minimalist logo for a coffee shop, white background"
+
+SETUP
+  Requires a Replicate API key in config.json (see config.example.json).
+  Free models list: https://replicate.com/collections/try-for-free`);
+}
+
 async function main() {
   const prompt = process.argv[2];
 
-  if (!prompt) {
-    console.error('Usage: gen-img.ts "your image prompt"');
+  if (!prompt || prompt === "--help" || prompt === "-h") {
+    if (prompt === "--help" || prompt === "-h") {
+      printHelp();
+      process.exit(0);
+    }
+    console.error('Usage: gen-img.ts "your image prompt" (use --help for details)');
     process.exit(1);
   }
 
