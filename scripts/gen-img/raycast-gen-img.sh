@@ -18,4 +18,4 @@ export PATH="$HOME/.bun/bin:$HOME/.local/bin:$PATH"
 
 # Run in background, detached
 prompt="$1"
-nohup ~/dotfiles/scripts/rayimg/gen-img.ts "$prompt" >> /tmp/gen-img.log 2>&1 &
+nohup ~/dotfiles/scripts/gen-img/gen-img.ts "$prompt" >> /tmp/gen-img.log 2>&1 &

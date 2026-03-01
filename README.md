@@ -50,7 +50,7 @@ All scripts in `scripts/` are TypeScript files using Bun runtime with shebang `#
 - `bitbucket/` - Bitbucket CLI tools (`bb-repos`, `bb-pr-create`, `bb-pr-update`)
 - `sonar/` - SonarCloud tools (`sonar-verify`, `sonar-scan`, `sonar-compare`)
 - `claude-monitor/` - Claude session monitoring (`cm` alias)
-- `rayimg/gen-img.ts` - AI image generation via Replicate (`gen-img` alias)
+- `gen-img/gen-img.ts` - AI image generation via Replicate (`gen-img` alias)
 - `telegram/` - Telegram notifications
 
 ## Architecture & Patterns

@@ -108,7 +108,7 @@ function gen-img() {
     echo "Image saved to ~/Downloads with descriptive filename"
     return 0
   fi
-  ~/dotfiles/scripts/rayimg/gen-img.ts "$*"
+  ~/dotfiles/scripts/gen-img/gen-img.ts "$*"
 }
 function ai-img() { gen-img "$@"; }
 alias img="chafa"

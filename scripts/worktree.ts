@@ -217,7 +217,8 @@ async function createWorktree(
   repoName: string,
   purpose: string,
   branch?: string,
-  existingBranch: boolean = false
+  existingBranch: boolean = false,
+  baseBranch?: string,
 ): Promise<string | null> {
   const worktreesBaseDir = getWorktreesBaseDir(repoPath);
   const worktreesDir = join(worktreesBaseDir, repoName);
@@ -251,15 +252,38 @@ async function createWorktree(
     const { success } = await exec(`git worktree add ${worktreePath} ${branchName}`, repoPath);
     if (!success) return null;
   } else {
-    const baseResult = await detectBaseBranch(repoPath);
-    if (!baseResult) {
-      log.error(`No main or master branch found (local or remote)`);
-      return null;
+    let base: string;
+    let isRemote: boolean;
+
+    if (baseBranch) {
+      // Explicit base branch — check if it's remote or local
+      isRemote = baseBranch.startsWith("origin/");
+      if (!isRemote) {
+        // Check if remote version exists, prefer it
+        const { success: hasRemote } = await execQuiet(`git rev-parse --verify origin/${baseBranch}`, repoPath);
+        if (hasRemote) {
+          base = `origin/${baseBranch}`;
+          isRemote = true;
+        } else {
+          base = baseBranch;
+        }
+      } else {
+        base = baseBranch;
+      }
+      log.info(`Using specified base: ${base}`);
+    } else {
+      const baseResult = await detectBaseBranch(repoPath);
+      if (!baseResult) {
+        log.error(`No main or master branch found (local or remote)`);
+        return null;
+      }
+      base = baseResult.branch;
+      isRemote = baseResult.isRemote;
     }
 
-    log.step(`Creating worktree with new branch: ${branchName} from ${baseResult.branch}`);
-    const noTrackFlag = baseResult.isRemote ? " --no-track" : "";
-    const { success } = await exec(`git worktree add -b ${branchName} ${worktreePath} ${baseResult.branch}${noTrackFlag}`, repoPath);
+    log.step(`Creating worktree with new branch: ${branchName} from ${base}`);
+    const noTrackFlag = isRemote ? " --no-track" : "";
+    const { success } = await exec(`git worktree add -b ${branchName} ${worktreePath} ${base}${noTrackFlag}`, repoPath);
     if (!success) return null;
   }
 
@@ -414,6 +438,7 @@ ${colors.cyan}Commands:${colors.reset}
 
 ${colors.cyan}Create Options:${colors.reset}
   --branch <name>      Specify branch name (default: feature/<purpose>, or <purpose> if it has a prefix like fix/, feat/, etc.)
+  --base <branch>      Specify base branch (default: auto-detect main/master from remote)
   --existing-branch    Use existing branch instead of creating new
   --no-env             Skip local file sync
 
@@ -430,6 +455,7 @@ ${colors.cyan}Remove Options:${colors.reset}
 ${colors.cyan}Examples:${colors.reset}
   gw create dark-mode
   gw create fix-payment --branch hotfix/payment-bug
+  gw create feat/new-feature --base develop
   gw create review-pr --existing-branch
   gw sync --dry-run
   gw list
@@ -468,7 +494,8 @@ async function main(): Promise<void> {
         process.exit(1);
       }
 
-      // Support both: gw create <purpose> and gw create <repo> <purpose>
+      // Support: gw create <purpose> [--base <branch>] [options]
+      //     or: gw create <repo> <purpose> [--base <branch>] [options]
       const hasRepoArg = args.length >= 3 && !args[1].startsWith("--") && !args[2].startsWith("--");
       const purpose = hasRepoArg ? args[2] : args[1];
       let repoPath = hasRepoArg && args[1] !== "." ? resolve(process.cwd(), args[1]) : process.cwd();
@@ -476,6 +503,7 @@ async function main(): Promise<void> {
       // Parse options
       const options = {
         branch: args.includes("--branch") ? args[args.indexOf("--branch") + 1] : undefined,
+        base: args.includes("--base") ? args[args.indexOf("--base") + 1] : undefined,
         existingBranch: args.includes("--existing-branch"),
         noEnv: args.includes("--no-env"),
       };
@@ -502,7 +530,7 @@ async function main(): Promise<void> {
       console.log(`\n${colors.bright}Creating worktree for ${repoName}/${purpose}${colors.reset}\n`);
 
       // Create worktree
-      const worktreePath = await createWorktree(repoPath, repoName, purpose, options.branch, options.existingBranch);
+      const worktreePath = await createWorktree(repoPath, repoName, purpose, options.branch, options.existingBranch, options.base);
       if (!worktreePath) process.exit(1);
 
       // Sync local files
