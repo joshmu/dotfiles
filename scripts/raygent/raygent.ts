@@ -35,7 +35,7 @@ async function main() {
       sessionConfig = await generateSessionConfig(prompt);
     }
 
-    const escapedPrompt = prompt.replace(/"/g, '\\"');
+    const escapedPrompt = prompt.replace(/'/g, "'\\''");
 
     let target: string;
 
@@ -57,7 +57,7 @@ async function main() {
       console.log(`Started: ${sessionName} @ ${sessionConfig.cwd}`);
     }
 
-    sendKeys(target, `claude "${escapedPrompt}"`);
+    sendKeys(target, `claude '${escapedPrompt}'`);
   } catch (error) {
     console.error('Error:', error instanceof Error ? error.message : error);
     process.exit(1);
