@@ -10,6 +10,7 @@
 
 import { generateSessionConfig, loadConfig, findExactMatch, type SessionConfig } from './lib/router-agent';
 import { createSession, sendKeys, generateUniqueName, hasSession, createPane } from './lib/tmux';
+import { writeFileSync } from 'fs';
 
 async function main() {
   const prompt = process.argv[2];
@@ -58,7 +59,15 @@ async function main() {
     }
 
     const extraArgs = process.env.CLAUDE_EXTRA_ARGS?.trim() || '';
-    sendKeys(target, `claude ${extraArgs ? extraArgs + ' ' : ''}'${escapedPrompt}'`);
+    if (extraArgs) {
+      // Write prompt to temp file to avoid shell escaping issues with long prompts
+      // Use -- separator because --disallowedTools is variadic (consumes following args)
+      const promptFile = `/tmp/raygent-prompt-${Date.now()}.txt`;
+      writeFileSync(promptFile, prompt);
+      sendKeys(target, `claude ${extraArgs} -- "$(cat ${promptFile})" && rm ${promptFile}`);
+    } else {
+      sendKeys(target, `claude '${escapedPrompt}'`);
+    }
   } catch (error) {
     console.error('Error:', error instanceof Error ? error.message : error);
     process.exit(1);
