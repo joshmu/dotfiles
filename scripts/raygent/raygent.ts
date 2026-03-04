@@ -57,7 +57,8 @@ async function main() {
       console.log(`Started: ${sessionName} @ ${sessionConfig.cwd}`);
     }
 
-    sendKeys(target, `claude '${escapedPrompt}'`);
+    const extraArgs = process.env.CLAUDE_EXTRA_ARGS?.trim() || '';
+    sendKeys(target, `claude ${extraArgs ? extraArgs + ' ' : ''}'${escapedPrompt}'`);
   } catch (error) {
     console.error('Error:', error instanceof Error ? error.message : error);
     process.exit(1);
