@@ -222,7 +222,9 @@ async function createWorktree(
 ): Promise<string | null> {
   const worktreesBaseDir = getWorktreesBaseDir(repoPath);
   const worktreesDir = join(worktreesBaseDir, repoName);
-  const worktreePath = join(worktreesDir, purpose);
+  // Flatten purpose to single directory name (e.g., "chore/codex-support" → "chore-codex-support")
+  const worktreeDirName = purpose.replace(/\//g, "-");
+  const worktreePath = join(worktreesDir, worktreeDirName);
 
   // Check if worktree already exists
   const { output: worktreeList } = await exec("git worktree list", repoPath);
@@ -401,7 +403,8 @@ async function listWorktrees(): Promise<void> {
 // Remove worktree
 async function removeWorktree(repoPath: string, repoName: string, purpose: string, force: boolean = false): Promise<boolean> {
   const worktreesBaseDir = getWorktreesBaseDir(repoPath);
-  const worktreePath = join(worktreesBaseDir, repoName, purpose);
+  const worktreeDirName = purpose.replace(/\//g, "-");
+  const worktreePath = join(worktreesBaseDir, repoName, worktreeDirName);
 
   if (!existsSync(worktreePath)) {
     log.error(`Worktree not found: ${worktreePath}`);
@@ -527,7 +530,8 @@ async function main(): Promise<void> {
       }
 
       const repoName = basename(repoPath);
-      console.log(`\n${colors.bright}Creating worktree for ${repoName}/${purpose}${colors.reset}\n`);
+      const displayName = purpose.replace(/\//g, "-");
+      console.log(`\n${colors.bright}Creating worktree for ${repoName}/${displayName}${colors.reset}\n`);
 
       // Create worktree
       const worktreePath = await createWorktree(repoPath, repoName, purpose, options.branch, options.existingBranch, options.base);
