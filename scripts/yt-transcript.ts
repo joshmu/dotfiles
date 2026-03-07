@@ -9,18 +9,28 @@ interface TranscriptResponse {
   error?: string;
 }
 
+interface VideoMetadata {
+  title?: string;
+  description?: string;
+  channel?: string;
+}
+
 interface ScriptOutput {
   success: boolean;
   videoId?: string;
   url?: string;
+  title?: string;
+  description?: string;
+  channel?: string;
   transcript?: string;
+  fallback?: boolean;
   error?: string;
 }
 
 function extractVideoId(url: string): string | null {
   // Remove leading/trailing whitespace
   url = url.trim();
-  
+
   // Try different patterns to extract video ID
   const patterns = [
     // youtube.com/watch?v=VIDEO_ID
@@ -38,14 +48,14 @@ function extractVideoId(url: string): string | null {
     // User/channel URLs with video ID at the end
     /[#\/]([a-zA-Z0-9_-]{11})(?:[?&\s]|$)/,
   ];
-  
+
   for (const pattern of patterns) {
     const match = url.match(pattern);
     if (match && match[1]) {
       return match[1];
     }
   }
-  
+
   return null;
 }
 
@@ -88,11 +98,44 @@ print(json.dumps({"transcript": result}))
   return JSON.parse(output.trim());
 }
 
+async function fetchTranscriptChain(videoId: string): Promise<{ data: TranscriptResponse; fallback: boolean }> {
+  try {
+    const data = await fetchTranscript(videoId);
+    if (data.error) {
+      throw new Error(data.error);
+    }
+    return { data, fallback: false };
+  } catch {
+    const data = await fetchTranscriptViaPython(videoId);
+    return { data, fallback: true };
+  }
+}
+
+async function fetchVideoMetadata(videoId: string): Promise<VideoMetadata> {
+  const url = `https://www.youtube.com/watch?v=${videoId}`;
+  const proc = Bun.spawn(["yt-dlp", "--dump-json", "--no-download", url], {
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  const exitCode = await proc.exited;
+  if (exitCode !== 0) {
+    const stderr = await new Response(proc.stderr).text();
+    throw new Error(`yt-dlp failed: ${stderr.trim()}`);
+  }
+  const output = await new Response(proc.stdout).text();
+  const json = JSON.parse(output.trim());
+  return {
+    title: json.title,
+    description: json.description,
+    channel: json.channel,
+  };
+}
+
 function formatTranscript(data: TranscriptResponse): string {
   if (!data.transcript || !Array.isArray(data.transcript)) {
     return "";
   }
-  
+
   // Join all transcript segments into a single text
   return data.transcript
     .map(segment => segment.text)
@@ -103,7 +146,7 @@ function formatTranscript(data: TranscriptResponse): string {
 
 async function main() {
   const args = process.argv.slice(2);
-  
+
   if (args.length === 0) {
     const output: ScriptOutput = {
       success: false,
@@ -112,10 +155,10 @@ async function main() {
     console.log(JSON.stringify(output, null, 2));
     process.exit(1);
   }
-  
+
   const url = args[0];
   const videoId = extractVideoId(url);
-  
+
   if (!videoId) {
     const output: ScriptOutput = {
       success: false,
@@ -125,7 +168,7 @@ async function main() {
     console.log(JSON.stringify(output, null, 2));
     process.exit(1);
   }
-  
+
   // Validate video ID length
   if (videoId.length !== 11) {
     const output: ScriptOutput = {
@@ -137,32 +180,26 @@ async function main() {
     console.log(JSON.stringify(output, null, 2));
     process.exit(1);
   }
-  
-  let data: TranscriptResponse;
-  let usedFallback = false;
 
-  // Try primary API, fall back to Python if it fails
-  try {
-    data = await fetchTranscript(videoId);
-    if (data.error) {
-      throw new Error(data.error);
-    }
-  } catch (primaryError) {
-    try {
-      data = await fetchTranscriptViaPython(videoId);
-      usedFallback = true;
-    } catch (fallbackError) {
-      const output: ScriptOutput = {
-        success: false,
-        error: `Primary API failed: ${primaryError.message}. Fallback also failed: ${fallbackError.message}`,
-        videoId,
-        url,
-      };
-      console.log(JSON.stringify(output, null, 2));
-      process.exit(1);
-    }
+  // Fetch metadata and transcript in parallel
+  const [metadataResult, transcriptResult] = await Promise.allSettled([
+    fetchVideoMetadata(videoId),
+    fetchTranscriptChain(videoId),
+  ]);
+
+  // Handle transcript failure
+  if (transcriptResult.status === "rejected") {
+    const output: ScriptOutput = {
+      success: false,
+      error: transcriptResult.reason?.message ?? "Failed to fetch transcript",
+      videoId,
+      url,
+    };
+    console.log(JSON.stringify(output, null, 2));
+    process.exit(1);
   }
 
+  const { data, fallback } = transcriptResult.value;
   const transcriptText = formatTranscript(data);
 
   if (!transcriptText) {
@@ -176,13 +213,16 @@ async function main() {
     process.exit(1);
   }
 
-  const output: ScriptOutput & { fallback?: boolean } = {
+  const metadata = metadataResult.status === "fulfilled" ? metadataResult.value : {};
+
+  const output: ScriptOutput = {
     success: true,
     videoId,
     url,
+    ...metadata,
     transcript: transcriptText,
   };
-  if (usedFallback) {
+  if (fallback) {
     output.fallback = true;
   }
 
