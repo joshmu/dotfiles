@@ -114,6 +114,7 @@ function ai-img() { gen-img "$@"; }
 alias img="chafa"
 alias kimi="ccr code"
 alias ag='npx tsx ~/Desktop/code/agents/src/cli.ts'
+export PATH="$HOME/Desktop/code/agents/wrappers:$PATH"
 function ai-local() {
   output=$(ollama run codellama "$@")
   echo "$output" | glow
