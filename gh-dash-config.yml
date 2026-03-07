@@ -46,11 +46,11 @@ keybindings:
         exec $SHELL"
     - key: C
       command: >
-        tmux new-window -n "review-{{.PrNumber}}"
+        tmux new-window -n "pr-{{.PrNumber}}"
         "cd {{.RepoPath}} &&
         git fetch origin pull/{{.PrNumber}}/head:{{.HeadRefName}} 2>/dev/null;
-        ~/dotfiles/scripts/worktree.ts create review-{{.PrNumber}} --branch {{.HeadRefName}} --existing-branch;
-        cd $(dirname {{.RepoPath}})/worktrees/$(basename {{.RepoPath}})/review-{{.PrNumber}};
+        ~/dotfiles/scripts/worktree.ts create pr-{{.PrNumber}} --branch {{.HeadRefName}} --existing-branch;
+        cd $(dirname {{.RepoPath}})/worktrees/$(basename {{.RepoPath}})/pr-{{.PrNumber}};
         CLAUDE_AUTO_REFLECT=1 claude --allow-dangerously-skip-permissions 'Review PR #{{.PrNumber}} in {{.RepoName}} ({{.HeadRefName}}). Use /pr-review or /code-review:code-review to perform a thorough code review.'"
     - key: v
       command: gh pr review --approve --repo {{.RepoName}} {{.PrNumber}}
