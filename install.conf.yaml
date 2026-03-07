@@ -29,6 +29,7 @@
     ~/.oh-my-mu.json: oh-my-mu.json
     ~/Library/Application Support/lazygit/config.yml: lazygit-config.yml
     ~/Library/Application Support/lazydocker/config.yml: lazydocker-config.yml
+    ~/.config/gh-dash/config.yml: gh-dash-config.yml
     ~/Desktop/obsidian/.obsidian/snippets: obsidian/snippets
     ~/Desktop/obsidian/.obsidian.vimrc: obsidian/obsidian.vimrc
     ~/.cursor/mcp.json: cursor/mcp.json
@@ -44,6 +45,7 @@
 - create:
     - ~/downloads
     - ~/.vim/undo-history
+    - ~/.config/gh-dash
 
 - shell:
     - [git submodule update --init --recursive, Installing submodules]
