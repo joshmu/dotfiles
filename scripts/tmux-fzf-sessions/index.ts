@@ -251,7 +251,7 @@ if (process.argv[2] === "--preview" && process.argv[3]) {
       const pane = paneByPid.get(ppid);
       if (pane) {
         const target = `${sessionName}:${pane.windowIndex}.${pane.paneIndex}`;
-        const state: ClaudeState = pane.claudeState === "working" || pane.claudeState === "waiting" ? pane.claudeState : "unknown";
+        const state: ClaudeState = pane.claudeState === "working" || pane.claudeState === "waiting" || pane.claudeState === "idle" ? pane.claudeState : "unknown";
         claudeTargets.push({ target, state });
         claudeWindowInfo.set(pane.windowIndex, state);
         break;

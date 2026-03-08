@@ -57,11 +57,12 @@ describe("parsePaneData", () => {
   });
 
   test("parses 5-field format with claude state", () => {
-    const raw = "dev:0:0:1234:working\ndev:0:1:5678:waiting\nwork:1:0:9012:";
+    const raw = "dev:0:0:1234:working\ndev:0:1:5678:waiting\ndev:1:0:3456:idle\nwork:1:0:9012:";
     const result = parsePaneData(raw);
     expect(result).toEqual([
       { session: "dev", windowIndex: 0, paneIndex: 0, pid: "1234", claudeState: "working" },
       { session: "dev", windowIndex: 0, paneIndex: 1, pid: "5678", claudeState: "waiting" },
+      { session: "dev", windowIndex: 1, paneIndex: 0, pid: "3456", claudeState: "idle" },
       { session: "work", windowIndex: 1, paneIndex: 0, pid: "9012", claudeState: undefined },
     ]);
   });
@@ -203,6 +204,19 @@ describe("findClaudePaneTargets", () => {
     expect(result.get("dev")).toEqual([{ target: "dev:1.0", state: "waiting" }]);
   });
 
+  test("propagates idle state from pane", () => {
+    const panesWithState: PaneInfo[] = [
+      { session: "dev", windowIndex: 1, paneIndex: 0, pid: "200", claudeState: "idle" },
+    ];
+    const byPid = buildPaneByPid(panesWithState);
+    const pidToParent = new Map([
+      ["300", "200"],
+      ["200", "1"],
+    ]);
+    const result = findClaudePaneTargets(["300"], byPid, pidToParent);
+    expect(result.get("dev")).toEqual([{ target: "dev:1.0", state: "idle" }]);
+  });
+
   test("returns empty map when Claude PID has no tmux ancestor", () => {
     // claude(999) -> orphan(998) -> init(1)
     const pidToParent = new Map([
@@ -321,15 +335,21 @@ describe("formatSessionLine", () => {
     expect(beforeIcon).toContain("\x1b[33m"); // yellow
   });
 
+  test("uses dim for idle state", () => {
+    const line = formatSessionLine("dev", "other", [{ target: "dev:0.0", state: "idle" }]);
+    expect(line).toContain("\x1b[2m"); // dim
+  });
+
   test("mixed states show correct colors per icon", () => {
     const line = formatSessionLine("dev", "other", [
       { target: "dev:0.0", state: "working" },
       { target: "dev:1.0", state: "waiting" },
+      { target: "dev:2.0", state: "idle" },
     ]);
-    expect(stripAnsi(line)).toBe("dev 󰚩 󰚩");
-    // Should contain both magenta and yellow for icons
+    expect(stripAnsi(line)).toBe("dev 󰚩 󰚩 󰚩");
     expect(line).toContain("\x1b[35m"); // magenta for working
     expect(line).toContain("\x1b[33m"); // yellow for waiting
+    expect(line).toContain("\x1b[2m"); // dim for idle
   });
 });
 
@@ -391,8 +411,17 @@ describe("renderTreeHeader", () => {
     const header = renderTreeHeader("dev", windows, new Map<number, ClaudeState>([[0, "waiting"]]));
     const lines = header.split("\n");
     const winLine = lines[1];
-    // The icon color should be yellow
     expect(winLine).toContain("\x1b[33m"); // yellow
+  });
+
+  test("uses dim for idle state in tree", () => {
+    const windows: WindowInfo[] = [
+      { session: "dev", index: 0, name: "shell", paneCount: 1 },
+    ];
+    const header = renderTreeHeader("dev", windows, new Map<number, ClaudeState>([[0, "idle"]]));
+    const lines = header.split("\n");
+    const winLine = lines[1];
+    expect(winLine).toContain("\x1b[2m"); // dim
   });
 
   test("ends with separator line", () => {
@@ -458,6 +487,11 @@ describe("renderPaneSeparator", () => {
     const sep = renderPaneSeparator("dev:1.0", "waiting");
     expect(sep).toContain("\x1b[33m"); // yellow
     expect(sep).not.toContain("\x1b[35m"); // no magenta
+  });
+
+  test("uses dim for idle state", () => {
+    const sep = renderPaneSeparator("dev:1.0", "idle");
+    expect(sep).toContain("\x1b[2m"); // dim
   });
 
   test("pads to consistent width", () => {

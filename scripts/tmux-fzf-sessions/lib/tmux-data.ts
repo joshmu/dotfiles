@@ -8,7 +8,7 @@ export interface PaneInfo {
   claudeState?: string;
 }
 
-export type ClaudeState = "working" | "waiting" | "unknown";
+export type ClaudeState = "working" | "waiting" | "idle" | "unknown";
 
 export interface ClaudePaneInfo {
   target: string;
@@ -116,7 +116,7 @@ export function buildPaneByPid(panes: PaneInfo[]): Map<string, PaneInfo> {
 }
 
 function toClaudeState(raw?: string): ClaudeState {
-  if (raw === "working" || raw === "waiting") return raw;
+  if (raw === "working" || raw === "waiting" || raw === "idle") return raw;
   return "unknown";
 }
 
@@ -155,7 +155,9 @@ export function findClaudePaneTargets(
 }
 
 function claudeIconColor(state: ClaudeState): string {
-  return state === "waiting" ? YELLOW : MAGENTA;
+  if (state === "waiting") return YELLOW;
+  if (state === "idle") return DIM;
+  return MAGENTA; // working or unknown
 }
 
 /**
@@ -209,6 +211,6 @@ export function renderTreeHeader(
 export function renderPaneSeparator(target: string, state?: ClaudeState): string {
   const label = `── 󰚩 ${target} ──`;
   const padding = Math.max(0, 40 - label.length);
-  const color = state === "waiting" ? YELLOW : MAGENTA;
+  const color = claudeIconColor(state ?? "unknown");
   return `${BOLD}${color}${label}${"─".repeat(padding)}${RESET}`;
 }
