@@ -5,6 +5,14 @@ export interface PaneInfo {
   windowIndex: number;
   paneIndex: number;
   pid: string;
+  claudeState?: string;
+}
+
+export type ClaudeState = "working" | "waiting" | "unknown";
+
+export interface ClaudePaneInfo {
+  target: string;
+  state: ClaudeState;
 }
 
 export interface WindowInfo {
@@ -31,7 +39,8 @@ export const cleanSessionName = (name: string) =>
   name.replace(/ 󰚩( 󰚩)*$/, "");
 
 /**
- * Parse `tmux list-panes -a -F "#{session_name}:#{window_index}:#{pane_index}:#{pane_pid}"`
+ * Parse `tmux list-panes -a -F "#{session_name}:#{window_index}:#{pane_index}:#{pane_pid}:#{@claude-state}"`
+ * Also supports legacy 4-field format without state.
  */
 export function parsePaneData(raw: string): PaneInfo[] {
   return raw
@@ -45,6 +54,7 @@ export function parsePaneData(raw: string): PaneInfo[] {
         windowIndex: parseInt(parts[1]),
         paneIndex: parseInt(parts[2]),
         pid: parts[3],
+        claudeState: parts[4] || undefined,
       };
     })
     .filter((p): p is PaneInfo => p !== null);
@@ -105,17 +115,22 @@ export function buildPaneByPid(panes: PaneInfo[]): Map<string, PaneInfo> {
   return map;
 }
 
+function toClaudeState(raw?: string): ClaudeState {
+  if (raw === "working" || raw === "waiting") return raw;
+  return "unknown";
+}
+
 /**
  * Walk PID ancestry to find which tmux panes are running Claude.
- * Returns session -> list of pane targets (e.g., "myproject:2.1")
+ * Returns session -> list of ClaudePaneInfo (target + state)
  */
 export function findClaudePaneTargets(
   claudePids: string[],
   paneByPid: Map<string, PaneInfo>,
   pidToParent: Map<string, string>,
   maxDepth = MAX_PARENT_DEPTH,
-): Map<string, string[]> {
-  const targets = new Map<string, string[]>();
+): Map<string, ClaudePaneInfo[]> {
+  const targets = new Map<string, ClaudePaneInfo[]>();
 
   for (const cpid of claudePids) {
     if (!cpid || !/^\d+$/.test(cpid)) continue;
@@ -129,7 +144,7 @@ export function findClaudePaneTargets(
       if (pane) {
         const target = `${pane.session}:${pane.windowIndex}.${pane.paneIndex}`;
         const arr = targets.get(pane.session) || [];
-        arr.push(target);
+        arr.push({ target, state: toClaudeState(pane.claudeState) });
         targets.set(pane.session, arr);
         break;
       }
@@ -139,21 +154,25 @@ export function findClaudePaneTargets(
   return targets;
 }
 
+function claudeIconColor(state: ClaudeState): string {
+  return state === "waiting" ? YELLOW : MAGENTA;
+}
+
 /**
  * Format a session line for fzf display.
- * Current session in yellow, others in green. Claude indicator in magenta.
+ * Current session in yellow, others in green. Claude icons colored per state.
  */
 export function formatSessionLine(
   name: string,
   currentSession: string,
-  claudeCount: number,
+  claudePanes: ClaudePaneInfo[],
 ): string {
   const claudeIndicator =
-    claudeCount > 0
-      ? ` ${MAGENTA}${"󰚩 ".repeat(claudeCount).trim()}${RESET}`
+    claudePanes.length > 0
+      ? " " + claudePanes.map((p) => `${claudeIconColor(p.state)}󰚩${RESET}`).join(" ")
       : "";
   const color = name === currentSession ? YELLOW : GREEN;
-  return `${color}${name}${claudeIndicator}${RESET}`;
+  return `${color}${name}${RESET}${claudeIndicator}`;
 }
 
 /**
@@ -162,7 +181,7 @@ export function formatSessionLine(
 export function renderTreeHeader(
   sessionName: string,
   windows: WindowInfo[],
-  claudeWindowIndices: Set<number>,
+  claudeWindowInfo: Map<number, ClaudeState>,
 ): string {
   const winLabel = windows.length === 1 ? "window" : "windows";
   const lines: string[] = [];
@@ -172,8 +191,9 @@ export function renderTreeHeader(
   for (const win of windows) {
     let line = `  ${GREEN}${win.index}:${RESET} ${win.name}`;
     if (win.paneCount > 1) line += ` ${DIM}[${win.paneCount} panes]${RESET}`;
-    if (claudeWindowIndices.has(win.index)) {
-      line += ` ${MAGENTA}󰚩${RESET}`;
+    const state = claudeWindowInfo.get(win.index);
+    if (state !== undefined) {
+      line += ` ${claudeIconColor(state)}󰚩${RESET}`;
     }
     lines.push(line);
   }
@@ -186,8 +206,9 @@ export function renderTreeHeader(
 /**
  * Render a labeled separator for a Claude pane target in stacked preview.
  */
-export function renderPaneSeparator(target: string): string {
+export function renderPaneSeparator(target: string, state?: ClaudeState): string {
   const label = `── 󰚩 ${target} ──`;
   const padding = Math.max(0, 40 - label.length);
-  return `${BOLD}${MAGENTA}${label}${"─".repeat(padding)}${RESET}`;
+  const color = state === "waiting" ? YELLOW : MAGENTA;
+  return `${BOLD}${color}${label}${"─".repeat(padding)}${RESET}`;
 }

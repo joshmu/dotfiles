@@ -35,6 +35,8 @@ import {
   renderPaneSeparator,
   renderTreeHeader,
   stripAnsi,
+  type ClaudePaneInfo,
+  type ClaudeState,
 } from "./lib/tmux-data";
 
 // Config
@@ -74,7 +76,7 @@ async function generateSessionList(): Promise<string> {
         "list-panes",
         "-a",
         "-F",
-        "#{session_name}:#{window_index}:#{pane_index}:#{pane_pid}",
+        "#{session_name}:#{window_index}:#{pane_index}:#{pane_pid}:#{@claude-state}",
       ]),
       run(["pgrep", "-x", "claude"]),
       run(["ps", "-A", "-o", "pid=,ppid="]),
@@ -97,10 +99,19 @@ async function generateSessionList(): Promise<string> {
     pidToParent,
   );
 
-  const sessions = parseSessionActivity(sessionsData).map((name) => {
-    const claudeCount = claudeTargets.get(name)?.length || 0;
-    return formatSessionLine(name, current, claudeCount);
-  });
+  const hasWaiting = (name: string) =>
+    claudeTargets.get(name)?.some((p) => p.state === "waiting") ?? false;
+
+  const sessions = parseSessionActivity(sessionsData)
+    .sort((a, b) => {
+      const aw = hasWaiting(a) ? 0 : 1;
+      const bw = hasWaiting(b) ? 0 : 1;
+      return aw - bw;
+    })
+    .map((name) => {
+      const claudePanes = claudeTargets.get(name) || [];
+      return formatSessionLine(name, current, claudePanes);
+    });
 
   const directories = SHOW_ZOXIDE
     ? zoxideData
@@ -170,7 +181,7 @@ if (process.argv[2] === "--preview" && process.argv[3]) {
       "-t",
       sessionName,
       "-F",
-      "#{window_index}:#{pane_index}:#{pane_pid}",
+      "#{window_index}:#{pane_index}:#{pane_pid}:#{@claude-state}",
     ]),
     run([
       "tmux",
@@ -208,7 +219,7 @@ if (process.argv[2] === "--preview" && process.argv[3]) {
   // Parse panes (scoped format — no session prefix)
   const paneByPid = new Map<
     string,
-    { session: string; windowIndex: number; paneIndex: number; pid: string }
+    { session: string; windowIndex: number; paneIndex: number; pid: string; claudeState?: string }
   >();
   for (const line of paneData.split("\n")) {
     const parts = line.split(":");
@@ -218,6 +229,7 @@ if (process.argv[2] === "--preview" && process.argv[3]) {
         windowIndex: parseInt(parts[0]),
         paneIndex: parseInt(parts[1]),
         pid: parts[2],
+        claudeState: parts[3] || undefined,
       });
     }
   }
@@ -225,8 +237,8 @@ if (process.argv[2] === "--preview" && process.argv[3]) {
   const pidToParent = parseProcessTree(allProcs);
 
   // Find Claude pane targets in this session
-  const claudeTargets: string[] = [];
-  const claudeWindowIndices = new Set<number>();
+  const claudeTargets: ClaudePaneInfo[] = [];
+  const claudeWindowInfo = new Map<number, ClaudeState>();
 
   for (const cpid of claudePids.split("\n")) {
     if (!cpid || !/^\d+$/.test(cpid)) continue;
@@ -239,15 +251,19 @@ if (process.argv[2] === "--preview" && process.argv[3]) {
       const pane = paneByPid.get(ppid);
       if (pane) {
         const target = `${sessionName}:${pane.windowIndex}.${pane.paneIndex}`;
-        claudeTargets.push(target);
-        claudeWindowIndices.add(pane.windowIndex);
+        const state: ClaudeState = pane.claudeState === "working" || pane.claudeState === "waiting" ? pane.claudeState : "unknown";
+        claudeTargets.push({ target, state });
+        claudeWindowInfo.set(pane.windowIndex, state);
         break;
       }
     }
   }
 
+  // Sort waiting panes first for priority visibility
+  claudeTargets.sort((a, b) => (a.state === "waiting" ? 0 : 1) - (b.state === "waiting" ? 0 : 1));
+
   // Render tree header
-  const header = renderTreeHeader(sessionName, windows, claudeWindowIndices);
+  const header = renderTreeHeader(sessionName, windows, claudeWindowInfo);
   process.stdout.write(header + "\n");
 
   // Capture and display pane content
@@ -256,8 +272,8 @@ if (process.argv[2] === "--preview" && process.argv[3]) {
   if (claudeTargets.length > 1) {
     // Multiple Claude panes: stack with labeled separators
     const linesPerPane = Math.max(5, Math.floor(maxLines / claudeTargets.length));
-    for (const target of claudeTargets) {
-      process.stdout.write(renderPaneSeparator(target) + "\n");
+    for (const { target, state } of claudeTargets) {
+      process.stdout.write(renderPaneSeparator(target, state) + "\n");
       const paneContent = await run([
         "tmux", "capture-pane", "-ept", target, "-p",
       ]);
@@ -269,7 +285,7 @@ if (process.argv[2] === "--preview" && process.argv[3]) {
   } else {
     // Single Claude pane or fallback to active pane
     const captureTarget =
-      claudeTargets.length === 1 ? claudeTargets[0] : sessionName;
+      claudeTargets.length === 1 ? claudeTargets[0].target : sessionName;
     const paneContent = await run([
       "tmux", "capture-pane", "-ept", captureTarget, "-p",
     ]);

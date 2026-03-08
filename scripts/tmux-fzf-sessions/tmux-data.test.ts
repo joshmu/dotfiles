@@ -11,6 +11,8 @@ import {
   renderPaneSeparator,
   renderTreeHeader,
   stripAnsi,
+  type ClaudePaneInfo,
+  type ClaudeState,
   type PaneInfo,
   type WindowInfo,
 } from "./lib/tmux-data";
@@ -48,9 +50,19 @@ describe("parsePaneData", () => {
     const raw = "dev:0:0:1234\ndev:0:1:5678\nwork:1:0:9012";
     const result = parsePaneData(raw);
     expect(result).toEqual([
-      { session: "dev", windowIndex: 0, paneIndex: 0, pid: "1234" },
-      { session: "dev", windowIndex: 0, paneIndex: 1, pid: "5678" },
-      { session: "work", windowIndex: 1, paneIndex: 0, pid: "9012" },
+      { session: "dev", windowIndex: 0, paneIndex: 0, pid: "1234", claudeState: undefined },
+      { session: "dev", windowIndex: 0, paneIndex: 1, pid: "5678", claudeState: undefined },
+      { session: "work", windowIndex: 1, paneIndex: 0, pid: "9012", claudeState: undefined },
+    ]);
+  });
+
+  test("parses 5-field format with claude state", () => {
+    const raw = "dev:0:0:1234:working\ndev:0:1:5678:waiting\nwork:1:0:9012:";
+    const result = parsePaneData(raw);
+    expect(result).toEqual([
+      { session: "dev", windowIndex: 0, paneIndex: 0, pid: "1234", claudeState: "working" },
+      { session: "dev", windowIndex: 0, paneIndex: 1, pid: "5678", claudeState: "waiting" },
+      { session: "work", windowIndex: 1, paneIndex: 0, pid: "9012", claudeState: undefined },
     ]);
   });
 
@@ -150,7 +162,7 @@ describe("findClaudePaneTargets", () => {
       ["200", "1"],
     ]);
     const result = findClaudePaneTargets(["300"], paneByPid, pidToParent);
-    expect(result.get("dev")).toEqual(["dev:1.0"]);
+    expect(result.get("dev")).toEqual([{ target: "dev:1.0", state: "unknown" }]);
   });
 
   test("finds Claude 3 levels deep", () => {
@@ -162,7 +174,33 @@ describe("findClaudePaneTargets", () => {
       ["200", "1"],
     ]);
     const result = findClaudePaneTargets(["400"], paneByPid, pidToParent);
-    expect(result.get("dev")).toEqual(["dev:1.0"]);
+    expect(result.get("dev")).toEqual([{ target: "dev:1.0", state: "unknown" }]);
+  });
+
+  test("propagates working state from pane", () => {
+    const panesWithState: PaneInfo[] = [
+      { session: "dev", windowIndex: 1, paneIndex: 0, pid: "200", claudeState: "working" },
+    ];
+    const byPid = buildPaneByPid(panesWithState);
+    const pidToParent = new Map([
+      ["300", "200"],
+      ["200", "1"],
+    ]);
+    const result = findClaudePaneTargets(["300"], byPid, pidToParent);
+    expect(result.get("dev")).toEqual([{ target: "dev:1.0", state: "working" }]);
+  });
+
+  test("propagates waiting state from pane", () => {
+    const panesWithState: PaneInfo[] = [
+      { session: "dev", windowIndex: 1, paneIndex: 0, pid: "200", claudeState: "waiting" },
+    ];
+    const byPid = buildPaneByPid(panesWithState);
+    const pidToParent = new Map([
+      ["300", "200"],
+      ["200", "1"],
+    ]);
+    const result = findClaudePaneTargets(["300"], byPid, pidToParent);
+    expect(result.get("dev")).toEqual([{ target: "dev:1.0", state: "waiting" }]);
   });
 
   test("returns empty map when Claude PID has no tmux ancestor", () => {
@@ -184,7 +222,10 @@ describe("findClaudePaneTargets", () => {
       ["200", "1"],
     ]);
     const result = findClaudePaneTargets(["301", "302"], paneByPid, pidToParent);
-    expect(result.get("dev")).toEqual(["dev:0.0", "dev:1.0"]);
+    expect(result.get("dev")).toEqual([
+      { target: "dev:0.0", state: "unknown" },
+      { target: "dev:1.0", state: "unknown" },
+    ]);
   });
 
   test("handles Claude instances across different sessions", () => {
@@ -196,8 +237,8 @@ describe("findClaudePaneTargets", () => {
       ["500", "1"],
     ]);
     const result = findClaudePaneTargets(["301", "601"], paneByPid, pidToParent);
-    expect(result.get("dev")).toEqual(["dev:1.0"]);
-    expect(result.get("work")).toEqual(["work:0.0"]);
+    expect(result.get("dev")).toEqual([{ target: "dev:1.0", state: "unknown" }]);
+    expect(result.get("work")).toEqual([{ target: "work:0.0", state: "unknown" }]);
   });
 
   test("respects maxDepth limit", () => {
@@ -216,7 +257,7 @@ describe("findClaudePaneTargets", () => {
 
     // maxDepth=5 should find it
     const deep = findClaudePaneTargets(["800"], paneByPid, pidToParent, 5);
-    expect(deep.get("dev")).toEqual(["dev:1.0"]);
+    expect(deep.get("dev")).toEqual([{ target: "dev:1.0", state: "unknown" }]);
   });
 
   test("skips invalid Claude PIDs", () => {
@@ -226,37 +267,69 @@ describe("findClaudePaneTargets", () => {
       paneByPid,
       pidToParent,
     );
-    expect(result.get("dev")).toEqual(["dev:1.0"]);
+    expect(result.get("dev")).toEqual([{ target: "dev:1.0", state: "unknown" }]);
   });
 });
 
 describe("formatSessionLine", () => {
   test("formats current session in yellow", () => {
-    const line = formatSessionLine("dev", "dev", 0);
+    const line = formatSessionLine("dev", "dev", []);
     expect(line).toContain("\x1b[33m"); // yellow
     expect(stripAnsi(line)).toBe("dev");
   });
 
   test("formats other session in green", () => {
-    const line = formatSessionLine("work", "dev", 0);
+    const line = formatSessionLine("work", "dev", []);
     expect(line).toContain("\x1b[32m"); // green
     expect(stripAnsi(line)).toBe("work");
   });
 
   test("adds single Claude indicator", () => {
-    const line = formatSessionLine("dev", "other", 1);
+    const line = formatSessionLine("dev", "other", [{ target: "dev:0.0", state: "unknown" }]);
     expect(stripAnsi(line)).toBe("dev 󰚩");
   });
 
   test("adds multiple Claude indicators", () => {
-    const line = formatSessionLine("dev", "other", 2);
+    const line = formatSessionLine("dev", "other", [
+      { target: "dev:0.0", state: "unknown" },
+      { target: "dev:1.0", state: "unknown" },
+    ]);
     expect(stripAnsi(line)).toBe("dev 󰚩 󰚩");
   });
 
-  test("no indicator when count is 0", () => {
-    const line = formatSessionLine("dev", "other", 0);
+  test("no indicator when no claude panes", () => {
+    const line = formatSessionLine("dev", "other", []);
     expect(stripAnsi(line)).toBe("dev");
     expect(line).not.toContain("󰚩");
+  });
+
+  test("uses magenta for working state", () => {
+    const line = formatSessionLine("dev", "other", [{ target: "dev:0.0", state: "working" }]);
+    expect(line).toContain("\x1b[35m"); // magenta
+  });
+
+  test("uses magenta for unknown state", () => {
+    const line = formatSessionLine("dev", "other", [{ target: "dev:0.0", state: "unknown" }]);
+    expect(line).toContain("\x1b[35m"); // magenta
+  });
+
+  test("uses yellow for waiting state", () => {
+    const line = formatSessionLine("dev", "other", [{ target: "dev:0.0", state: "waiting" }]);
+    // The icon should be yellow, not magenta
+    const iconStart = line.indexOf("󰚩");
+    const beforeIcon = line.substring(0, iconStart);
+    expect(beforeIcon).toContain("\x1b[33m"); // yellow
+  });
+
+  test("mixed states show correct colors per icon", () => {
+    const line = formatSessionLine("dev", "other", [
+      { target: "dev:0.0", state: "working" },
+      { target: "dev:1.0", state: "waiting" },
+    ]);
+    expect(stripAnsi(line)).toBe("dev 󰚩 󰚩");
+    // Should contain both magenta and yellow for icons
+    expect(line).toContain("\x1b[35m"); // magenta for working
+    expect(line).toContain("\x1b[33m"); // yellow for waiting
   });
 });
 
@@ -265,7 +338,7 @@ describe("renderTreeHeader", () => {
     const windows: WindowInfo[] = [
       { session: "dev", index: 0, name: "shell", paneCount: 1 },
     ];
-    const header = renderTreeHeader("dev", windows, new Set());
+    const header = renderTreeHeader("dev", windows, new Map());
     const plain = stripAnsi(header);
     expect(plain).toContain("━━ dev (1 window) ━━");
     expect(plain).toContain("0: shell");
@@ -278,7 +351,7 @@ describe("renderTreeHeader", () => {
       { session: "dev", index: 1, name: "server", paneCount: 1 },
       { session: "dev", index: 2, name: "shell", paneCount: 1 },
     ];
-    const header = renderTreeHeader("dev", windows, new Set());
+    const header = renderTreeHeader("dev", windows, new Map());
     const plain = stripAnsi(header);
     expect(plain).toContain("3 windows");
     expect(plain).toContain("0: editor [2 panes]");
@@ -291,7 +364,7 @@ describe("renderTreeHeader", () => {
       { session: "dev", index: 0, name: "editor", paneCount: 1 },
       { session: "dev", index: 1, name: "claude", paneCount: 1 },
     ];
-    const header = renderTreeHeader("dev", windows, new Set([1]));
+    const header = renderTreeHeader("dev", windows, new Map<number, ClaudeState>([[1, "unknown"]]));
     const lines = header.split("\n");
 
     // Window 0 should not have indicator
@@ -303,11 +376,30 @@ describe("renderTreeHeader", () => {
     expect(win1Line).toContain("󰚩");
   });
 
+  test("uses magenta for working/unknown state in tree", () => {
+    const windows: WindowInfo[] = [
+      { session: "dev", index: 0, name: "shell", paneCount: 1 },
+    ];
+    const header = renderTreeHeader("dev", windows, new Map<number, ClaudeState>([[0, "working"]]));
+    expect(header).toContain("\x1b[35m"); // magenta
+  });
+
+  test("uses yellow for waiting state in tree", () => {
+    const windows: WindowInfo[] = [
+      { session: "dev", index: 0, name: "shell", paneCount: 1 },
+    ];
+    const header = renderTreeHeader("dev", windows, new Map<number, ClaudeState>([[0, "waiting"]]));
+    const lines = header.split("\n");
+    const winLine = lines[1];
+    // The icon color should be yellow
+    expect(winLine).toContain("\x1b[33m"); // yellow
+  });
+
   test("ends with separator line", () => {
     const windows: WindowInfo[] = [
       { session: "dev", index: 0, name: "shell", paneCount: 1 },
     ];
-    const header = renderTreeHeader("dev", windows, new Set());
+    const header = renderTreeHeader("dev", windows, new Map());
     const lines = header.split("\n");
     expect(stripAnsi(lines[lines.length - 1])).toMatch(/^─+$/);
   });
@@ -316,7 +408,7 @@ describe("renderTreeHeader", () => {
     const windows: WindowInfo[] = [
       { session: "dev", index: 0, name: "shell", paneCount: 1 },
     ];
-    const header = renderTreeHeader("dev", windows, new Set());
+    const header = renderTreeHeader("dev", windows, new Map());
     expect(header).toContain("\x1b[36m"); // cyan
   });
 
@@ -324,7 +416,7 @@ describe("renderTreeHeader", () => {
     const windows: WindowInfo[] = [
       { session: "dev", index: 0, name: "shell", paneCount: 1 },
     ];
-    const header = renderTreeHeader("dev", windows, new Set());
+    const header = renderTreeHeader("dev", windows, new Map());
     expect(header).toContain("\x1b[32m"); // green
   });
 
@@ -332,7 +424,7 @@ describe("renderTreeHeader", () => {
     const windows: WindowInfo[] = [
       { session: "dev", index: 0, name: "editor", paneCount: 3 },
     ];
-    const header = renderTreeHeader("dev", windows, new Set());
+    const header = renderTreeHeader("dev", windows, new Map());
     expect(header).toContain("\x1b[2m"); // dim
   });
 });
@@ -351,10 +443,21 @@ describe("renderPaneSeparator", () => {
     expect(plain).toMatch(/^── 󰚩/);
   });
 
-  test("uses magenta bold color", () => {
+  test("uses magenta bold color by default", () => {
     const sep = renderPaneSeparator("dev:1.0");
     expect(sep).toContain("\x1b[1m"); // bold
     expect(sep).toContain("\x1b[35m"); // magenta
+  });
+
+  test("uses magenta for working state", () => {
+    const sep = renderPaneSeparator("dev:1.0", "working");
+    expect(sep).toContain("\x1b[35m"); // magenta
+  });
+
+  test("uses yellow for waiting state", () => {
+    const sep = renderPaneSeparator("dev:1.0", "waiting");
+    expect(sep).toContain("\x1b[33m"); // yellow
+    expect(sep).not.toContain("\x1b[35m"); // no magenta
   });
 
   test("pads to consistent width", () => {
