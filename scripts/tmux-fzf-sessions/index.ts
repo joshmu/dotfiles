@@ -28,6 +28,7 @@ import {
   cleanSessionName,
   findClaudePaneTargets,
   formatSessionLine,
+  getSessionGroup,
   parsePaneData,
   parseProcessTree,
   parseSessionActivity,
@@ -37,6 +38,7 @@ import {
   stripAnsi,
   type ClaudePaneInfo,
   type ClaudeState,
+  type SessionGroup,
 } from "./lib/tmux-data";
 
 // Config
@@ -100,14 +102,15 @@ async function generateSessionList(): Promise<string> {
     panes,
   );
 
-  const hasWaiting = (name: string) =>
-    claudeTargets.get(name)?.some((p) => p.state === "waiting") ?? false;
+  const GROUP_PRIORITY: Record<SessionGroup, number> = {
+    waiting: 0, working: 1, idle: 2, none: 3,
+  };
 
   const sessions = parseSessionActivity(sessionsData)
     .sort((a, b) => {
-      const aw = hasWaiting(a) ? 0 : 1;
-      const bw = hasWaiting(b) ? 0 : 1;
-      return aw - bw;
+      const pa = GROUP_PRIORITY[getSessionGroup(claudeTargets.get(a) || [])];
+      const pb = GROUP_PRIORITY[getSessionGroup(claudeTargets.get(b) || [])];
+      return pa - pb;
     })
     .map((name) => {
       const claudePanes = claudeTargets.get(name) || [];

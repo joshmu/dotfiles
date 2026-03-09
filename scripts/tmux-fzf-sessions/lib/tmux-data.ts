@@ -34,6 +34,15 @@ const RESET = "\x1b[0m";
 
 const MAX_PARENT_DEPTH = 5;
 
+export type SessionGroup = "waiting" | "working" | "idle" | "none";
+
+export function getSessionGroup(claudePanes: ClaudePaneInfo[]): SessionGroup {
+  if (claudePanes.length === 0) return "none";
+  if (claudePanes.some((p) => p.state === "waiting")) return "waiting";
+  if (claudePanes.some((p) => p.state === "working" || p.state === "unknown")) return "working";
+  return "idle";
+}
+
 export const stripAnsi = (str: string) => str.replace(/\x1b\[[0-9;]*m/g, "");
 
 export const cleanSessionName = (name: string) =>

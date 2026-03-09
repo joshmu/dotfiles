@@ -4,6 +4,7 @@ import {
   cleanSessionName,
   findClaudePaneTargets,
   formatSessionLine,
+  getSessionGroup,
   parsePaneData,
   parseProcessTree,
   parseSessionActivity,
@@ -481,6 +482,53 @@ describe("renderTreeHeader", () => {
     ];
     const header = renderTreeHeader("dev", windows, new Map());
     expect(header).toContain("\x1b[2m"); // dim
+  });
+});
+
+describe("getSessionGroup", () => {
+  test("returns 'none' for empty panes", () => {
+    expect(getSessionGroup([])).toBe("none");
+  });
+
+  test("returns 'waiting' when any pane is waiting", () => {
+    const panes: ClaudePaneInfo[] = [
+      { target: "dev:0.0", state: "working" },
+      { target: "dev:1.0", state: "waiting" },
+    ];
+    expect(getSessionGroup(panes)).toBe("waiting");
+  });
+
+  test("returns 'working' for working state", () => {
+    expect(getSessionGroup([{ target: "dev:0.0", state: "working" }])).toBe("working");
+  });
+
+  test("returns 'working' for unknown state", () => {
+    expect(getSessionGroup([{ target: "dev:0.0", state: "unknown" }])).toBe("working");
+  });
+
+  test("returns 'idle' when all panes are idle", () => {
+    const panes: ClaudePaneInfo[] = [
+      { target: "dev:0.0", state: "idle" },
+      { target: "dev:1.0", state: "idle" },
+    ];
+    expect(getSessionGroup(panes)).toBe("idle");
+  });
+
+  test("waiting takes priority over working", () => {
+    const panes: ClaudePaneInfo[] = [
+      { target: "dev:0.0", state: "working" },
+      { target: "dev:1.0", state: "waiting" },
+      { target: "dev:2.0", state: "idle" },
+    ];
+    expect(getSessionGroup(panes)).toBe("waiting");
+  });
+
+  test("working takes priority over idle", () => {
+    const panes: ClaudePaneInfo[] = [
+      { target: "dev:0.0", state: "idle" },
+      { target: "dev:1.0", state: "working" },
+    ];
+    expect(getSessionGroup(panes)).toBe("working");
   });
 });
 
