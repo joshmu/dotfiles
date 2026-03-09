@@ -361,9 +361,9 @@ describe("formatSessionLine", () => {
     expect(beforeIcon).toContain("\x1b[33m"); // yellow
   });
 
-  test("uses dim for idle state", () => {
+  test("uses dark gray for idle state", () => {
     const line = formatSessionLine("dev", "other", [{ target: "dev:0.0", state: "idle" }]);
-    expect(line).toContain("\x1b[2m"); // dim
+    expect(line).toContain("\x1b[90m"); // dark gray
   });
 
   test("mixed states show correct colors per icon", () => {
@@ -375,7 +375,7 @@ describe("formatSessionLine", () => {
     expect(stripAnsi(line)).toBe("dev 󰚩 󰚩 󰚩");
     expect(line).toContain("\x1b[35m"); // magenta for working
     expect(line).toContain("\x1b[33m"); // yellow for waiting
-    expect(line).toContain("\x1b[2m"); // dim for idle
+    expect(line).toContain("\x1b[90m"); // dark gray for idle
   });
 });
 
@@ -447,7 +447,7 @@ describe("renderTreeHeader", () => {
     const header = renderTreeHeader("dev", windows, new Map<number, ClaudeState>([[0, "idle"]]));
     const lines = header.split("\n");
     const winLine = lines[1];
-    expect(winLine).toContain("\x1b[2m"); // dim
+    expect(winLine).toContain("\x1b[90m"); // dark gray
   });
 
   test("ends with separator line", () => {
@@ -515,9 +515,9 @@ describe("renderPaneSeparator", () => {
     expect(sep).not.toContain("\x1b[35m"); // no magenta
   });
 
-  test("uses dim for idle state", () => {
+  test("uses dark gray for idle state", () => {
     const sep = renderPaneSeparator("dev:1.0", "idle");
-    expect(sep).toContain("\x1b[2m"); // dim
+    expect(sep).toContain("\x1b[90m"); // dark gray
   });
 
   test("pads to consistent width", () => {

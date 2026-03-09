@@ -27,6 +27,7 @@ const GREEN = "\x1b[32m";
 const YELLOW = "\x1b[33m";
 const MAGENTA = "\x1b[35m";
 const CYAN = "\x1b[36m";
+const DARK_GRAY = "\x1b[90m";
 const BOLD = "\x1b[1m";
 const DIM = "\x1b[2m";
 const RESET = "\x1b[0m";
@@ -174,7 +175,7 @@ export function findClaudePaneTargets(
 
 function claudeIconColor(state: ClaudeState): string {
   if (state === "waiting") return YELLOW;
-  if (state === "idle") return DIM;
+  if (state === "idle") return DARK_GRAY;
   return MAGENTA; // working or unknown
 }
 
