@@ -55,4 +55,4 @@ keybindings:
     - key: v
       command: gh pr review --approve --repo {{.RepoName}} {{.PrNumber}}
     - key: M
-      command: gh pr merge --squash --repo {{.RepoName}} {{.PrNumber}}
+      command: gh pr merge --merge --repo {{.RepoName}} {{.PrNumber}}
