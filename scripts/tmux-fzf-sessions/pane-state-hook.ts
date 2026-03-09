@@ -16,6 +16,7 @@ const event = parsed.hook_event_name as string;
 
 const directStates: Record<string, string> = {
   UserPromptSubmit: "working",
+  PreToolUse: "working",
   Stop: "idle",
   PermissionRequest: "waiting",
   Elicitation: "waiting",
