@@ -28,15 +28,19 @@ import {
   cleanSessionName,
   findClaudePaneTargets,
   formatSessionLine,
+  getSessionGroup,
   parsePaneData,
   parseProcessTree,
   parseSessionActivity,
   parseWindowData,
+  renderGroupSeparator,
   renderPaneSeparator,
   renderTreeHeader,
+  SEPARATOR_PREFIX,
   stripAnsi,
   type ClaudePaneInfo,
   type ClaudeState,
+  type SessionGroup,
 } from "./lib/tmux-data";
 
 // Config
@@ -100,19 +104,38 @@ async function generateSessionList(): Promise<string> {
     panes,
   );
 
-  const hasWaiting = (name: string) =>
-    claudeTargets.get(name)?.some((p) => p.state === "waiting") ?? false;
+  // Bucket sessions by Claude state priority, preserving recency within each
+  const groupOrder: SessionGroup[] = ["waiting", "working", "idle", "none"];
+  const buckets = new Map<SessionGroup, string[]>(
+    groupOrder.map((g) => [g, []]),
+  );
 
-  const sessions = parseSessionActivity(sessionsData)
-    .sort((a, b) => {
-      const aw = hasWaiting(a) ? 0 : 1;
-      const bw = hasWaiting(b) ? 0 : 1;
-      return aw - bw;
-    })
-    .map((name) => {
-      const claudePanes = claudeTargets.get(name) || [];
-      return formatSessionLine(name, current, claudePanes);
-    });
+  for (const name of parseSessionActivity(sessionsData)) {
+    const claudePanes = claudeTargets.get(name) || [];
+    const group = getSessionGroup(claudePanes);
+    const line = formatSessionLine(name, current, claudePanes);
+    buckets.get(group)!.push(line);
+  }
+
+  const groupLabels: Record<SessionGroup, string> = {
+    waiting: "waiting",
+    working: "working",
+    idle: "idle",
+    none: "",
+  };
+
+  const sessions: string[] = [];
+  let isFirst = true;
+  for (const group of groupOrder) {
+    const items = buckets.get(group)!;
+    if (items.length === 0) continue;
+    if (!isFirst) {
+      const label = groupLabels[group];
+      sessions.push(renderGroupSeparator(label));
+    }
+    sessions.push(...items);
+    isFirst = false;
+  }
 
   const directories = SHOW_ZOXIDE
     ? zoxideData
@@ -356,6 +379,9 @@ if (!selected && query && key === "enter") {
 }
 
 if (!selected) process.exit(0);
+
+// Ignore separator lines
+if (selected.startsWith(SEPARATOR_PREFIX)) process.exit(0);
 
 const isSession = !selected.startsWith("/");
 
