@@ -27,8 +27,10 @@ let state = directStates[event];
 // Notification: only "waiting" for events that need user attention
 if (event === "Notification") {
   const type = parsed.notification_type as string | undefined;
-  if (type === "permission_prompt" || type === "idle_prompt" || type === "elicitation_dialog") {
+  if (type === "permission_prompt" || type === "elicitation_dialog") {
     state = "waiting";
+  } else if (type === "idle_prompt") {
+    state = "idle";
   }
 }
 
