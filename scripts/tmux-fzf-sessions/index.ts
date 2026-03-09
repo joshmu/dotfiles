@@ -97,6 +97,7 @@ async function generateSessionList(): Promise<string> {
     claudePids.split("\n"),
     paneByPid,
     pidToParent,
+    panes,
   );
 
   const hasWaiting = (name: string) =>

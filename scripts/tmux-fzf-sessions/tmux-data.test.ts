@@ -266,11 +266,11 @@ describe("findClaudePaneTargets", () => {
       ["200", "1"],
     ]);
     // maxDepth=2 should NOT find it (needs 4 hops to reach pane 200)
-    const shallow = findClaudePaneTargets(["800"], paneByPid, pidToParent, 2);
+    const shallow = findClaudePaneTargets(["800"], paneByPid, pidToParent, undefined, 2);
     expect(shallow.size).toBe(0);
 
     // maxDepth=5 should find it
-    const deep = findClaudePaneTargets(["800"], paneByPid, pidToParent, 5);
+    const deep = findClaudePaneTargets(["800"], paneByPid, pidToParent, undefined, 5);
     expect(deep.get("dev")).toEqual([{ target: "dev:1.0", state: "unknown" }]);
   });
 
@@ -282,6 +282,32 @@ describe("findClaudePaneTargets", () => {
       pidToParent,
     );
     expect(result.get("dev")).toEqual([{ target: "dev:1.0", state: "unknown" }]);
+  });
+
+  test("detects claude via @claude-state when pgrep misses PID", () => {
+    const panesWithState: PaneInfo[] = [
+      { session: "dev", windowIndex: 0, paneIndex: 0, pid: "100" },
+      { session: "dev", windowIndex: 2, paneIndex: 0, pid: "300", claudeState: "working" },
+    ];
+    const byPid = buildPaneByPid(panesWithState);
+    const pidToParent = new Map<string, string>();
+    // No claude PIDs found by pgrep, but pane 300 has state set by hook
+    const result = findClaudePaneTargets([], byPid, pidToParent, panesWithState);
+    expect(result.get("dev")).toEqual([{ target: "dev:2.0", state: "working" }]);
+  });
+
+  test("does not duplicate panes found by both PID and hook", () => {
+    const panesWithState: PaneInfo[] = [
+      { session: "dev", windowIndex: 1, paneIndex: 0, pid: "200", claudeState: "working" },
+    ];
+    const byPid = buildPaneByPid(panesWithState);
+    const pidToParent = new Map([
+      ["300", "200"],
+      ["200", "1"],
+    ]);
+    // PID ancestry finds it AND hook state is set — should only appear once
+    const result = findClaudePaneTargets(["300"], byPid, pidToParent, panesWithState);
+    expect(result.get("dev")).toEqual([{ target: "dev:1.0", state: "working" }]);
   });
 });
 

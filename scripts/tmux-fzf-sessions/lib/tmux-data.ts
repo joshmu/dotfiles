@@ -122,16 +122,21 @@ function toClaudeState(raw?: string): ClaudeState {
 
 /**
  * Walk PID ancestry to find which tmux panes are running Claude.
+ * Also includes panes with @claude-state set (hook-based detection)
+ * to cover cases where pgrep misses a process.
  * Returns session -> list of ClaudePaneInfo (target + state)
  */
 export function findClaudePaneTargets(
   claudePids: string[],
   paneByPid: Map<string, PaneInfo>,
   pidToParent: Map<string, string>,
+  allPanes?: PaneInfo[],
   maxDepth = MAX_PARENT_DEPTH,
 ): Map<string, ClaudePaneInfo[]> {
   const targets = new Map<string, ClaudePaneInfo[]>();
+  const seen = new Set<string>();
 
+  // PID ancestry walking
   for (const cpid of claudePids) {
     if (!cpid || !/^\d+$/.test(cpid)) continue;
 
@@ -143,11 +148,24 @@ export function findClaudePaneTargets(
       const pane = paneByPid.get(ppid);
       if (pane) {
         const target = `${pane.session}:${pane.windowIndex}.${pane.paneIndex}`;
+        seen.add(target);
         const arr = targets.get(pane.session) || [];
         arr.push({ target, state: toClaudeState(pane.claudeState) });
         targets.set(pane.session, arr);
         break;
       }
+    }
+  }
+
+  // Complement with hook-based detection: panes with @claude-state set
+  if (allPanes) {
+    for (const pane of allPanes) {
+      if (!pane.claudeState) continue;
+      const target = `${pane.session}:${pane.windowIndex}.${pane.paneIndex}`;
+      if (seen.has(target)) continue;
+      const arr = targets.get(pane.session) || [];
+      arr.push({ target, state: toClaudeState(pane.claudeState) });
+      targets.set(pane.session, arr);
     }
   }
 
