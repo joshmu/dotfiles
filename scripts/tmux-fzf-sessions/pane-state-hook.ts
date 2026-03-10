@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 import { execSync } from "child_process";
-import { computeWindowClaudeInfo } from "./lib/tmux-data";
+import { computeWindowClaudeInfo, parseProcessTree } from "./lib/tmux-data";
 
 const pane = process.env.TMUX_PANE;
 if (!pane) process.exit(0);
@@ -57,7 +57,39 @@ try {
     ).toString().trim();
 
     const paneStates = paneStatesRaw.split("\n").map((s) => s || undefined);
-    const info = computeWindowClaudeInfo(paneStates);
+
+    // Detect non-Claude agents (codex, opencode) via PID ancestry
+    let extraAgentCount = 0;
+    try {
+      const panePidsRaw = execSync(
+        `tmux list-panes -t "${windowTarget}" -F "#{pane_pid}"`,
+        { timeout: 1000 },
+      ).toString().trim();
+      const panePidSet = new Set(panePidsRaw.split("\n"));
+
+      const allProcs = execSync("ps -A -o pid=,ppid=", { timeout: 1000 }).toString().trim();
+      const pidToParent = parseProcessTree(allProcs);
+
+      for (const tool of ["codex", "opencode"]) {
+        try {
+          const pids = execSync(`pgrep -x ${tool}`, { timeout: 1000 })
+            .toString().trim().split("\n").filter(Boolean);
+          for (const pid of pids) {
+            let ppid = pid;
+            for (let i = 0; i < 5; i++) {
+              ppid = pidToParent.get(ppid) || "";
+              if (!ppid || ppid === "1") break;
+              if (panePidSet.has(ppid)) {
+                extraAgentCount++;
+                break;
+              }
+            }
+          }
+        } catch {} // pgrep exits 1 when no matches
+      }
+    } catch {}
+
+    const info = computeWindowClaudeInfo(paneStates, extraAgentCount);
 
     if (info) {
       execSync(`tmux set-option -w -t "${windowTarget}" @window-claude-state ${info.state}`, { timeout: 1000 });
