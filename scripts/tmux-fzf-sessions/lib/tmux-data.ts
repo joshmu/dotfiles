@@ -41,17 +41,19 @@ export interface WindowClaudeInfo {
 
 export function computeWindowClaudeInfo(
   paneStates: (string | undefined)[],
+  extraAgentCount = 0,
 ): WindowClaudeInfo | null {
   const active = paneStates.filter((s): s is string => !!s);
-  if (active.length === 0) return null;
+  const totalActive = active.length + extraAgentCount;
+  if (totalActive === 0) return null;
 
   const state: ClaudeState = active.includes("waiting")
     ? "waiting"
-    : active.includes("working")
+    : (active.includes("working") || extraAgentCount > 0)
       ? "working"
       : "idle";
 
-  const icons = active.map(() => "󰚩").join(" ");
+  const icons = Array(totalActive).fill("󰚩").join(" ");
 
   return { state, icons };
 }
