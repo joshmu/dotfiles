@@ -623,4 +623,40 @@ describe("computeWindowClaudeInfo", () => {
     const result = computeWindowClaudeInfo(["idle", "working", "waiting"]);
     expect(result).toEqual({ state: "waiting", icons: "󰚩 󰚩 󰚩" });
   });
+
+  // extraAgentCount tests (codex/opencode detection)
+  test("extraAgentCount=1 with no claude panes returns working with one icon", () => {
+    const result = computeWindowClaudeInfo([], 1);
+    expect(result).toEqual({ state: "working", icons: "󰚩" });
+  });
+
+  test("extraAgentCount=2 with no claude panes returns working with two icons", () => {
+    const result = computeWindowClaudeInfo([], 2);
+    expect(result).toEqual({ state: "working", icons: "󰚩 󰚩" });
+  });
+
+  test("extraAgentCount=1 with idle claude pane promotes state to working", () => {
+    const result = computeWindowClaudeInfo(["idle"], 1);
+    expect(result).toEqual({ state: "working", icons: "󰚩 󰚩" });
+  });
+
+  test("extraAgentCount=1 with waiting claude pane keeps waiting priority", () => {
+    const result = computeWindowClaudeInfo(["waiting"], 1);
+    expect(result).toEqual({ state: "waiting", icons: "󰚩 󰚩" });
+  });
+
+  test("extraAgentCount=0 default preserves existing behavior", () => {
+    const result = computeWindowClaudeInfo(["working"]);
+    expect(result).toEqual({ state: "working", icons: "󰚩" });
+  });
+
+  test("extraAgentCount with all empty pane states still counts extra agents", () => {
+    const result = computeWindowClaudeInfo(["", undefined], 1);
+    expect(result).toEqual({ state: "working", icons: "󰚩" });
+  });
+
+  test("extraAgentCount=0 with no claude panes returns null", () => {
+    const result = computeWindowClaudeInfo([], 0);
+    expect(result).toBeNull();
+  });
 });
