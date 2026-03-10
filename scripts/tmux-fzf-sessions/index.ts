@@ -71,7 +71,7 @@ const currentSession = async () => {
 // --- Generate the formatted session list ---
 
 async function generateSessionList(): Promise<string> {
-  const [paneData, claudePids, allProcs, sessionsData, zoxideData, current] =
+  const [paneData, claudePids, codexPids, opencodePids, allProcs, sessionsData, zoxideData, current] =
     await Promise.all([
       run([
         "tmux",
@@ -81,6 +81,8 @@ async function generateSessionList(): Promise<string> {
         "#{session_name}:#{window_index}:#{pane_index}:#{pane_pid}:#{@claude-state}",
       ]),
       run(["pgrep", "-x", "claude"]),
+      run(["pgrep", "-x", "codex"]),
+      run(["pgrep", "-x", "opencode"]),
       run(["ps", "-A", "-o", "pid=,ppid="]),
       run([
         "tmux",
@@ -95,8 +97,13 @@ async function generateSessionList(): Promise<string> {
   const panes = parsePaneData(paneData);
   const paneByPid = buildPaneByPid(panes);
   const pidToParent = parseProcessTree(allProcs);
+  const allAgentPids = [
+    ...claudePids.split("\n"),
+    ...codexPids.split("\n"),
+    ...opencodePids.split("\n"),
+  ];
   const claudeTargets = findClaudePaneTargets(
-    claudePids.split("\n"),
+    allAgentPids,
     paneByPid,
     pidToParent,
     panes,
@@ -178,7 +185,7 @@ if (process.argv[2] === "--preview" && process.argv[3]) {
   const sessionName = cleanSessionName(stripAnsi(rawArg));
 
   // Fetch data scoped to this session for speed
-  const [paneData, windowData, claudePids, allProcs] = await Promise.all([
+  const [paneData, windowData, claudePids, codexPids, opencodePids, allProcs] = await Promise.all([
     run([
       "tmux",
       "list-panes",
@@ -196,6 +203,8 @@ if (process.argv[2] === "--preview" && process.argv[3]) {
       "#{window_index}:#{window_name}:#{window_panes}",
     ]),
     run(["pgrep", "-x", "claude"]),
+    run(["pgrep", "-x", "codex"]),
+    run(["pgrep", "-x", "opencode"]),
     run(["ps", "-A", "-o", "pid=,ppid="]),
   ]);
 
@@ -244,7 +253,12 @@ if (process.argv[2] === "--preview" && process.argv[3]) {
   const claudeTargets: ClaudePaneInfo[] = [];
   const claudeWindowInfo = new Map<number, ClaudeState>();
 
-  for (const cpid of claudePids.split("\n")) {
+  const allAgentPids = [
+    ...claudePids.split("\n"),
+    ...codexPids.split("\n"),
+    ...opencodePids.split("\n"),
+  ];
+  for (const cpid of allAgentPids) {
     if (!cpid || !/^\d+$/.test(cpid)) continue;
 
     let ppid = cpid;
