@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 import { execSync } from "child_process";
+import { computeWindowClaudeInfo } from "./lib/tmux-data";
 
 const pane = process.env.TMUX_PANE;
 if (!pane) process.exit(0);
@@ -39,6 +40,32 @@ try {
     execSync(`tmux set-option -p -t ${pane} @claude-state ${state}`, { timeout: 1000 });
   } else if (event === "SessionEnd") {
     execSync(`tmux set-option -pu -t ${pane} @claude-state`, { timeout: 1000 });
+  }
+} catch {}
+
+// Recompute window-level aggregate state for status bar indicators
+try {
+  const windowTarget = execSync(
+    `tmux display-message -p -t ${pane} "#{session_name}:#{window_index}"`,
+    { timeout: 1000 },
+  ).toString().trim();
+
+  if (windowTarget) {
+    const paneStatesRaw = execSync(
+      `tmux list-panes -t "${windowTarget}" -F "#{@claude-state}"`,
+      { timeout: 1000 },
+    ).toString().trim();
+
+    const paneStates = paneStatesRaw.split("\n").map((s) => s || undefined);
+    const info = computeWindowClaudeInfo(paneStates);
+
+    if (info) {
+      execSync(`tmux set-option -w -t "${windowTarget}" @window-claude-state ${info.state}`, { timeout: 1000 });
+      execSync(`tmux set-option -w -t "${windowTarget}" @window-claude-icons '${info.icons}'`, { timeout: 1000 });
+    } else {
+      execSync(`tmux set-option -wu -t "${windowTarget}" @window-claude-state`, { timeout: 1000 });
+      execSync(`tmux set-option -wu -t "${windowTarget}" @window-claude-icons`, { timeout: 1000 });
+    }
   }
 } catch {}
 
