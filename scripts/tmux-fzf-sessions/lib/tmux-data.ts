@@ -34,6 +34,28 @@ const RESET = "\x1b[0m";
 
 const MAX_PARENT_DEPTH = 5;
 
+export interface WindowClaudeInfo {
+  state: ClaudeState;
+  icons: string;
+}
+
+export function computeWindowClaudeInfo(
+  paneStates: (string | undefined)[],
+): WindowClaudeInfo | null {
+  const active = paneStates.filter((s): s is string => !!s);
+  if (active.length === 0) return null;
+
+  const state: ClaudeState = active.includes("waiting")
+    ? "waiting"
+    : active.includes("working")
+      ? "working"
+      : "idle";
+
+  const icons = active.map(() => "󰚩").join(" ");
+
+  return { state, icons };
+}
+
 export type SessionGroup = "waiting" | "working" | "idle" | "none";
 
 export function getSessionGroup(claudePanes: ClaudePaneInfo[]): SessionGroup {
