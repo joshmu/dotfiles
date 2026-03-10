@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   buildPaneByPid,
   cleanSessionName,
+  computeWindowClaudeInfo,
   findClaudePaneTargets,
   formatSessionLine,
   getSessionGroup,
@@ -572,5 +573,54 @@ describe("renderPaneSeparator", () => {
     const sep = renderPaneSeparator("s:0.0");
     const plain = stripAnsi(sep);
     expect(plain.length).toBeGreaterThanOrEqual(40);
+  });
+});
+
+describe("computeWindowClaudeInfo", () => {
+  test("returns null for empty array", () => {
+    expect(computeWindowClaudeInfo([])).toBeNull();
+  });
+
+  test("returns null when all undefined", () => {
+    expect(computeWindowClaudeInfo([undefined, undefined])).toBeNull();
+  });
+
+  test("returns null when all empty strings", () => {
+    expect(computeWindowClaudeInfo(["", ""])).toBeNull();
+  });
+
+  test("returns single icon for single working pane", () => {
+    const result = computeWindowClaudeInfo(["working"]);
+    expect(result).toEqual({ state: "working", icons: "󰚩" });
+  });
+
+  test("returns single icon for single waiting pane", () => {
+    const result = computeWindowClaudeInfo(["waiting"]);
+    expect(result).toEqual({ state: "waiting", icons: "󰚩" });
+  });
+
+  test("returns single icon for single idle pane", () => {
+    const result = computeWindowClaudeInfo(["idle"]);
+    expect(result).toEqual({ state: "idle", icons: "󰚩" });
+  });
+
+  test("waiting takes priority over working with two icons", () => {
+    const result = computeWindowClaudeInfo(["working", "waiting"]);
+    expect(result).toEqual({ state: "waiting", icons: "󰚩 󰚩" });
+  });
+
+  test("working takes priority over idle with two icons", () => {
+    const result = computeWindowClaudeInfo(["idle", "working"]);
+    expect(result).toEqual({ state: "working", icons: "󰚩 󰚩" });
+  });
+
+  test("idle returned when mixed with undefined", () => {
+    const result = computeWindowClaudeInfo(["idle", undefined, ""]);
+    expect(result).toEqual({ state: "idle", icons: "󰚩" });
+  });
+
+  test("waiting wins with three icons when all states present", () => {
+    const result = computeWindowClaudeInfo(["idle", "working", "waiting"]);
+    expect(result).toEqual({ state: "waiting", icons: "󰚩 󰚩 󰚩" });
   });
 });
