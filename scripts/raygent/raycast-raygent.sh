@@ -15,6 +15,7 @@
 
 # Ensure PATH includes claude
 export PATH="$HOME/.local/bin:$PATH"
+export RAYGENT_DEBUG=1
 
 # Run in background, detached (log to file for debugging)
 # Store prompt in variable to prevent shell interpretation of special chars (& etc)
