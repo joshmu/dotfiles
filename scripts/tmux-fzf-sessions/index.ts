@@ -5,7 +5,7 @@
  * Features:
  * - Lists all tmux sessions sorted by last activity
  * - Shows Claude process indicators (󰚩) for sessions running Claude
- * - Highlights current session in yellow, others in green
+ * - Highlights current session in bold white, others in green
  * - Preview shows session window tree + Claude pane content
  * - Optional zoxide directory listing for quick session creation
  *

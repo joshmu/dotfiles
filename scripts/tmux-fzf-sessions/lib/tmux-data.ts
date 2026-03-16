@@ -25,6 +25,7 @@ export interface WindowInfo {
 // Colors
 const GREEN = "\x1b[32m";
 const YELLOW = "\x1b[33m";
+const WHITE = "\x1b[97m";
 const MAGENTA = "\x1b[35m";
 const CYAN = "\x1b[36m";
 const DARK_GRAY = "\x1b[90m";
@@ -214,7 +215,7 @@ function claudeIconColor(state: ClaudeState): string {
 
 /**
  * Format a session line for fzf display.
- * Current session in yellow, others in green. Claude icons colored per state.
+ * Current session in bold white, others in green. Claude icons colored per state.
  */
 export function formatSessionLine(
   name: string,
@@ -225,7 +226,7 @@ export function formatSessionLine(
     claudePanes.length > 0
       ? " " + claudePanes.map((p) => `${claudeIconColor(p.state)}󰚩${RESET}`).join(" ")
       : "";
-  const color = name === currentSession ? YELLOW : GREEN;
+  const color = name === currentSession ? `${BOLD}${WHITE}` : GREEN;
   return `${color}${name}${RESET}${claudeIndicator}`;
 }
 
