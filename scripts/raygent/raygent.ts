@@ -9,6 +9,7 @@
  */
 
 import { generateSessionConfig, loadConfig, findExactMatch, type SessionConfig } from './lib/router-agent';
+import { buildClaudeArgs } from './lib/claude-cmd';
 import { createSession, sendKeys, generateUniqueName, hasSession, createPane } from './lib/tmux';
 import { writeFileSync } from 'fs';
 
@@ -36,8 +37,6 @@ async function main() {
       sessionConfig = await generateSessionConfig(prompt);
     }
 
-    const escapedPrompt = prompt.replace(/'/g, "'\\''");
-
     let target: string;
 
     if (sessionConfig.tmuxSession) {
@@ -58,16 +57,10 @@ async function main() {
       console.log(`Started: ${sessionName} @ ${sessionConfig.cwd}`);
     }
 
-    const extraArgs = process.env.CLAUDE_EXTRA_ARGS?.trim() || '';
-    if (extraArgs) {
-      // Write prompt to temp file to avoid shell escaping issues with long prompts
-      // Use -- separator because --disallowedTools is variadic (consumes following args)
-      const promptFile = `/tmp/raygent-prompt-${Date.now()}.txt`;
-      writeFileSync(promptFile, prompt);
-      sendKeys(target, `claude ${extraArgs} -- "$(cat ${promptFile})" && rm ${promptFile}`);
-    } else {
-      sendKeys(target, `claude '${escapedPrompt}'`);
-    }
+    const args = buildClaudeArgs(process.env.CLAUDE_EXTRA_ARGS);
+    const promptFile = `/tmp/raygent-prompt-${Date.now()}.txt`;
+    writeFileSync(promptFile, prompt);
+    sendKeys(target, `claude ${args} -- "$(cat ${promptFile})" && rm ${promptFile}`);
   } catch (error) {
     console.error('Error:', error instanceof Error ? error.message : error);
     process.exit(1);
