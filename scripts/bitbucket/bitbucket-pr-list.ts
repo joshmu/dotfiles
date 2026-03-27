@@ -1,62 +1,62 @@
 #!/usr/bin/env bun
-import { parseArgs } from 'util';
-import { BitbucketAPI } from './lib/api';
-import { loadConfig, getCurrentRepo } from './lib/config';
-import type { BitbucketPullRequest } from './lib/types';
+import { parseArgs } from "util";
+import { BitbucketAPI } from "./lib/api";
+import { loadConfig, getCurrentRepo } from "./lib/config";
+import type { BitbucketPullRequest } from "./lib/types";
 
 // Parse command line arguments
 const { values, positionals } = parseArgs({
   args: Bun.argv,
   options: {
     help: {
-      type: 'boolean',
-      short: 'h',
+      type: "boolean",
+      short: "h",
     },
     repo: {
-      type: 'string',
-      short: 'r',
+      type: "string",
+      short: "r",
     },
     workspace: {
-      type: 'string',
-      short: 'w',
+      type: "string",
+      short: "w",
     },
     state: {
-      type: 'string',
-      short: 's',
+      type: "string",
+      short: "s",
     },
     draft: {
-      type: 'boolean',
+      type: "boolean",
     },
-    'no-draft': {
-      type: 'boolean',
+    "no-draft": {
+      type: "boolean",
     },
     limit: {
-      type: 'string',
-      short: 'l',
+      type: "string",
+      short: "l",
     },
     format: {
-      type: 'string',
-      short: 'f',
+      type: "string",
+      short: "f",
     },
     author: {
-      type: 'string',
-      short: 'a',
+      type: "string",
+      short: "a",
     },
-    'my-prs': {
-      type: 'boolean',
+    "my-prs": {
+      type: "boolean",
     },
     search: {
-      type: 'string',
+      type: "string",
     },
-    'sort-by': {
-      type: 'string',
+    "sort-by": {
+      type: "string",
     },
-    'sort-desc': {
-      type: 'boolean',
+    "sort-desc": {
+      type: "boolean",
     },
-    'non-interactive': {
-      type: 'boolean',
-      short: 'n',
+    "non-interactive": {
+      type: "boolean",
+      short: "n",
     },
   },
   strict: true,
@@ -122,7 +122,7 @@ function formatDate(dateStr: string): string {
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  
+
   if (diffDays === 0) {
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     if (diffHours === 0) {
@@ -139,46 +139,66 @@ function formatDate(dateStr: string): string {
 
 function formatPRTable(prs: BitbucketPullRequest[]): void {
   if (prs.length === 0) {
-    console.log('No pull requests found');
+    console.log("No pull requests found");
     return;
   }
 
   // Calculate column widths
-  const idWidth = Math.max(4, ...prs.map(pr => pr.id.toString().length));
-  const titleWidth = Math.min(50, Math.max(5, ...prs.map(pr => pr.title.length)));
-  const authorWidth = Math.min(20, Math.max(6, ...prs.map(pr => pr.author.display_name.length)));
-  const sourceWidth = Math.min(30, Math.max(6, ...prs.map(pr => pr.source.branch.name.length)));
-  const destWidth = Math.min(20, Math.max(4, ...prs.map(pr => pr.destination.branch.name.length)));
+  const idWidth = Math.max(4, ...prs.map((pr) => pr.id.toString().length));
+  const titleWidth = Math.min(50, Math.max(5, ...prs.map((pr) => pr.title.length)));
+  const authorWidth = Math.min(20, Math.max(6, ...prs.map((pr) => pr.author.display_name.length)));
+  const sourceWidth = Math.min(30, Math.max(6, ...prs.map((pr) => pr.source.branch.name.length)));
+  const destWidth = Math.min(
+    20,
+    Math.max(4, ...prs.map((pr) => pr.destination.branch.name.length)),
+  );
 
   // Header
-  console.log('\n' + [
-    'ID'.padEnd(idWidth),
-    'Title'.padEnd(titleWidth),
-    'Draft'.padEnd(5),
-    'Author'.padEnd(authorWidth),
-    'Source'.padEnd(sourceWidth),
-    '→ Dest'.padEnd(destWidth + 2),
-    'Created',
-  ].join(' │ '));
+  console.log(
+    "\n" +
+      [
+        "ID".padEnd(idWidth),
+        "Title".padEnd(titleWidth),
+        "Draft".padEnd(5),
+        "Author".padEnd(authorWidth),
+        "Source".padEnd(sourceWidth),
+        "→ Dest".padEnd(destWidth + 2),
+        "Created",
+      ].join(" │ "),
+  );
 
-  console.log('─'.repeat(idWidth + titleWidth + 5 + authorWidth + sourceWidth + destWidth + 2 + 12 + 30));
+  console.log(
+    "─".repeat(idWidth + titleWidth + 5 + authorWidth + sourceWidth + destWidth + 2 + 12 + 30),
+  );
 
   // Rows
   for (const pr of prs) {
-    const title = pr.title.length > titleWidth ? pr.title.substring(0, titleWidth - 3) + '...' : pr.title;
-    const author = pr.author.display_name.length > authorWidth ? pr.author.display_name.substring(0, authorWidth - 3) + '...' : pr.author.display_name;
-    const source = pr.source.branch.name.length > sourceWidth ? pr.source.branch.name.substring(0, sourceWidth - 3) + '...' : pr.source.branch.name;
-    const dest = pr.destination.branch.name.length > destWidth ? pr.destination.branch.name.substring(0, destWidth - 3) + '...' : pr.destination.branch.name;
+    const title =
+      pr.title.length > titleWidth ? pr.title.substring(0, titleWidth - 3) + "..." : pr.title;
+    const author =
+      pr.author.display_name.length > authorWidth
+        ? pr.author.display_name.substring(0, authorWidth - 3) + "..."
+        : pr.author.display_name;
+    const source =
+      pr.source.branch.name.length > sourceWidth
+        ? pr.source.branch.name.substring(0, sourceWidth - 3) + "..."
+        : pr.source.branch.name;
+    const dest =
+      pr.destination.branch.name.length > destWidth
+        ? pr.destination.branch.name.substring(0, destWidth - 3) + "..."
+        : pr.destination.branch.name;
 
-    console.log([
-      pr.id.toString().padEnd(idWidth),
-      title.padEnd(titleWidth),
-      (pr.draft ? '✓' : ' ').padEnd(5),
-      author.padEnd(authorWidth),
-      source.padEnd(sourceWidth),
-      `→ ${dest}`.padEnd(destWidth + 2),
-      formatDate(pr.created_on),
-    ].join(' │ '));
+    console.log(
+      [
+        pr.id.toString().padEnd(idWidth),
+        title.padEnd(titleWidth),
+        (pr.draft ? "✓" : " ").padEnd(5),
+        author.padEnd(authorWidth),
+        source.padEnd(sourceWidth),
+        `→ ${dest}`.padEnd(destWidth + 2),
+        formatDate(pr.created_on),
+      ].join(" │ "),
+    );
   }
 
   console.log(`\n${prs.length} pull request(s) found`);
@@ -186,7 +206,7 @@ function formatPRTable(prs: BitbucketPullRequest[]): void {
 
 function formatPRSimple(prs: BitbucketPullRequest[]): void {
   for (const pr of prs) {
-    console.log(`#${pr.id} ${pr.title}${pr.draft ? ' [DRAFT]' : ''}`);
+    console.log(`#${pr.id} ${pr.title}${pr.draft ? " [DRAFT]" : ""}`);
   }
 }
 
@@ -206,80 +226,86 @@ async function main() {
 
     // Get repository info
     const currentRepo = getCurrentRepo();
-    const nonInteractive = values['non-interactive'] || false;
+    const nonInteractive = values["non-interactive"] || false;
     const workspace = values.workspace || config.workspace;
-    const repo = values.repo || currentRepo || (nonInteractive ? null : await prompt('Repository slug: '));
-    
+    const repo =
+      values.repo || currentRepo || (nonInteractive ? null : await prompt("Repository slug: "));
+
     if (!repo) {
-      console.error('❌ Repository slug is required' + (nonInteractive ? ' in non-interactive mode' : ''));
+      console.error(
+        "❌ Repository slug is required" + (nonInteractive ? " in non-interactive mode" : ""),
+      );
       process.exit(1);
     }
 
     // Parse options
-    const state = values.state as 'OPEN' | 'MERGED' | 'DECLINED' | 'SUPERSEDED' | undefined || 'OPEN';
-    const limit = parseInt(values.limit || '50', 10);
-    const format = values.format || 'table';
+    const state =
+      (values.state as "OPEN" | "MERGED" | "DECLINED" | "SUPERSEDED" | undefined) || "OPEN";
+    const limit = parseInt(values.limit || "50", 10);
+    const format = values.format || "table";
 
-    if (values.draft && values['no-draft']) {
-      console.error('❌ Cannot use both --draft and --no-draft');
+    if (values.draft && values["no-draft"]) {
+      console.error("❌ Cannot use both --draft and --no-draft");
       process.exit(1);
     }
 
     // Fetch PRs
     console.log(`🔍 Fetching pull requests from ${workspace}/${repo}...`);
     const response = await api.listPullRequests(workspace, repo, state);
-    
+
     let prs = response.values;
 
     // Filter by draft status if requested
     if (values.draft) {
-      prs = prs.filter(pr => pr.draft);
-    } else if (values['no-draft']) {
-      prs = prs.filter(pr => !pr.draft);
+      prs = prs.filter((pr) => pr.draft);
+    } else if (values["no-draft"]) {
+      prs = prs.filter((pr) => !pr.draft);
     }
 
     // Filter by author
     if (values.author) {
       const authorFilter = values.author.toLowerCase();
-      prs = prs.filter(pr => 
-        pr.author.username.toLowerCase() === authorFilter ||
-        pr.author.display_name.toLowerCase().includes(authorFilter)
+      prs = prs.filter(
+        (pr) =>
+          pr.author.username.toLowerCase() === authorFilter ||
+          pr.author.display_name.toLowerCase().includes(authorFilter),
       );
     }
 
-    // Filter by "my PRs" 
-    if (values['my-prs']) {
-      prs = prs.filter(pr => pr.author.username === config.username);
+    // Filter by "my PRs"
+    if (values["my-prs"]) {
+      prs = prs.filter((pr) => pr.author.username === config.username);
     }
 
     // Search filter
     if (values.search) {
       const searchTerm = values.search.toLowerCase();
-      prs = prs.filter(pr => 
-        pr.title.toLowerCase().includes(searchTerm) ||
-        (pr.description && pr.description.toLowerCase().includes(searchTerm))
+      prs = prs.filter(
+        (pr) =>
+          pr.title.toLowerCase().includes(searchTerm) ||
+          (pr.description && pr.description.toLowerCase().includes(searchTerm)),
       );
     }
 
     // Sorting
-    const sortBy = values['sort-by'] || 'created';
-    const sortDesc = values['sort-desc'] || false;
-    
+    const sortBy = values["sort-by"] || "created";
+    const sortDesc = values["sort-desc"] || false;
+
     prs.sort((a, b) => {
       let comparison = 0;
-      
+
       switch (sortBy) {
-        case 'created':
+        case "created":
           comparison = new Date(a.created_on).getTime() - new Date(b.created_on).getTime();
           break;
-        case 'updated':
+        case "updated":
           comparison = new Date(a.updated_on).getTime() - new Date(b.updated_on).getTime();
           break;
-        case 'title':
+        case "title":
           comparison = a.title.localeCompare(b.title);
           break;
       }
-      
+
       return sortDesc ? -comparison : comparison;
     });
 
@@ -288,37 +314,36 @@ async function main() {
 
     // Format output
     switch (format) {
-      case 'json':
+      case "json":
         formatPRJson(prs);
         break;
-      case 'simple':
+      case "simple":
         formatPRSimple(prs);
         break;
-      case 'table':
+      case "table":
       default:
         formatPRTable(prs);
         break;
     }
-
   } catch (error) {
-    console.error('\n❌ Error listing pull requests:', error);
+    console.error("\n❌ Error listing pull requests:", error);
     process.exit(1);
   }
-  
+
   // Ensure clean exit
   process.exit(0);
 }
 
 async function prompt(question: string, defaultValue?: string): Promise<string> {
-  const defaultText = defaultValue ? ` (${defaultValue})` : '';
+  const defaultText = defaultValue ? ` (${defaultValue})` : "";
   process.stdout.write(`${question}${defaultText}: `);
-  
+
   for await (const line of console) {
     const answer = line.trim();
-    return answer || defaultValue || '';
+    return answer || defaultValue || "";
   }
-  
-  return defaultValue || '';
+
+  return defaultValue || "";
 }
 
 // Run the main function

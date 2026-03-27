@@ -21,6 +21,7 @@ Bun-based command-line tools for interacting with Bitbucket repositories, pull r
 ## 🚀 Quick Start
 
 1. **Setup credentials**:
+
    ```bash
    cp config.json.example config.json
    # Edit config.json with your Bitbucket credentials
@@ -68,6 +69,7 @@ bun bitbucket-pr-create.ts -t "Quick fix" --no-template
 ```
 
 **Options:**
+
 - `-t, --title` - PR title (required)
 - `-d, --description` - PR description
 - `-s, --source` - Source branch (defaults to current branch)
@@ -106,6 +108,7 @@ bun bitbucket-pr-update.ts -p 123
 ```
 
 **Options:**
+
 - `-p, --pr` - PR ID to update (required)
 - `-t, --title` - New PR title
 - `-d, --description` - New PR description
@@ -151,6 +154,7 @@ bun bitbucket-pr-list.ts --sort-by updated --sort-desc
 ```
 
 **Options:**
+
 - `-r, --repo` - Repository slug (defaults to current repo)
 - `-w, --workspace` - Workspace
 - `-s, --state` - Filter by state: OPEN, MERGED, DECLINED, SUPERSEDED (default: OPEN)
@@ -187,6 +191,7 @@ bun bitbucket-repos-list.ts --format simple
 ```
 
 **Options:**
+
 - `-f, --filter` - Filter repositories by name
 - `-u, --show-urls` - Show clone URLs
 - `-p, --show-private` - Include private status
@@ -212,6 +217,7 @@ Create a `config.json` file in this directory:
 ### Auto-detection
 
 The scripts automatically detect:
+
 - Current git repository name
 - Current git branch
 - Workspace from environment
@@ -237,6 +243,7 @@ bitbucket/
 ## 📝 PR Templates
 
 The scripts support PR templates from these locations (in order of precedence):
+
 - `.bitbucket/pull_request_template.md`
 - `.github/pull_request_template.md`
 - `pull_request_template.md`
@@ -247,6 +254,7 @@ The scripts support PR templates from these locations (in order of precedence):
 ### Template Variables
 
 Templates can use these variables:
+
 - `{{branch}}` or `${branch}` - Source branch name
 - `{{sourceBranch}}` - Source branch name
 - `{{destinationBranch}}` - Target branch name
@@ -259,19 +267,24 @@ Templates can use these variables:
 
 ```markdown
 ## Summary
+
 {{title}}
 
 ## Ticket
+
 {{ticketNumber}}
 
 ## Changes
+
 - [ ] TODO: Describe changes
 
 ## Testing
+
 - [ ] Unit tests pass
 - [ ] Manual testing completed
 
 ## Checklist
+
 - [ ] Code follows style guidelines
 - [ ] Self-review completed
 - [ ] Comments added where needed
@@ -280,6 +293,7 @@ Templates can use these variables:
 ## 🤖 Non-Interactive Mode
 
 All scripts support a `--non-interactive` (or `-n`) flag that disables all prompts and uses defaults for unspecified values. This is essential for:
+
 - CI/CD pipelines
 - Automation scripts
 - Using from Claude Code or other tools
@@ -308,13 +322,16 @@ bitbucket-pr-list.ts --non-interactive
 ```
 
 ### Non-Interactive Defaults
+
 - `closeSourceBranch`: false
 - `isDraft`: false (unless --draft specified)
 - `useMarkdown`: true (when description provided)
 - `useTemplate`: true (unless --no-template)
 
 ### Required Fields
+
 In non-interactive mode, these fields must be provided or detected:
+
 - Repository slug (via `-r` or git detection)
 - PR title (for create)
 - PR ID (for update)
@@ -332,42 +349,48 @@ In non-interactive mode, these fields must be provided or detected:
 ### API Client Usage
 
 ```typescript
-import { BitbucketAPI } from './lib/api';
-import { loadConfig } from './lib/config';
+import { BitbucketAPI } from "./lib/api";
+import { loadConfig } from "./lib/config";
 
 const config = loadConfig();
 const api = new BitbucketAPI(config);
 
 // Create a PR
 const pr = await api.createPullRequest(workspace, repo, {
-  title: 'My PR',
-  source: { branch: { name: 'feature' } },
+  title: "My PR",
+  source: { branch: { name: "feature" } },
 });
 ```
 
 ## 🐛 Troubleshooting
 
 ### Authentication Issues
+
 - Ensure your app password has the correct permissions
 - Check that your username is correct (not email)
 - App passwords are different from your account password
 
 ### Rate Limiting
+
 Bitbucket has API rate limits. The scripts now include automatic retry logic:
+
 - Automatic exponential backoff for 429 errors
 - Maximum 3 retries with increasing delays
 - If you still hit limits, wait a few minutes before retrying
 
 ### Branch Not Found
+
 - Ensure the branch exists in the remote repository
 - Push your local branch before creating a PR
 
 ### Draft PR Issues
+
 - Draft PRs are a native Bitbucket feature (not just title prefixes)
 - Ensure your Bitbucket instance supports draft PRs
 - Check PR state with `bun bitbucket-pr-list.ts --draft`
 
 ### Markdown Formatting
+
 - Use the `--markdown` flag when creating/updating PRs
 - Bitbucket supports standard GitHub-flavored markdown
 - Preview your markdown locally before submitting

@@ -73,42 +73,46 @@ cp config.example.json config.json
 
 ### Workspace Options
 
-| Option | Type | Description |
-|--------|------|-------------|
-| `path` | string | Working directory for the session |
-| `keywords` | string[] | Keywords for AI router matching |
-| `exactKeywords` | string[] | Deterministic matching (bypasses AI router) |
-| `tmuxSession` | string | Fixed session name; reuses session with new panes |
+| Option          | Type     | Description                                       |
+| --------------- | -------- | ------------------------------------------------- |
+| `path`          | string   | Working directory for the session                 |
+| `keywords`      | string[] | Keywords for AI router matching                   |
+| `exactKeywords` | string[] | Deterministic matching (bypasses AI router)       |
+| `tmuxSession`   | string   | Fixed session name; reuses session with new panes |
 
 ## Usage
 
 ### Via Raycast
+
 Invoke Raygent script command with your prompt.
 
 ### CLI
+
 ```bash
 bun ~/dotfiles/scripts/raygent/raygent.ts "your prompt here"
 ```
 
 ### Test Router
+
 ```bash
 bun ~/dotfiles/scripts/raygent/lib/router-agent.ts "your prompt"
 ```
 
 ### Attach to Session
+
 ```bash
 tmux attach -t <session-name>
 ```
 
 ## Files
 
-| File | Purpose |
-|------|---------|
-| `raygent.ts` | Main orchestrator |
-| `lib/router-agent.ts` | AI routing via Claude Haiku |
-| `lib/tmux.ts` | tmux session management |
-| `raycast-raygent.sh` | Raycast script command |
-| `config.json` | Workspace config (gitignored) |
+| File                  | Purpose                       |
+| --------------------- | ----------------------------- |
+| `raygent.ts`          | Main orchestrator             |
+| `lib/router-agent.ts` | AI routing via Claude Haiku   |
+| `lib/tmux.ts`         | tmux session management       |
+| `raycast-raygent.sh`  | Raycast script command        |
+| `config.json`         | Workspace config (gitignored) |
 
 ## Dependencies
 

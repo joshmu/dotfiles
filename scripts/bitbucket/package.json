@@ -1,8 +1,12 @@
 {
   "name": "bitbucket-cli",
   "version": "1.0.0",
-  "description": "Bitbucket CLI tools",
   "private": true,
+  "description": "Bitbucket CLI tools",
+  "keywords": [
+    "bitbucket",
+    "cli"
+  ],
   "type": "module",
   "scripts": {
     "pr:create": "bun bitbucket-pr-create.ts",
@@ -11,15 +15,11 @@
     "repos:list": "bun bitbucket-repos-list.ts",
     "setup": "cp config.json.example config.json && echo 'Please edit config.json with your credentials'"
   },
-  "keywords": [
-    "bitbucket",
-    "cli"
-  ],
-  "engines": {
-    "bun": ">=1.0.0"
-  },
   "dependencies": {},
   "devDependencies": {
     "@types/bun": "latest"
+  },
+  "engines": {
+    "bun": ">=1.0.0"
   }
 }

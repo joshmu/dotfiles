@@ -17,12 +17,12 @@ cm -w
 
 ## Interactive Controls
 
-| Key | Action |
-|-----|--------|
-| `j/k` | Navigate up/down |
+| Key           | Action            |
+| ------------- | ----------------- |
+| `j/k`         | Navigate up/down  |
 | `o` / `Enter` | Jump to tmux pane |
-| `r` | Refresh |
-| `q` | Quit |
+| `r`           | Refresh           |
+| `q`           | Quit              |
 
 ## What it shows
 
@@ -37,16 +37,16 @@ cm -w
 
 The EVENT column shows the last event type with content details:
 
-| Event | Meaning |
-|-------|---------|
-| `assistant` | Claude responded with text |
-| `assistant:thinking` | Claude is thinking |
-| `assistant:Bash` | Claude using Bash tool |
-| `assistant:Read` | Claude reading files |
-| `user` | User sent a message |
-| `user:tool_result` | Tool results returned to Claude |
-| `progress` | Hook executing |
-| `system` | Local command |
+| Event                | Meaning                         |
+| -------------------- | ------------------------------- |
+| `assistant`          | Claude responded with text      |
+| `assistant:thinking` | Claude is thinking              |
+| `assistant:Bash`     | Claude using Bash tool          |
+| `assistant:Read`     | Claude reading files            |
+| `user`               | User sent a message             |
+| `user:tool_result`   | Tool results returned to Claude |
+| `progress`           | Hook executing                  |
+| `system`             | Local command                   |
 
 ## How it works
 

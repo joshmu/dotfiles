@@ -36,7 +36,9 @@ function loadConfig(): Config {
   const configPath = join(import.meta.dir, "config.json");
 
   if (!existsSync(configPath)) {
-    throw new Error("Config file not found. Copy config.example.json to config.json and add your API key.");
+    throw new Error(
+      "Config file not found. Copy config.example.json to config.json and add your API key.",
+    );
   }
 
   const config = JSON.parse(readFileSync(configPath, "utf-8"));
@@ -52,25 +54,29 @@ const fallbackFilename = () => `image-${Date.now()}`;
 
 async function generateFilename(prompt: string): Promise<string> {
   try {
-    const proc = Bun.spawn([
-      CLAUDE_PATH,
-      "-p",
-      `Generate a short, descriptive filename (2-4 words, kebab-case, no extension, no quotes) for an image with this prompt: "${prompt}". Output ONLY the filename, nothing else.`,
-      "--model",
-      "haiku",
-      "--output-format",
-      "text",
-    ], {
-      stdout: "pipe",
-      stderr: "pipe",
-    });
+    const proc = Bun.spawn(
+      [
+        CLAUDE_PATH,
+        "-p",
+        `Generate a short, descriptive filename (2-4 words, kebab-case, no extension, no quotes) for an image with this prompt: "${prompt}". Output ONLY the filename, nothing else.`,
+        "--model",
+        "haiku",
+        "--output-format",
+        "text",
+      ],
+      {
+        stdout: "pipe",
+        stderr: "pipe",
+      },
+    );
 
     const output = await new Response(proc.stdout).text();
     const exitCode = await proc.exited;
 
     if (exitCode !== 0) return fallbackFilename();
 
-    const filename = output.trim()
+    const filename = output
+      .trim()
       .replace(/['"]/g, "")
       .replace(/\s+/g, "-")
       .replace(/[^a-zA-Z0-9-]/g, "")
@@ -83,16 +89,19 @@ async function generateFilename(prompt: string): Promise<string> {
 }
 
 async function createPrediction(apiKey: string, prompt: string): Promise<string> {
-  const response = await fetch(`https://api.replicate.com/v1/models/${REPLICATE_MODEL}/predictions`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
+  const response = await fetch(
+    `https://api.replicate.com/v1/models/${REPLICATE_MODEL}/predictions`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        input: { prompt, output_format: "jpg" },
+      }),
     },
-    body: JSON.stringify({
-      input: { prompt, output_format: "jpg" },
-    }),
-  });
+  );
 
   if (!response.ok) {
     const error = await response.text();

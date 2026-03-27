@@ -59,7 +59,7 @@ class ElevenLabsTTS {
 
   private loadConfigSync(): Config {
     const configPath = join(__dirname, "config.json");
-    
+
     if (!existsSync(configPath)) {
       log.error("Config file not found. Please run setup.sh first.");
       process.exit(1);
@@ -68,7 +68,7 @@ class ElevenLabsTTS {
     try {
       const configContent = readFileSync(configPath, "utf-8");
       const config = JSON.parse(configContent);
-      
+
       // Check for API key in environment variable as fallback
       if (!config.apiKey && process.env.ELEVENLABS_API_KEY) {
         config.apiKey = process.env.ELEVENLABS_API_KEY;
@@ -107,7 +107,7 @@ class ElevenLabsTTS {
       const cacheFile = this.getCacheFileName(options.text, voiceId);
       if (existsSync(cacheFile)) {
         log.info("Using cached audio");
-        
+
         // If specific output file requested, copy from cache
         if (options.outputFile) {
           await $`cp ${cacheFile} ${options.outputFile}`.quiet();
@@ -119,7 +119,7 @@ class ElevenLabsTTS {
 
     // Prepare the request
     const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=${format}`;
-    
+
     const requestBody = {
       text: options.text,
       model_id: modelId,
@@ -148,7 +148,7 @@ class ElevenLabsTTS {
 
       // Get the audio data
       const audioBuffer = await response.arrayBuffer();
-      
+
       // Determine output file
       let outputPath: string;
       if (options.outputFile) {
@@ -159,7 +159,7 @@ class ElevenLabsTTS {
 
       // Save the audio file
       await Bun.write(outputPath, audioBuffer);
-      
+
       // Also save to cache if not already there
       if (!options.noCache && options.outputFile) {
         const cacheFile = this.getCacheFileName(options.text, voiceId);
@@ -168,7 +168,6 @@ class ElevenLabsTTS {
 
       log.success(`Audio saved to: ${outputPath}`);
       return outputPath;
-
     } catch (error) {
       log.error(`Failed to generate speech: ${error}`);
       throw error;
@@ -188,10 +187,10 @@ class ElevenLabsTTS {
       }
 
       const data = await response.json();
-      
+
       console.log("\nAvailable Voices:");
       console.log("─".repeat(60));
-      
+
       for (const voice of data.voices) {
         console.log(`${colors.cyan}${voice.name}${colors.reset}`);
         console.log(`  ID: ${voice.voice_id}`);
@@ -222,7 +221,7 @@ class ElevenLabsTTS {
 // CLI Interface
 async function main() {
   const args = process.argv.slice(2);
-  
+
   if (args.length === 0 || args.includes("--help") || args.includes("-h")) {
     console.log(`
 ElevenLabs Text-to-Speech CLI
@@ -273,7 +272,7 @@ Examples:
     const fileIndex = args.indexOf("--file");
     const inputFile = args[fileIndex + 1];
     const outputFile = args[fileIndex + 2];
-    
+
     if (!inputFile || !outputFile) {
       log.error("--file requires input and output file paths");
       process.exit(1);
@@ -291,7 +290,7 @@ Examples:
     // Parse text and options
     for (let i = 0; i < args.length; i++) {
       const arg = args[i];
-      
+
       if (arg === "--output" || arg === "-o") {
         options.outputFile = args[++i];
       } else if (arg === "--voice" || arg === "-v") {
@@ -323,10 +322,9 @@ Examples:
 
   try {
     const outputPath = await tts.generateSpeech(options);
-    
+
     // Output just the path for easy piping to other commands
     console.log(outputPath);
-    
   } catch (error) {
     log.error(`Failed to generate speech: ${error}`);
     process.exit(1);

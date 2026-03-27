@@ -278,11 +278,7 @@ describe("findClaudePaneTargets", () => {
 
   test("skips invalid Claude PIDs", () => {
     const pidToParent = new Map([["300", "200"]]);
-    const result = findClaudePaneTargets(
-      ["", "abc", "300"],
-      paneByPid,
-      pidToParent,
-    );
+    const result = findClaudePaneTargets(["", "abc", "300"], paneByPid, pidToParent);
     expect(result.get("dev")).toEqual([{ target: "dev:1.0", state: "unknown" }]);
   });
 
@@ -383,9 +379,7 @@ describe("formatSessionLine", () => {
 
 describe("renderTreeHeader", () => {
   test("renders single window without Claude", () => {
-    const windows: WindowInfo[] = [
-      { session: "dev", index: 0, name: "shell", paneCount: 1 },
-    ];
+    const windows: WindowInfo[] = [{ session: "dev", index: 0, name: "shell", paneCount: 1 }];
     const header = renderTreeHeader("dev", windows, new Map());
     const plain = stripAnsi(header);
     expect(plain).toContain("━━ dev (1 window) ━━");
@@ -425,17 +419,13 @@ describe("renderTreeHeader", () => {
   });
 
   test("uses magenta for working/unknown state in tree", () => {
-    const windows: WindowInfo[] = [
-      { session: "dev", index: 0, name: "shell", paneCount: 1 },
-    ];
+    const windows: WindowInfo[] = [{ session: "dev", index: 0, name: "shell", paneCount: 1 }];
     const header = renderTreeHeader("dev", windows, new Map<number, ClaudeState>([[0, "working"]]));
     expect(header).toContain("\x1b[35m"); // magenta
   });
 
   test("uses yellow for waiting state in tree", () => {
-    const windows: WindowInfo[] = [
-      { session: "dev", index: 0, name: "shell", paneCount: 1 },
-    ];
+    const windows: WindowInfo[] = [{ session: "dev", index: 0, name: "shell", paneCount: 1 }];
     const header = renderTreeHeader("dev", windows, new Map<number, ClaudeState>([[0, "waiting"]]));
     const lines = header.split("\n");
     const winLine = lines[1];
@@ -443,9 +433,7 @@ describe("renderTreeHeader", () => {
   });
 
   test("uses dim for idle state in tree", () => {
-    const windows: WindowInfo[] = [
-      { session: "dev", index: 0, name: "shell", paneCount: 1 },
-    ];
+    const windows: WindowInfo[] = [{ session: "dev", index: 0, name: "shell", paneCount: 1 }];
     const header = renderTreeHeader("dev", windows, new Map<number, ClaudeState>([[0, "idle"]]));
     const lines = header.split("\n");
     const winLine = lines[1];
@@ -453,34 +441,26 @@ describe("renderTreeHeader", () => {
   });
 
   test("ends with separator line", () => {
-    const windows: WindowInfo[] = [
-      { session: "dev", index: 0, name: "shell", paneCount: 1 },
-    ];
+    const windows: WindowInfo[] = [{ session: "dev", index: 0, name: "shell", paneCount: 1 }];
     const header = renderTreeHeader("dev", windows, new Map());
     const lines = header.split("\n");
     expect(stripAnsi(lines[lines.length - 1])).toMatch(/^─+$/);
   });
 
   test("header uses cyan color", () => {
-    const windows: WindowInfo[] = [
-      { session: "dev", index: 0, name: "shell", paneCount: 1 },
-    ];
+    const windows: WindowInfo[] = [{ session: "dev", index: 0, name: "shell", paneCount: 1 }];
     const header = renderTreeHeader("dev", windows, new Map());
     expect(header).toContain("\x1b[36m"); // cyan
   });
 
   test("window index uses green color", () => {
-    const windows: WindowInfo[] = [
-      { session: "dev", index: 0, name: "shell", paneCount: 1 },
-    ];
+    const windows: WindowInfo[] = [{ session: "dev", index: 0, name: "shell", paneCount: 1 }];
     const header = renderTreeHeader("dev", windows, new Map());
     expect(header).toContain("\x1b[32m"); // green
   });
 
   test("pane count uses dim color", () => {
-    const windows: WindowInfo[] = [
-      { session: "dev", index: 0, name: "editor", paneCount: 3 },
-    ];
+    const windows: WindowInfo[] = [{ session: "dev", index: 0, name: "editor", paneCount: 3 }];
     const header = renderTreeHeader("dev", windows, new Map());
     expect(header).toContain("\x1b[2m"); // dim
   });

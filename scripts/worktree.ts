@@ -64,7 +64,10 @@ interface SyncResult {
 }
 
 // Execute command and return output
-async function exec(cmd: string, cwd?: string): Promise<{ success: boolean; output: string; error?: string }> {
+async function exec(
+  cmd: string,
+  cwd?: string,
+): Promise<{ success: boolean; output: string; error?: string }> {
   log.cmd(cmd);
 
   const proc = spawn(cmd.split(" "), {
@@ -86,7 +89,10 @@ async function exec(cmd: string, cwd?: string): Promise<{ success: boolean; outp
 }
 
 // Execute command quietly (no logging)
-async function execQuiet(cmd: string, cwd?: string): Promise<{ success: boolean; output: string; error?: string }> {
+async function execQuiet(
+  cmd: string,
+  cwd?: string,
+): Promise<{ success: boolean; output: string; error?: string }> {
   const proc = spawn(cmd.split(" "), {
     cwd: cwd || process.cwd(),
     stdout: "pipe",
@@ -177,7 +183,9 @@ async function getMainRepoPath(path: string): Promise<string | null> {
 }
 
 // Detect the best base branch (main or master) from remote or local
-async function detectBaseBranch(repoPath: string): Promise<{ branch: string; isRemote: boolean } | null> {
+async function detectBaseBranch(
+  repoPath: string,
+): Promise<{ branch: string; isRemote: boolean } | null> {
   const { output: remoteRefs } = await execQuiet(`git branch -r`, repoPath);
   const hasRemoteMain = remoteRefs.includes("origin/main");
   const hasRemoteMaster = remoteRefs.includes("origin/master");
@@ -200,12 +208,20 @@ async function detectBaseBranch(repoPath: string): Promise<{ branch: string; isR
 }
 
 // Select between main and master branches, preferring the more recent if both exist
-async function selectBranch(repoPath: string, hasMain: boolean, hasMaster: boolean, prefix: string): Promise<string> {
+async function selectBranch(
+  repoPath: string,
+  hasMain: boolean,
+  hasMaster: boolean,
+  prefix: string,
+): Promise<string> {
   if (!hasMain) return "master";
   if (!hasMaster) return "main";
 
   const { output: mainTime } = await execQuiet(`git log -1 --format=%ct ${prefix}main`, repoPath);
-  const { output: masterTime } = await execQuiet(`git log -1 --format=%ct ${prefix}master`, repoPath);
+  const { output: masterTime } = await execQuiet(
+    `git log -1 --format=%ct ${prefix}master`,
+    repoPath,
+  );
   const branch = parseInt(mainTime || "0") >= parseInt(masterTime || "0") ? "main" : "master";
   log.info(`Both main and master exist, using ${branch} (more recent)`);
   return branch;
@@ -238,7 +254,20 @@ async function createWorktree(
 
   // Determine branch name
   // Skip feature/ prefix if purpose already has a conventional branch prefix
-  const BRANCH_PREFIXES = ['feature/', 'feat/', 'fix/', 'hotfix/', 'chore/', 'docs/', 'refactor/', 'test/', 'ci/', 'build/', 'perf/', 'release/'];
+  const BRANCH_PREFIXES = [
+    "feature/",
+    "feat/",
+    "fix/",
+    "hotfix/",
+    "chore/",
+    "docs/",
+    "refactor/",
+    "test/",
+    "ci/",
+    "build/",
+    "perf/",
+    "release/",
+  ];
   const hasPrefix = BRANCH_PREFIXES.some((p) => purpose.startsWith(p));
   const branchName = branch || (hasPrefix ? purpose : `feature/${purpose}`);
 
@@ -262,7 +291,10 @@ async function createWorktree(
       isRemote = baseBranch.startsWith("origin/");
       if (!isRemote) {
         // Check if remote version exists, prefer it
-        const { success: hasRemote } = await execQuiet(`git rev-parse --verify origin/${baseBranch}`, repoPath);
+        const { success: hasRemote } = await execQuiet(
+          `git rev-parse --verify origin/${baseBranch}`,
+          repoPath,
+        );
         if (hasRemote) {
           base = `origin/${baseBranch}`;
           isRemote = true;
@@ -285,7 +317,10 @@ async function createWorktree(
 
     log.step(`Creating worktree with new branch: ${branchName} from ${base}`);
     const noTrackFlag = isRemote ? " --no-track" : "";
-    const { success } = await exec(`git worktree add -b ${branchName} ${worktreePath} ${base}${noTrackFlag}`, repoPath);
+    const { success } = await exec(
+      `git worktree add -b ${branchName} ${worktreePath} ${base}${noTrackFlag}`,
+      repoPath,
+    );
     if (!success) return null;
   }
 
@@ -294,7 +329,11 @@ async function createWorktree(
 }
 
 // Sync files from source to destination based on patterns
-async function syncFiles(sourcePath: string, destPath: string, options: SyncOptions = {}): Promise<SyncResult> {
+async function syncFiles(
+  sourcePath: string,
+  destPath: string,
+  options: SyncOptions = {},
+): Promise<SyncResult> {
   const result: SyncResult = { copied: [], skipped: [], missing: [], errors: [] };
 
   // Get patterns from config or use defaults
@@ -352,7 +391,9 @@ function printSyncSummary(result: SyncResult, dryRun: boolean = false): void {
 
   if (result.errors.length > 0) {
     log.error(`Errors: ${result.errors.length}`);
-    result.errors.forEach((e) => console.log(`  ${colors.red}!${colors.reset} ${e.file}: ${e.error}`));
+    result.errors.forEach((e) =>
+      console.log(`  ${colors.red}!${colors.reset} ${e.file}: ${e.error}`),
+    );
   }
 
   if (result.copied.length === 0 && result.skipped.length === 0 && result.errors.length === 0) {
@@ -390,18 +431,25 @@ async function listWorktrees(): Promise<void> {
       const isDirty = status.length > 0;
 
       console.log(
-        `  ${colors.green}▸${colors.reset} ${name} ${colors.yellow}(${branch})${colors.reset}${isDirty ? ` ${colors.red}*modified${colors.reset}` : ""}`
+        `  ${colors.green}▸${colors.reset} ${name} ${colors.yellow}(${branch})${colors.reset}${isDirty ? ` ${colors.red}*modified${colors.reset}` : ""}`,
       );
       console.log(`    ${colors.bright}${wt.path}${colors.reset}`);
     } catch {
-      console.log(`  ${colors.red}▸${colors.reset} ${name} ${colors.red}(error reading)${colors.reset}`);
+      console.log(
+        `  ${colors.red}▸${colors.reset} ${name} ${colors.red}(error reading)${colors.reset}`,
+      );
     }
   }
   console.log();
 }
 
 // Remove worktree
-async function removeWorktree(repoPath: string, repoName: string, purpose: string, force: boolean = false): Promise<boolean> {
+async function removeWorktree(
+  repoPath: string,
+  repoName: string,
+  purpose: string,
+  force: boolean = false,
+): Promise<boolean> {
   const worktreesBaseDir = getWorktreesBaseDir(repoPath);
   const worktreeDirName = purpose.replace(/\//g, "-");
   const worktreePath = join(worktreesBaseDir, repoName, worktreeDirName);
@@ -501,7 +549,8 @@ async function main(): Promise<void> {
       //     or: gw create <repo> <purpose> [--base <branch>] [options]
       const hasRepoArg = args.length >= 3 && !args[1].startsWith("--") && !args[2].startsWith("--");
       const purpose = hasRepoArg ? args[2] : args[1];
-      let repoPath = hasRepoArg && args[1] !== "." ? resolve(process.cwd(), args[1]) : process.cwd();
+      let repoPath =
+        hasRepoArg && args[1] !== "." ? resolve(process.cwd(), args[1]) : process.cwd();
 
       // Parse options
       const options = {
@@ -531,10 +580,19 @@ async function main(): Promise<void> {
 
       const repoName = basename(repoPath);
       const displayName = purpose.replace(/\//g, "-");
-      console.log(`\n${colors.bright}Creating worktree for ${repoName}/${displayName}${colors.reset}\n`);
+      console.log(
+        `\n${colors.bright}Creating worktree for ${repoName}/${displayName}${colors.reset}\n`,
+      );
 
       // Create worktree
-      const worktreePath = await createWorktree(repoPath, repoName, purpose, options.branch, options.existingBranch, options.base);
+      const worktreePath = await createWorktree(
+        repoPath,
+        repoName,
+        purpose,
+        options.branch,
+        options.existingBranch,
+        options.base,
+      );
       if (!worktreePath) process.exit(1);
 
       // Sync local files
@@ -542,7 +600,9 @@ async function main(): Promise<void> {
         log.step("Syncing local files...");
         const syncResult = await syncFiles(repoPath, worktreePath, { overwrite: false });
         if (syncResult.copied.length > 0) {
-          log.success(`Synced ${syncResult.copied.length} file(s): ${syncResult.copied.join(", ")}`);
+          log.success(
+            `Synced ${syncResult.copied.length} file(s): ${syncResult.copied.join(", ")}`,
+          );
         }
         if (syncResult.skipped.length > 0) {
           log.info(`Skipped ${syncResult.skipped.length} existing file(s)`);
@@ -576,9 +636,15 @@ async function main(): Promise<void> {
       }
 
       // Support both: gw remove <purpose> and gw remove <repo> <purpose>
-      const hasRepoArg = filteredArgs.length >= 3 && !filteredArgs[1].startsWith("--") && !filteredArgs[2].startsWith("--");
+      const hasRepoArg =
+        filteredArgs.length >= 3 &&
+        !filteredArgs[1].startsWith("--") &&
+        !filteredArgs[2].startsWith("--");
       const purpose = hasRepoArg ? filteredArgs[2] : filteredArgs[1];
-      const repoPath = hasRepoArg && filteredArgs[1] !== "." ? resolve(process.cwd(), filteredArgs[1]) : process.cwd();
+      const repoPath =
+        hasRepoArg && filteredArgs[1] !== "."
+          ? resolve(process.cwd(), filteredArgs[1])
+          : process.cwd();
 
       if (!existsSync(repoPath)) {
         log.error(`Repository not found: ${repoPath}`);
@@ -592,7 +658,9 @@ async function main(): Promise<void> {
     }
 
     case "sync": {
-      const { success: gitSuccess, output: repoRoot } = await execQuiet("git rev-parse --show-toplevel");
+      const { success: gitSuccess, output: repoRoot } = await execQuiet(
+        "git rev-parse --show-toplevel",
+      );
       if (!gitSuccess || !repoRoot) {
         log.error("Not in a git repository");
         process.exit(1);

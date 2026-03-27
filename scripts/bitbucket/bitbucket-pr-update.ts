@@ -1,54 +1,54 @@
 #!/usr/bin/env bun
-import { parseArgs } from 'util';
-import { BitbucketAPI } from './lib/api';
-import { loadConfig, getCurrentRepo } from './lib/config';
-import type { BitbucketPullRequestUpdate, BitbucketMarkupContent } from './lib/types';
+import { parseArgs } from "util";
+import { BitbucketAPI } from "./lib/api";
+import { loadConfig, getCurrentRepo } from "./lib/config";
+import type { BitbucketPullRequestUpdate, BitbucketMarkupContent } from "./lib/types";
 
 // Parse command line arguments
 const { values, positionals } = parseArgs({
   args: Bun.argv,
   options: {
     help: {
-      type: 'boolean',
-      short: 'h',
+      type: "boolean",
+      short: "h",
     },
     pr: {
-      type: 'string',
-      short: 'p',
+      type: "string",
+      short: "p",
     },
     title: {
-      type: 'string',
-      short: 't',
+      type: "string",
+      short: "t",
     },
     description: {
-      type: 'string',
-      short: 'd',
+      type: "string",
+      short: "d",
     },
     destination: {
-      type: 'string',
-      short: 'b',
+      type: "string",
+      short: "b",
     },
     repo: {
-      type: 'string',
-      short: 'r',
+      type: "string",
+      short: "r",
     },
     workspace: {
-      type: 'string',
-      short: 'w',
+      type: "string",
+      short: "w",
     },
-    'convert-to-draft': {
-      type: 'boolean',
+    "convert-to-draft": {
+      type: "boolean",
     },
-    'ready-for-review': {
-      type: 'boolean',
+    "ready-for-review": {
+      type: "boolean",
     },
-    'non-interactive': {
-      type: 'boolean',
-      short: 'n',
+    "non-interactive": {
+      type: "boolean",
+      short: "n",
     },
-    'show': {
-      type: 'boolean',
-      short: 's',
+    show: {
+      type: "boolean",
+      short: "s",
     },
   },
   strict: true,
@@ -107,23 +107,23 @@ Environment Variables:
 }
 
 async function prompt(question: string, defaultValue?: string): Promise<string> {
-  const defaultText = defaultValue ? ` (${defaultValue})` : '';
+  const defaultText = defaultValue ? ` (${defaultValue})` : "";
   process.stdout.write(`${question}${defaultText}: `);
-  
+
   for await (const line of console) {
     const answer = line.trim();
-    return answer || defaultValue || '';
+    return answer || defaultValue || "";
   }
-  
-  return defaultValue || '';
+
+  return defaultValue || "";
 }
 
 async function promptYesNo(question: string, defaultValue: boolean = false): Promise<boolean> {
-  const defaultText = defaultValue ? 'Y/n' : 'y/N';
-  const answer = await prompt(`${question} (${defaultText})`, '');
-  
+  const defaultText = defaultValue ? "Y/n" : "y/N";
+  const answer = await prompt(`${question} (${defaultText})`, "");
+
   if (!answer) return defaultValue;
-  return answer.toLowerCase() === 'y' || answer.toLowerCase() === 'yes';
+  return answer.toLowerCase() === "y" || answer.toLowerCase() === "yes";
 }
 
 async function main() {
@@ -138,36 +138,39 @@ async function main() {
 
     // Get repository info
     const currentRepo = getCurrentRepo();
-    const nonInteractive = values['non-interactive'] || false;
+    const nonInteractive = values["non-interactive"] || false;
     const workspace = values.workspace || config.workspace;
-    const repo = values.repo || currentRepo || (nonInteractive ? null : await prompt('Repository slug'));
-    
-    const prId = values.pr || (nonInteractive ? null : await prompt('PR ID to update'));
+    const repo =
+      values.repo || currentRepo || (nonInteractive ? null : await prompt("Repository slug"));
+
+    const prId = values.pr || (nonInteractive ? null : await prompt("PR ID to update"));
     if (!prId) {
-      console.error('❌ PR ID is required');
+      console.error("❌ PR ID is required");
       process.exit(1);
     }
-    
+
     // Check required fields in non-interactive mode
     if (nonInteractive && !repo) {
-      console.error('❌ Repository slug is required in non-interactive mode (use -r or ensure git repo)');
+      console.error(
+        "❌ Repository slug is required in non-interactive mode (use -r or ensure git repo)",
+      );
       process.exit(1);
     }
 
     const prIdNum = parseInt(prId, 10);
     if (isNaN(prIdNum)) {
-      console.error('❌ PR ID must be a number');
+      console.error("❌ PR ID must be a number");
       process.exit(1);
     }
 
     // Fetch current PR details
-    console.log('\n🔍 Fetching PR details...');
+    console.log("\n🔍 Fetching PR details...");
     const currentPR = await api.getPullRequest(workspace, repo, prIdNum);
-    
+
     console.log(`\n📋 Current PR #${currentPR.id}:`);
     console.log(`   Title: ${currentPR.title}`);
     console.log(`   State: ${currentPR.state}`);
-    console.log(`   Draft: ${currentPR.draft ? 'Yes' : 'No'}`);
+    console.log(`   Draft: ${currentPR.draft ? "Yes" : "No"}`);
     console.log(`   Source: ${currentPR.source.branch.name}`);
     console.log(`   Destination: ${currentPR.destination.branch.name}`);
     console.log(`   Author: ${currentPR.author.display_name}`);
@@ -177,11 +180,11 @@ async function main() {
 
     // If --show flag is used, just display and exit
     if (values.show) {
-      console.log('\n📊 Pull Request Details:');
+      console.log("\n📊 Pull Request Details:");
       console.log(`   ID: #${currentPR.id}`);
       console.log(`   Title: ${currentPR.title}`);
       console.log(`   State: ${currentPR.state}`);
-      console.log(`   Draft: ${currentPR.draft ? 'Yes' : 'No'}`);
+      console.log(`   Draft: ${currentPR.draft ? "Yes" : "No"}`);
       console.log(`   Author: ${currentPR.author.display_name}`);
       console.log(`   Created: ${new Date(currentPR.created_on).toLocaleString()}`);
       console.log(`   Updated: ${new Date(currentPR.updated_on).toLocaleString()}`);
@@ -196,14 +199,14 @@ async function main() {
     }
 
     // Check if PR is still open
-    if (currentPR.state !== 'OPEN') {
+    if (currentPR.state !== "OPEN") {
       console.error(`\n❌ Cannot update PR in ${currentPR.state} state`);
       process.exit(1);
     }
 
     // Handle draft status changes
-    if (values['convert-to-draft'] && values['ready-for-review']) {
-      console.error('\n❌ Cannot use both --convert-to-draft and --ready-for-review');
+    if (values["convert-to-draft"] && values["ready-for-review"]) {
+      console.error("\n❌ Cannot use both --convert-to-draft and --ready-for-review");
       process.exit(1);
     }
 
@@ -217,7 +220,7 @@ async function main() {
       hasUpdates = true;
     } else {
       if (!nonInteractive) {
-        const newTitle = await prompt('\nNew title (leave empty to keep current)', '');
+        const newTitle = await prompt("\nNew title (leave empty to keep current)", "");
         if (newTitle) {
           updateData.title = newTitle;
           hasUpdates = true;
@@ -232,7 +235,7 @@ async function main() {
       hasUpdates = true;
     } else {
       if (!nonInteractive) {
-        const newDescription = await prompt('New description (leave empty to keep current)', '');
+        const newDescription = await prompt("New description (leave empty to keep current)", "");
         if (newDescription) {
           // Send raw markdown string directly
           updateData.description = newDescription;
@@ -251,29 +254,32 @@ async function main() {
       hasUpdates = true;
     } else {
       if (!nonInteractive) {
-        const newDestination = await prompt('New destination branch (leave empty to keep current)', '');
+        const newDestination = await prompt(
+          "New destination branch (leave empty to keep current)",
+          "",
+        );
         if (newDestination) {
           // Validate branch exists
           try {
             const branches = await api.getAllBranches(workspace, repo);
-            const branchNames = branches.map(b => b.name);
-            
+            const branchNames = branches.map((b) => b.name);
+
             if (!branchNames.includes(newDestination)) {
               console.error(`\n❌ Destination branch '${newDestination}' not found in repository`);
-              console.error(`First 10 branches: ${branchNames.slice(0, 10).join(', ')}...`);
-              const proceed = await promptYesNo('Continue anyway?', false);
+              console.error(`First 10 branches: ${branchNames.slice(0, 10).join(", ")}...`);
+              const proceed = await promptYesNo("Continue anyway?", false);
               if (!proceed) {
                 process.exit(1);
               }
             }
           } catch (error) {
-            console.error('⚠️  Could not validate branch:', error);
-            const proceed = await promptYesNo('Continue anyway?', false);
+            console.error("⚠️  Could not validate branch:", error);
+            const proceed = await promptYesNo("Continue anyway?", false);
             if (!proceed) {
               process.exit(1);
             }
           }
-          
+
           updateData.destination = {
             branch: {
               name: newDestination,
@@ -285,15 +291,15 @@ async function main() {
     }
 
     // Draft status
-    if (values['convert-to-draft']) {
+    if (values["convert-to-draft"]) {
       updateData.draft = true;
       hasUpdates = true;
-    } else if (values['ready-for-review']) {
+    } else if (values["ready-for-review"]) {
       updateData.draft = false;
       hasUpdates = true;
     } else if (!values.title && !values.description && !values.destination && !nonInteractive) {
       // In interactive mode, ask about draft status
-      const changeDraftStatus = await promptYesNo('\nChange draft status?', false);
+      const changeDraftStatus = await promptYesNo("\nChange draft status?", false);
       if (changeDraftStatus) {
         updateData.draft = !currentPR.draft;
         hasUpdates = true;
@@ -301,20 +307,20 @@ async function main() {
     }
 
     if (!hasUpdates) {
-      console.log('\n✨ No updates specified');
+      console.log("\n✨ No updates specified");
       process.exit(0);
     }
 
     // Update PR
-    console.log('\n📤 Updating pull request...');
+    console.log("\n📤 Updating pull request...");
     const updatedPR = await api.updatePullRequest(workspace, repo, prIdNum, updateData);
 
-    console.log('\n✅ Pull request updated successfully!');
+    console.log("\n✅ Pull request updated successfully!");
     console.log(`   PR #${updatedPR.id}: ${updatedPR.title}`);
     console.log(`   URL: ${updatedPR.links.html.href}`);
-    
+
     // Show what changed
-    console.log('\n📝 Changes:');
+    console.log("\n📝 Changes:");
     if (updateData.title && updateData.title !== currentPR.title) {
       console.log(`   Title: "${currentPR.title}" → "${updateData.title}"`);
     }
@@ -324,18 +330,24 @@ async function main() {
         console.log(`   Description: Updated (Markdown)`);
       }
     }
-    if (updateData.destination && updateData.destination.branch.name !== currentPR.destination.branch.name) {
-      console.log(`   Destination: ${currentPR.destination.branch.name} → ${updateData.destination.branch.name}`);
+    if (
+      updateData.destination &&
+      updateData.destination.branch.name !== currentPR.destination.branch.name
+    ) {
+      console.log(
+        `   Destination: ${currentPR.destination.branch.name} → ${updateData.destination.branch.name}`,
+      );
     }
     if (updateData.draft !== undefined && updateData.draft !== currentPR.draft) {
-      console.log(`   Draft Status: ${currentPR.draft ? 'Draft' : 'Ready'} → ${updateData.draft ? 'Draft' : 'Ready for review'}`);
+      console.log(
+        `   Draft Status: ${currentPR.draft ? "Draft" : "Ready"} → ${updateData.draft ? "Draft" : "Ready for review"}`,
+      );
     }
-
   } catch (error) {
-    console.error('\n❌ Error updating pull request:', error);
+    console.error("\n❌ Error updating pull request:", error);
     process.exit(1);
   }
-  
+
   // Ensure clean exit
   process.exit(0);
 }

@@ -38,9 +38,9 @@ Update `REPLICATE_MODEL` in `gen-img.ts` to switch models.
 
 ## Files
 
-| File | Purpose |
-|------|---------|
-| `gen-img.ts` | Main script (Bun) |
-| `raycast-gen-img.sh` | Raycast wrapper |
-| `config.json` | API key (gitignored) |
-| `config.example.json` | Config template |
+| File                  | Purpose              |
+| --------------------- | -------------------- |
+| `gen-img.ts`          | Main script (Bun)    |
+| `raycast-gen-img.sh`  | Raycast wrapper      |
+| `config.json`         | API key (gitignored) |
+| `config.example.json` | Config template      |

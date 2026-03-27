@@ -1,11 +1,11 @@
 export function hasSession(name: string): boolean {
-  return Bun.spawnSync(['tmux', 'has-session', '-t', name]).exitCode === 0;
+  return Bun.spawnSync(["tmux", "has-session", "-t", name]).exitCode === 0;
 }
 
 export function createPane(session: string, cwd?: string): string {
-  const args = ['tmux', 'split-window', '-d', '-h'];
-  if (cwd) args.push('-c', cwd);
-  args.push('-t', session, '-P', '-F', '#{pane_id}');
+  const args = ["tmux", "split-window", "-d", "-h"];
+  if (cwd) args.push("-c", cwd);
+  args.push("-t", session, "-P", "-F", "#{pane_id}");
 
   const result = Bun.spawnSync(args);
   if (result.exitCode !== 0) {
@@ -15,8 +15,8 @@ export function createPane(session: string, cwd?: string): string {
 }
 
 export function createSession(name: string, cwd?: string): void {
-  const args = ['tmux', 'new-session', '-d', '-s', name];
-  if (cwd) args.push('-c', cwd);
+  const args = ["tmux", "new-session", "-d", "-s", name];
+  if (cwd) args.push("-c", cwd);
 
   if (Bun.spawnSync(args).exitCode !== 0) {
     throw new Error(`Failed to create tmux session: ${name}`);
@@ -24,7 +24,7 @@ export function createSession(name: string, cwd?: string): void {
 }
 
 export function sendKeys(session: string, keys: string): void {
-  if (Bun.spawnSync(['tmux', 'send-keys', '-t', session, keys, 'Enter']).exitCode !== 0) {
+  if (Bun.spawnSync(["tmux", "send-keys", "-t", session, keys, "Enter"]).exitCode !== 0) {
     throw new Error(`Failed to send keys to session: ${session}`);
   }
 }

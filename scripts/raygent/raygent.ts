@@ -8,10 +8,15 @@
  * 3. Send claude command with prompt
  */
 
-import { generateSessionConfig, loadConfig, findExactMatch, type SessionConfig } from './lib/router-agent';
-import { buildClaudeArgs } from './lib/claude-cmd';
-import { createSession, sendKeys, generateUniqueName, hasSession, createPane } from './lib/tmux';
-import { writeFileSync } from 'fs';
+import {
+  generateSessionConfig,
+  loadConfig,
+  findExactMatch,
+  type SessionConfig,
+} from "./lib/router-agent";
+import { buildClaudeArgs } from "./lib/claude-cmd";
+import { createSession, sendKeys, generateUniqueName, hasSession, createPane } from "./lib/tmux";
+import { writeFileSync } from "fs";
 
 async function main() {
   const prompt = process.argv[2];
@@ -62,7 +67,7 @@ async function main() {
     writeFileSync(promptFile, prompt);
     sendKeys(target, `claude ${args} -- "$(cat ${promptFile})" && rm ${promptFile}`);
   } catch (error) {
-    console.error('Error:', error instanceof Error ? error.message : error);
+    console.error("Error:", error instanceof Error ? error.message : error);
     process.exit(1);
   }
 }

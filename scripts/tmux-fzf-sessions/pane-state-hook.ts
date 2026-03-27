@@ -48,23 +48,27 @@ try {
   const windowTarget = execSync(
     `tmux display-message -p -t ${pane} "#{session_name}:#{window_index}"`,
     { timeout: 1000 },
-  ).toString().trim();
+  )
+    .toString()
+    .trim();
 
   if (windowTarget) {
-    const paneStatesRaw = execSync(
-      `tmux list-panes -t "${windowTarget}" -F "#{@claude-state}"`,
-      { timeout: 1000 },
-    ).toString().trim();
+    const paneStatesRaw = execSync(`tmux list-panes -t "${windowTarget}" -F "#{@claude-state}"`, {
+      timeout: 1000,
+    })
+      .toString()
+      .trim();
 
     const paneStates = paneStatesRaw.split("\n").map((s) => s || undefined);
 
     // Detect non-Claude agents (codex, opencode) via PID ancestry
     let extraAgentCount = 0;
     try {
-      const panePidsRaw = execSync(
-        `tmux list-panes -t "${windowTarget}" -F "#{pane_pid}"`,
-        { timeout: 1000 },
-      ).toString().trim();
+      const panePidsRaw = execSync(`tmux list-panes -t "${windowTarget}" -F "#{pane_pid}"`, {
+        timeout: 1000,
+      })
+        .toString()
+        .trim();
       const panePidSet = new Set(panePidsRaw.split("\n"));
 
       const allProcs = execSync("ps -A -o pid=,ppid=", { timeout: 1000 }).toString().trim();
@@ -73,7 +77,10 @@ try {
       for (const tool of ["codex", "opencode"]) {
         try {
           const pids = execSync(`pgrep -x ${tool}`, { timeout: 1000 })
-            .toString().trim().split("\n").filter(Boolean);
+            .toString()
+            .trim()
+            .split("\n")
+            .filter(Boolean);
           for (const pid of pids) {
             let ppid = pid;
             for (let i = 0; i < 5; i++) {
@@ -92,8 +99,12 @@ try {
     const info = computeWindowClaudeInfo(paneStates, extraAgentCount);
 
     if (info) {
-      execSync(`tmux set-option -w -t "${windowTarget}" @window-claude-state ${info.state}`, { timeout: 1000 });
-      execSync(`tmux set-option -w -t "${windowTarget}" @window-claude-icons '${info.icons}'`, { timeout: 1000 });
+      execSync(`tmux set-option -w -t "${windowTarget}" @window-claude-state ${info.state}`, {
+        timeout: 1000,
+      });
+      execSync(`tmux set-option -w -t "${windowTarget}" @window-claude-icons '${info.icons}'`, {
+        timeout: 1000,
+      });
     } else {
       execSync(`tmux set-option -wu -t "${windowTarget}" @window-claude-state`, { timeout: 1000 });
       execSync(`tmux set-option -wu -t "${windowTarget}" @window-claude-icons`, { timeout: 1000 });

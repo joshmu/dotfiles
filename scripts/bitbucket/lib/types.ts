@@ -15,7 +15,7 @@ export interface BitbucketUser {
 // Markdown content structure for descriptions
 export interface BitbucketMarkupContent {
   raw: string;
-  markup: 'markdown';
+  markup: "markdown";
   html?: string;
 }
 
@@ -71,7 +71,7 @@ export interface BitbucketPullRequest {
   id: number;
   title: string;
   description?: string;
-  state: 'OPEN' | 'MERGED' | 'DECLINED' | 'SUPERSEDED';
+  state: "OPEN" | "MERGED" | "DECLINED" | "SUPERSEDED";
   author: BitbucketUser;
   source: {
     branch: BitbucketBranch;
@@ -86,7 +86,7 @@ export interface BitbucketPullRequest {
   };
   participants: Array<{
     user: BitbucketUser;
-    role: 'PARTICIPANT' | 'REVIEWER';
+    role: "PARTICIPANT" | "REVIEWER";
     approved: boolean;
     state: string;
   }>;

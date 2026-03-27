@@ -193,9 +193,10 @@ class NotificationSoundGenerator {
 
   async listSounds(): Promise<void> {
     try {
-      const result = await $`ls -la ${this.soundsDir}/*.mp3 2>/dev/null || echo "No sounds found"`.quiet();
+      const result =
+        await $`ls -la ${this.soundsDir}/*.mp3 2>/dev/null || echo "No sounds found"`.quiet();
       const output = result.stdout.toString();
-      
+
       if (output.includes("No sounds found")) {
         log.warn("No generated sounds found");
         console.log(`Run '${process.argv[1]} --generate' to create sounds`);
@@ -262,14 +263,14 @@ Examples:
   // Handle generate common sounds
   if (args.includes("--generate")) {
     await generator.generateCommonSounds();
-    
+
     // Also check for sessions to generate
     const sessionsIndex = args.indexOf("--sessions");
     if (sessionsIndex !== -1 && args[sessionsIndex + 1]) {
       const sessions = args[sessionsIndex + 1].split(",");
       await generator.generateSessionSounds(sessions);
     }
-    
+
     process.exit(0);
   }
 
@@ -281,7 +282,7 @@ Examples:
   // Parse arguments
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
-    
+
     switch (arg) {
       case "--session":
         options.session = args[++i];

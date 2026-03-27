@@ -1,42 +1,42 @@
 #!/usr/bin/env bun
-import { parseArgs } from 'util';
-import { BitbucketAPI } from './lib/api';
-import { loadConfig } from './lib/config';
+import { parseArgs } from "util";
+import { BitbucketAPI } from "./lib/api";
+import { loadConfig } from "./lib/config";
 
 // Parse command line arguments
 const { values, positionals } = parseArgs({
   args: Bun.argv,
   options: {
     help: {
-      type: 'boolean',
-      short: 'h',
+      type: "boolean",
+      short: "h",
     },
     filter: {
-      type: 'string',
-      short: 'f',
+      type: "string",
+      short: "f",
     },
     workspace: {
-      type: 'string',
-      short: 'w',
+      type: "string",
+      short: "w",
     },
-    'show-urls': {
-      type: 'boolean',
-      short: 'u',
+    "show-urls": {
+      type: "boolean",
+      short: "u",
     },
-    'show-private': {
-      type: 'boolean',
-      short: 'p',
+    "show-private": {
+      type: "boolean",
+      short: "p",
     },
     limit: {
-      type: 'string',
-      short: 'l',
+      type: "string",
+      short: "l",
     },
     format: {
-      type: 'string',
+      type: "string",
     },
-    'non-interactive': {
-      type: 'boolean',
-      short: 'n',
+    "non-interactive": {
+      type: "boolean",
+      short: "n",
     },
   },
   strict: true,
@@ -91,10 +91,10 @@ function formatSize(bytes: number): string {
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
   });
 }
 
@@ -107,13 +107,13 @@ async function main() {
   try {
     const config = loadConfig();
     const api = new BitbucketAPI(config);
-    
+
     const workspace = values.workspace || config.workspace;
     const filter = values.filter;
-    const showUrls = values['show-urls'];
-    const showPrivate = values['show-private'];
+    const showUrls = values["show-urls"];
+    const showPrivate = values["show-private"];
     const limit = values.limit ? parseInt(values.limit, 10) : undefined;
-    const format = values.format || 'table';
+    const format = values.format || "table";
 
     console.log(`\n🔍 Fetching repositories from ${workspace}...`);
     if (filter) {
@@ -129,58 +129,60 @@ async function main() {
     }
 
     if (repos.length === 0) {
-      console.log('\n❌ No repositories found');
+      console.log("\n❌ No repositories found");
       process.exit(0);
     }
 
-    console.log(`\n📦 Found ${repos.length} repositories${response.size ? ` (of ${response.size} total)` : ''}:\n`);
+    console.log(
+      `\n📦 Found ${repos.length} repositories${response.size ? ` (of ${response.size} total)` : ""}:\n`,
+    );
 
     // Format output based on selected format
     switch (format) {
-      case 'json':
+      case "json":
         console.log(JSON.stringify(repos, null, 2));
         break;
-        
-      case 'simple':
+
+      case "simple":
         for (const repo of repos) {
           console.log(repo.slug);
         }
         break;
-        
-      case 'table':
+
+      case "table":
       default:
         // Calculate column widths
-        const nameWidth = Math.max(20, ...repos.map(r => r.slug.length)) + 2;
-        const langWidth = Math.max(10, ...repos.map(r => (r.language || 'N/A').length)) + 2;
-        
+        const nameWidth = Math.max(20, ...repos.map((r) => r.slug.length)) + 2;
+        const langWidth = Math.max(10, ...repos.map((r) => (r.language || "N/A").length)) + 2;
+
         // Print header
-        let header = `${'Repository'.padEnd(nameWidth)}${'Language'.padEnd(langWidth)}`;
-        if (showPrivate) header += 'Private  ';
-        header += 'Size       Updated';
-        
+        let header = `${"Repository".padEnd(nameWidth)}${"Language".padEnd(langWidth)}`;
+        if (showPrivate) header += "Private  ";
+        header += "Size       Updated";
+
         console.log(header);
-        console.log('─'.repeat(header.length));
-        
+        console.log("─".repeat(header.length));
+
         // Print repositories
         for (const repo of repos) {
           let line = `${repo.slug.padEnd(nameWidth)}`;
-          line += `${(repo.language || 'N/A').padEnd(langWidth)}`;
+          line += `${(repo.language || "N/A").padEnd(langWidth)}`;
           if (showPrivate) {
-            line += `${repo.is_private ? 'Yes' : 'No'}      `;
+            line += `${repo.is_private ? "Yes" : "No"}      `;
           }
           line += `${formatSize(repo.size).padEnd(10)} `;
           line += formatDate(repo.updated_on);
-          
+
           console.log(line);
-          
+
           if (repo.description) {
             console.log(`  └─ ${repo.description}`);
           }
-          
+
           if (showUrls) {
-            const sshUrl = repo.links.clone.find(c => c.name === 'ssh')?.href;
-            const httpsUrl = repo.links.clone.find(c => c.name === 'https')?.href;
-            
+            const sshUrl = repo.links.clone.find((c) => c.name === "ssh")?.href;
+            const httpsUrl = repo.links.clone.find((c) => c.name === "https")?.href;
+
             if (sshUrl) {
               console.log(`  └─ SSH: ${sshUrl}`);
             }
@@ -189,23 +191,22 @@ async function main() {
             }
           }
         }
-        
+
         break;
     }
 
     // Show pagination info
     if (response.next) {
-      console.log(`\n📄 More results available. Total: ${response.size || 'unknown'}`);
+      console.log(`\n📄 More results available. Total: ${response.size || "unknown"}`);
       if (!limit) {
-        console.log('   Use -l/--limit to see more results');
+        console.log("   Use -l/--limit to see more results");
       }
     }
-
   } catch (error) {
-    console.error('\n❌ Error listing repositories:', error);
+    console.error("\n❌ Error listing repositories:", error);
     process.exit(1);
   }
-  
+
   // Ensure clean exit
   process.exit(0);
 }

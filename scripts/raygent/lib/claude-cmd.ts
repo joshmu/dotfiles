@@ -1,4 +1,4 @@
-const BASE_FLAG = '--allow-dangerously-skip-permissions';
+const BASE_FLAG = "--allow-dangerously-skip-permissions";
 
 export function buildClaudeArgs(extraArgs?: string): string {
   const trimmed = extraArgs?.trim();

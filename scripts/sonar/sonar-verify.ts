@@ -32,7 +32,7 @@ interface SonarIssue {
   project: string;
   line?: number;
   message: string;
-  type: 'BUG' | 'VULNERABILITY' | 'CODE_SMELL' | 'SECURITY_HOTSPOT';
+  type: "BUG" | "VULNERABILITY" | "CODE_SMELL" | "SECURITY_HOTSPOT";
   status: string;
   textRange?: {
     startLine: number;
@@ -55,7 +55,7 @@ interface SonarResponse {
 interface AnalysisTask {
   task: {
     id: string;
-    status: 'PENDING' | 'IN_PROGRESS' | 'SUCCESS' | 'FAILED' | 'CANCELED';
+    status: "PENDING" | "IN_PROGRESS" | "SUCCESS" | "FAILED" | "CANCELED";
     analysisId?: string;
     errorMessage?: string;
   };
@@ -69,8 +69,8 @@ interface IssueDiff {
 }
 
 // Config
-const SONAR_BASE_URL = 'https://sonarcloud.io';
-const DEFAULT_STATUSES = 'OPEN,REOPENED,CONFIRMED';
+const SONAR_BASE_URL = "https://sonarcloud.io";
+const DEFAULT_STATUSES = "OPEN,REOPENED,CONFIRMED";
 const PAGE_SIZE = 500;
 const RATE_LIMIT_DELAY = 100;
 
@@ -79,31 +79,31 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Helpers
 function fingerprint(issue: SonarIssue): string {
-  const line = issue.line ?? issue.textRange?.startLine ?? '';
+  const line = issue.line ?? issue.textRange?.startLine ?? "";
   return `${issue.rule}::${issue.component}::${line}::${issue.message}`;
 }
 
 function getFilePath(component: string, projectKey: string): string {
-  return component.replace(`${projectKey}:`, '');
+  return component.replace(`${projectKey}:`, "");
 }
 
 function formatSeverity(severity: string): string {
   const colors: Record<string, string> = {
-    BLOCKER: '\x1b[31m', // red
-    CRITICAL: '\x1b[31m', // red
-    MAJOR: '\x1b[33m', // yellow
-    MINOR: '\x1b[36m', // cyan
-    INFO: '\x1b[37m', // white
+    BLOCKER: "\x1b[31m", // red
+    CRITICAL: "\x1b[31m", // red
+    MAJOR: "\x1b[33m", // yellow
+    MINOR: "\x1b[36m", // cyan
+    INFO: "\x1b[37m", // white
   };
-  const reset = '\x1b[0m';
-  return `${colors[severity] || ''}${severity}${reset}`;
+  const reset = "\x1b[0m";
+  return `${colors[severity] || ""}${severity}${reset}`;
 }
 
 // API Functions
 async function sonarFetch<T>(
   token: string,
   path: string,
-  params: Record<string, string | number | undefined>
+  params: Record<string, string | number | undefined>,
 ): Promise<T> {
   const url = new URL(`${SONAR_BASE_URL}/api/${path}`);
   for (const [key, value] of Object.entries(params)) {
@@ -140,11 +140,11 @@ async function fetchOpenIssues(options: FetchIssuesOptions): Promise<SonarIssue[
   let hasMore = true;
 
   while (hasMore) {
-    const data = await sonarFetch<SonarResponse>(token, 'issues/search', {
+    const data = await sonarFetch<SonarResponse>(token, "issues/search", {
       componentKeys: projectKey,
       branch,
       statuses,
-      types: types?.join(','),
+      types: types?.join(","),
       author,
       ps: PAGE_SIZE,
       p: page,
@@ -165,14 +165,12 @@ async function fetchOpenIssues(options: FetchIssuesOptions): Promise<SonarIssue[
 // Get long-lived branches from project
 async function getLongLivedBranches(
   token: string,
-  projectKey: string
+  projectKey: string,
 ): Promise<Array<{ name: string; type: string; isMain: boolean }>> {
-  const data = await sonarFetch<{ branches: Array<{ name: string; type: string; isMain: boolean }> }>(
-    token,
-    'project_branches/list',
-    { project: projectKey }
-  );
-  return data.branches.filter((b) => b.type === 'LONG');
+  const data = await sonarFetch<{
+    branches: Array<{ name: string; type: string; isMain: boolean }>;
+  }>(token, "project_branches/list", { project: projectKey });
+  return data.branches.filter((b) => b.type === "LONG");
 }
 
 // Smart branch detection - returns the baseline branch to use
@@ -188,7 +186,7 @@ async function getBaselineBranch(token: string, projectKey: string): Promise<str
   }
 
   // Multiple long-lived branches - prefer develop first (most common baseline)
-  const preferred = ['develop', 'main', 'master'];
+  const preferred = ["develop", "main", "master"];
   for (const name of preferred) {
     const found = longLived.find((b) => b.name === name);
     if (found) return found.name;
@@ -206,32 +204,28 @@ async function waitForAnalysis(
   token: string,
   ceTaskId: string,
   timeoutMs = 300000,
-  pollIntervalMs = 5000
+  pollIntervalMs = 5000,
 ): Promise<string> {
   const startTime = Date.now();
 
   while (Date.now() - startTime < timeoutMs) {
-    const data = await sonarFetch<AnalysisTask>(token, 'ce/task', { id: ceTaskId });
+    const data = await sonarFetch<AnalysisTask>(token, "ce/task", { id: ceTaskId });
 
-    if (data.task.status === 'SUCCESS') {
+    if (data.task.status === "SUCCESS") {
       return data.task.analysisId!;
     }
-    if (data.task.status === 'FAILED' || data.task.status === 'CANCELED') {
-      throw new Error(`Analysis ${data.task.status}: ${data.task.errorMessage || 'unknown error'}`);
+    if (data.task.status === "FAILED" || data.task.status === "CANCELED") {
+      throw new Error(`Analysis ${data.task.status}: ${data.task.errorMessage || "unknown error"}`);
     }
 
     console.log(`  Analysis status: ${data.task.status}...`);
     await sleep(pollIntervalMs);
   }
 
-  throw new Error('Analysis timeout');
+  throw new Error("Analysis timeout");
 }
 
-function diffIssues(
-  before: SonarIssue[],
-  after: SonarIssue[],
-  targetIssueKey?: string
-): IssueDiff {
+function diffIssues(before: SonarIssue[], after: SonarIssue[], targetIssueKey?: string): IssueDiff {
   const beforeByKey = new Map(before.map((i) => [i.key, i]));
   const afterByKey = new Map(after.map((i) => [i.key, i]));
 
@@ -286,7 +280,14 @@ export async function verifyIssueResolved(options: {
   };
 }
 
-export { fetchOpenIssues, diffIssues, waitForAnalysis, getFilePath, fingerprint, getLongLivedBranches };
+export {
+  fetchOpenIssues,
+  diffIssues,
+  waitForAnalysis,
+  getFilePath,
+  fingerprint,
+  getLongLivedBranches,
+};
 export type { SonarIssue, IssueDiff };
 
 // CLI
@@ -295,12 +296,12 @@ async function main() {
   const args = process.argv.slice(2);
 
   if (!token) {
-    console.error('Error: SONAR_TOKEN environment variable required');
-    console.error('\nGenerate at: https://sonarcloud.io → My Account → Security → Tokens');
+    console.error("Error: SONAR_TOKEN environment variable required");
+    console.error("\nGenerate at: https://sonarcloud.io → My Account → Security → Tokens");
     process.exit(1);
   }
 
-  if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
+  if (args.length === 0 || args.includes("--help") || args.includes("-h")) {
     console.log(`
 SonarCloud Issue Verification
 
@@ -345,20 +346,20 @@ Project Key Format:
   }
 
   const projectKey = args[0];
-  const branch = args[1] && !args[1].startsWith('--') ? args[1] : undefined;
-  const issueKey = args[2] && !args[2].startsWith('--') ? args[2] : undefined;
-  const jsonOutput = args.includes('--json');
-  const countOnly = args.includes('--count');
-  const typesArg = args.find((a) => a.startsWith('--types='));
-  const types = typesArg?.split('=')[1]?.split(',');
-  const listBranches = args.includes('--branches');
-  const showBaseline = args.includes('--baseline');
-  const deleteArg = args.find((a) => a.startsWith('--delete'));
+  const branch = args[1] && !args[1].startsWith("--") ? args[1] : undefined;
+  const issueKey = args[2] && !args[2].startsWith("--") ? args[2] : undefined;
+  const jsonOutput = args.includes("--json");
+  const countOnly = args.includes("--count");
+  const typesArg = args.find((a) => a.startsWith("--types="));
+  const types = typesArg?.split("=")[1]?.split(",");
+  const listBranches = args.includes("--branches");
+  const showBaseline = args.includes("--baseline");
+  const deleteArg = args.find((a) => a.startsWith("--delete"));
   const branchToDelete = deleteArg ? args[args.indexOf(deleteArg) + 1] : undefined;
 
   // User filtering options
-  const authorArg = args.find((a) => a.startsWith('--author='));
-  const author = authorArg?.split('=')[1];
+  const authorArg = args.find((a) => a.startsWith("--author="));
+  const author = authorArg?.split("=")[1];
 
   try {
     // Show baseline branch
@@ -367,23 +368,23 @@ Project Key Format:
       const longLived = await getLongLivedBranches(token, projectKey);
 
       if (longLived.length === 0) {
-        console.log('❌ No long-lived branches found');
+        console.log("❌ No long-lived branches found");
         process.exit(1);
       }
 
       const baseline = await getBaselineBranch(token, projectKey);
 
-      console.log('Long-lived branches:');
+      console.log("Long-lived branches:");
       for (const b of longLived) {
-        const marker = b.name === baseline ? ' ← baseline' : '';
-        const mainTag = b.isMain ? ' (main)' : '';
+        const marker = b.name === baseline ? " ← baseline" : "";
+        const mainTag = b.isMain ? " (main)" : "";
         console.log(`  \x1b[32m${b.name}\x1b[0m${mainTag}${marker}`);
       }
 
       if (baseline) {
         console.log(`\n✅ Auto-detected baseline: ${baseline}`);
       } else {
-        console.log('\n⚠️  Multiple long-lived branches - specify branch manually');
+        console.log("\n⚠️  Multiple long-lived branches - specify branch manually");
       }
       return;
     }
@@ -391,15 +392,13 @@ Project Key Format:
     // List branches
     if (listBranches) {
       console.log(`\n📋 Branches for ${projectKey}:\n`);
-      const data = await sonarFetch<{ branches: Array<{ name: string; type: string; isMain: boolean }> }>(
-        token,
-        'project_branches/list',
-        { project: projectKey }
-      );
+      const data = await sonarFetch<{
+        branches: Array<{ name: string; type: string; isMain: boolean }>;
+      }>(token, "project_branches/list", { project: projectKey });
 
       for (const b of data.branches) {
-        const mainTag = b.isMain ? ' (main)' : '';
-        const typeColor = b.type === 'LONG' ? '\x1b[32m' : '\x1b[33m';
+        const mainTag = b.isMain ? " (main)" : "";
+        const typeColor = b.type === "LONG" ? "\x1b[32m" : "\x1b[33m";
         console.log(`  ${typeColor}${b.type.padEnd(6)}\x1b[0m ${b.name}${mainTag}`);
       }
       console.log();
@@ -409,8 +408,10 @@ Project Key Format:
     // Delete branch (safety: only release-* branches)
     if (branchToDelete) {
       // Safety check: only allow deletion of release-* branches
-      if (!branchToDelete.startsWith('release-')) {
-        console.error(`\n❌ Safety check failed: Can only delete branches starting with "release-"`);
+      if (!branchToDelete.startsWith("release-")) {
+        console.error(
+          `\n❌ Safety check failed: Can only delete branches starting with "release-"`,
+        );
         console.error(`   Attempted to delete: "${branchToDelete}"`);
         console.error(`\n   This restriction prevents accidental deletion of important branches.`);
         console.error(`   If you need to delete this branch, use the SonarCloud web UI.\n`);
@@ -421,9 +422,9 @@ Project Key Format:
       const response = await fetch(
         `${SONAR_BASE_URL}/api/project_branches/delete?project=${projectKey}&branch=${encodeURIComponent(branchToDelete)}`,
         {
-          method: 'POST',
+          method: "POST",
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
 
       if (!response.ok) {
@@ -443,23 +444,29 @@ Project Key Format:
         targetBranch = baseline;
         console.log(`\n🎯 Auto-detected baseline: ${targetBranch}`);
       } else {
-        console.error('\n❌ No branch specified and could not auto-detect baseline');
-        console.error('   Use --branches to list available branches');
+        console.error("\n❌ No branch specified and could not auto-detect baseline");
+        console.error("   Use --branches to list available branches");
         process.exit(1);
       }
     }
 
     // Build filter description for output
     const filters: string[] = [];
-    if (types?.length) filters.push(`types=${types.join(',')}`);
+    if (types?.length) filters.push(`types=${types.join(",")}`);
     if (author) filters.push(`author=${author}`);
-    const filterDesc = filters.length > 0 ? ` (${filters.join(', ')})` : '';
+    const filterDesc = filters.length > 0 ? ` (${filters.join(", ")})` : "";
 
     if (issueKey) {
       // Verify specific issue
       console.log(`\n🔍 Checking if ${issueKey} is resolved on ${targetBranch}...\n`);
 
-      const issues = await fetchOpenIssues({ token, projectKey, branch: targetBranch, types, author });
+      const issues = await fetchOpenIssues({
+        token,
+        projectKey,
+        branch: targetBranch,
+        types,
+        author,
+      });
       const targetIssue = issues.find((i) => i.key === issueKey);
 
       if (!targetIssue) {
@@ -471,10 +478,14 @@ Project Key Format:
         process.exit(0);
       } else {
         if (jsonOutput) {
-          console.log(JSON.stringify({ resolved: false, issueKey, branch: targetBranch, issue: targetIssue }));
+          console.log(
+            JSON.stringify({ resolved: false, issueKey, branch: targetBranch, issue: targetIssue }),
+          );
         } else {
           console.log(`❌ Issue ${issueKey} is still OPEN`);
-          console.log(`   ${getFilePath(targetIssue.component, projectKey)}:${targetIssue.line || '?'}`);
+          console.log(
+            `   ${getFilePath(targetIssue.component, projectKey)}:${targetIssue.line || "?"}`,
+          );
           console.log(`   ${targetIssue.message}`);
         }
         process.exit(1);
@@ -485,14 +496,20 @@ Project Key Format:
         console.log(`\n📋 Fetching issues for ${projectKey} on ${targetBranch}${filterDesc}...\n`);
       }
 
-      const issues = await fetchOpenIssues({ token, projectKey, branch: targetBranch, types, author });
+      const issues = await fetchOpenIssues({
+        token,
+        projectKey,
+        branch: targetBranch,
+        types,
+        author,
+      });
 
       // Count only mode - quick check
       if (countOnly) {
         if (jsonOutput) {
           console.log(JSON.stringify({ count: issues.length, branch: targetBranch, filters }));
         } else {
-          const emoji = issues.length === 0 ? '✅' : '⚠️';
+          const emoji = issues.length === 0 ? "✅" : "⚠️";
           console.log(`${emoji} ${issues.length} issues on ${targetBranch}${filterDesc}`);
         }
         process.exit(issues.length > 0 ? 1 : 0);
@@ -504,7 +521,7 @@ Project Key Format:
       }
 
       if (issues.length === 0) {
-        console.log('No open issues found! 🎉');
+        console.log("No open issues found! 🎉");
         return;
       }
 
@@ -517,19 +534,21 @@ Project Key Format:
           acc[i.type].push(i);
           return acc;
         },
-        {} as Record<string, SonarIssue[]>
+        {} as Record<string, SonarIssue[]>,
       );
 
       for (const [type, typeIssues] of Object.entries(byType)) {
         console.log(`\n${type} (${typeIssues.length}):`);
-        console.log('─'.repeat(50));
+        console.log("─".repeat(50));
 
         for (const issue of typeIssues.slice(0, 20)) {
           // Limit display
           const file = getFilePath(issue.component, projectKey);
           console.log(`  [${formatSeverity(issue.severity)}] ${issue.key}`);
-          console.log(`    ${file}:${issue.line || '?'}`);
-          console.log(`    ${issue.message.slice(0, 80)}${issue.message.length > 80 ? '...' : ''}\n`);
+          console.log(`    ${file}:${issue.line || "?"}`);
+          console.log(
+            `    ${issue.message.slice(0, 80)}${issue.message.length > 80 ? "..." : ""}\n`,
+          );
         }
 
         if (typeIssues.length > 20) {
@@ -538,7 +557,7 @@ Project Key Format:
       }
     }
   } catch (error) {
-    console.error('Error:', error instanceof Error ? error.message : error);
+    console.error("Error:", error instanceof Error ? error.message : error);
     process.exit(1);
   }
 }

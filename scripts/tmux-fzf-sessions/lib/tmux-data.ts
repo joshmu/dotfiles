@@ -50,7 +50,7 @@ export function computeWindowClaudeInfo(
 
   const state: ClaudeState = active.includes("waiting")
     ? "waiting"
-    : (active.includes("working") || extraAgentCount > 0)
+    : active.includes("working") || extraAgentCount > 0
       ? "working"
       : "idle";
 
@@ -70,8 +70,7 @@ export function getSessionGroup(claudePanes: ClaudePaneInfo[]): SessionGroup {
 
 export const stripAnsi = (str: string) => str.replace(/\x1b\[[0-9;]*m/g, "");
 
-export const cleanSessionName = (name: string) =>
-  name.replace(/ 󰚩( 󰚩)*$/, "");
+export const cleanSessionName = (name: string) => name.replace(/ 󰚩( 󰚩)*$/, "");
 
 /**
  * Parse `tmux list-panes -a -F "#{session_name}:#{window_index}:#{pane_index}:#{pane_pid}:#{@claude-state}"`
@@ -241,7 +240,9 @@ export function renderTreeHeader(
   const winLabel = windows.length === 1 ? "window" : "windows";
   const lines: string[] = [];
 
-  lines.push(`${BOLD}${CYAN}━━ ${sessionName} ${DIM}(${windows.length} ${winLabel})${RESET}${BOLD}${CYAN} ━━${RESET}`);
+  lines.push(
+    `${BOLD}${CYAN}━━ ${sessionName} ${DIM}(${windows.length} ${winLabel})${RESET}${BOLD}${CYAN} ━━${RESET}`,
+  );
 
   for (const win of windows) {
     let line = `  ${GREEN}${win.index}:${RESET} ${win.name}`;

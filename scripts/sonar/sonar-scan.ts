@@ -20,19 +20,19 @@
  *   - npx @sonar/scan available
  */
 
-import { spawn } from 'child_process';
-import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
+import { spawn } from "child_process";
+import { readFileSync, existsSync } from "fs";
+import { join } from "path";
 
-const SONAR_BASE_URL = 'https://sonarcloud.io';
+const SONAR_BASE_URL = "https://sonarcloud.io";
 const DEFAULT_WAIT_SECONDS = 45;
 
 // Parse args
 const args = process.argv.slice(2);
-const branchArg = args.find((a) => a.startsWith('--branch='));
-const waitArg = args.find((a) => a.startsWith('--wait='));
-const noWait = args.includes('--no-wait');
-const help = args.includes('--help') || args.includes('-h');
+const branchArg = args.find((a) => a.startsWith("--branch="));
+const waitArg = args.find((a) => a.startsWith("--wait="));
+const noWait = args.includes("--no-wait");
+const help = args.includes("--help") || args.includes("-h");
 
 if (help) {
   console.log(`
@@ -58,32 +58,32 @@ Notes:
 // Validate token
 const token = process.env.SONAR_TOKEN;
 if (!token) {
-  console.error('Error: SONAR_TOKEN environment variable required');
-  console.error('\nGenerate at: https://sonarcloud.io → My Account → Security → Tokens');
+  console.error("Error: SONAR_TOKEN environment variable required");
+  console.error("\nGenerate at: https://sonarcloud.io → My Account → Security → Tokens");
   process.exit(1);
 }
 
 // Get branch name
 async function getCurrentBranch(): Promise<string> {
   return new Promise((resolve, reject) => {
-    const proc = spawn('git', ['branch', '--show-current']);
-    let output = '';
-    proc.stdout.on('data', (data) => (output += data.toString()));
-    proc.on('close', (code) => {
+    const proc = spawn("git", ["branch", "--show-current"]);
+    let output = "";
+    proc.stdout.on("data", (data) => (output += data.toString()));
+    proc.on("close", (code) => {
       if (code === 0) resolve(output.trim());
-      else reject(new Error('Failed to get current branch'));
+      else reject(new Error("Failed to get current branch"));
     });
   });
 }
 
 // Check sonar-project.properties exists
 function checkSonarConfig(): { projectKey: string; organization: string } | null {
-  const configPath = join(process.cwd(), 'sonar-project.properties');
+  const configPath = join(process.cwd(), "sonar-project.properties");
   if (!existsSync(configPath)) {
     return null;
   }
 
-  const content = readFileSync(configPath, 'utf-8');
+  const content = readFileSync(configPath, "utf-8");
   const projectKey = content.match(/sonar\.projectKey=(.+)/)?.[1]?.trim();
   const organization = content.match(/sonar\.organization=(.+)/)?.[1]?.trim();
 
@@ -99,27 +99,27 @@ async function runScanner(branch: string): Promise<string | null> {
   return new Promise((resolve, reject) => {
     console.log(`\n🔍 Running SonarCloud scan on branch: ${branch}\n`);
 
-    const proc = spawn('npx', ['@sonar/scan', `-Dsonar.branch.name=${branch}`], {
-      stdio: ['inherit', 'pipe', 'pipe'],
+    const proc = spawn("npx", ["@sonar/scan", `-Dsonar.branch.name=${branch}`], {
+      stdio: ["inherit", "pipe", "pipe"],
       env: { ...process.env, SONAR_TOKEN: token },
     });
 
-    let stdout = '';
-    let stderr = '';
+    let stdout = "";
+    let stderr = "";
 
-    proc.stdout?.on('data', (data) => {
+    proc.stdout?.on("data", (data) => {
       const str = data.toString();
       stdout += str;
       process.stdout.write(str);
     });
 
-    proc.stderr?.on('data', (data) => {
+    proc.stderr?.on("data", (data) => {
       const str = data.toString();
       stderr += str;
       process.stderr.write(str);
     });
 
-    proc.on('close', (code) => {
+    proc.on("close", (code) => {
       if (code !== 0) {
         reject(new Error(`Scanner exited with code ${code}`));
         return;
@@ -148,19 +148,19 @@ async function waitForAnalysis(ceTaskId: string, timeoutMs = 300000): Promise<vo
 
     const data = (await response.json()) as { task: { status: string; errorMessage?: string } };
 
-    if (data.task.status === 'SUCCESS') {
-      console.log('✅ Analysis complete');
+    if (data.task.status === "SUCCESS") {
+      console.log("✅ Analysis complete");
       return;
     }
-    if (data.task.status === 'FAILED' || data.task.status === 'CANCELED') {
-      throw new Error(`Analysis ${data.task.status}: ${data.task.errorMessage || 'unknown'}`);
+    if (data.task.status === "FAILED" || data.task.status === "CANCELED") {
+      throw new Error(`Analysis ${data.task.status}: ${data.task.errorMessage || "unknown"}`);
     }
 
     console.log(`   Status: ${data.task.status}...`);
     await new Promise((r) => setTimeout(r, 5000));
   }
 
-  throw new Error('Analysis timeout');
+  throw new Error("Analysis timeout");
 }
 
 // Main
@@ -168,8 +168,8 @@ async function main() {
   // Check config
   const config = checkSonarConfig();
   if (!config) {
-    console.error('Error: sonar-project.properties not found or missing required fields');
-    console.error('Required: sonar.projectKey and sonar.organization');
+    console.error("Error: sonar-project.properties not found or missing required fields");
+    console.error("Required: sonar.projectKey and sonar.organization");
     process.exit(1);
   }
 
@@ -177,9 +177,9 @@ async function main() {
   console.log(`🏢 Organization: ${config.organization}`);
 
   // Get branch
-  const branch = branchArg?.split('=')[1] || (await getCurrentBranch());
+  const branch = branchArg?.split("=")[1] || (await getCurrentBranch());
   if (!branch) {
-    console.error('Error: Could not determine branch name');
+    console.error("Error: Could not determine branch name");
     process.exit(1);
   }
 
@@ -187,8 +187,8 @@ async function main() {
   const isLongLived = /^(main|master|develop|release-|branch-)/.test(branch);
   if (!isLongLived) {
     console.warn(`\n⚠️  Warning: Branch "${branch}" is SHORT-LIVED`);
-    console.warn('   Only NEW issues will be visible (not inherited issues)');
-    console.warn('   Consider using release-* prefix for full issue visibility\n');
+    console.warn("   Only NEW issues will be visible (not inherited issues)");
+    console.warn("   Consider using release-* prefix for full issue visibility\n");
   }
 
   try {
@@ -202,16 +202,18 @@ async function main() {
 
     // Wait for API propagation
     if (!noWait) {
-      const waitSeconds = waitArg ? parseInt(waitArg.split('=')[1], 10) : DEFAULT_WAIT_SECONDS;
+      const waitSeconds = waitArg ? parseInt(waitArg.split("=")[1], 10) : DEFAULT_WAIT_SECONDS;
       console.log(`\n⏳ Waiting ${waitSeconds}s for API propagation...`);
       await new Promise((r) => setTimeout(r, waitSeconds * 1000));
     }
 
     console.log(`\n✅ Scan complete for ${branch}`);
-    console.log(`\n📊 View results: https://sonarcloud.io/dashboard?id=${config.projectKey}&branch=${encodeURIComponent(branch)}`);
+    console.log(
+      `\n📊 View results: https://sonarcloud.io/dashboard?id=${config.projectKey}&branch=${encodeURIComponent(branch)}`,
+    );
     console.log(`\n💡 Verify issues with: sonar-verify ${config.projectKey} ${branch} --types=BUG`);
   } catch (error) {
-    console.error('\n❌ Scan failed:', error instanceof Error ? error.message : error);
+    console.error("\n❌ Scan failed:", error instanceof Error ? error.message : error);
     process.exit(1);
   }
 }

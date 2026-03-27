@@ -5,9 +5,11 @@ This directory contains scripts for integrating ElevenLabs text-to-speech functi
 ## Setup
 
 1. **Initial Setup**
+
    ```bash
    ./setup.sh
    ```
+
    This will:
    - Configure your ElevenLabs API key
    - Select voice and model preferences
@@ -21,9 +23,11 @@ This directory contains scripts for integrating ElevenLabs text-to-speech functi
 ## Scripts
 
 ### elevenlabs-tts.ts
+
 Main TTS script for generating speech from text.
 
 **Usage:**
+
 ```bash
 # Basic usage
 ./elevenlabs-tts.ts "Hello, world!"
@@ -48,9 +52,11 @@ echo "Test message" | ./elevenlabs-tts.ts
 ```
 
 ### generate-notification-sound.ts
+
 Generates custom notification sounds for Claude Code.
 
 **Usage:**
+
 ```bash
 # Generate common notification sounds
 ./generate-notification-sound.ts
@@ -67,6 +73,7 @@ Generates custom notification sounds for Claude Code.
 To enable ElevenLabs notifications for Claude Code:
 
 1. **Enable the feature:**
+
    ```bash
    touch ~/.claude/.toggles/elevenlabs
    ```
@@ -77,6 +84,7 @@ To enable ElevenLabs notifications for Claude Code:
    ```
 
 When enabled, Claude Code will:
+
 - Generate dynamic speech for notifications
 - Announce tmux session context
 - Use custom voices for different event types
@@ -85,6 +93,7 @@ When enabled, Claude Code will:
 ## Configuration
 
 Edit `config.json` to customize:
+
 - `apiKey`: Your ElevenLabs API key
 - `voiceId`: Default voice to use
 - `modelId`: TTS model (turbo vs multilingual)
@@ -96,6 +105,7 @@ Edit `config.json` to customize:
 ## Caching
 
 Generated audio is cached to improve performance and reduce API calls:
+
 - Cache location: `~/.cache/elevenlabs/`
 - Files are named by MD5 hash of text+voice
 - Use `--no-cache` to force regeneration
@@ -109,6 +119,7 @@ Generated audio is cached to improve performance and reduce API calls:
 ## Voice Selection
 
 Find voice IDs:
+
 1. Run `./elevenlabs-tts.ts --list-voices`
 2. Or visit the [ElevenLabs Voice Library](https://elevenlabs.io/voice-library)
 
