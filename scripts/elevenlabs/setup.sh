@@ -63,7 +63,7 @@ echo
 
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     read -rp "Enter Voice ID: " VOICE_ID
-    if [ ! -z "$VOICE_ID" ]; then
+    if [ -n "$VOICE_ID" ]; then
         if [[ "$OSTYPE" == "darwin"* ]]; then
             sed -i '' "s/JBFqnCBsd6RMkjVDRZzb/$VOICE_ID/" "$CONFIG_FILE"
         else
