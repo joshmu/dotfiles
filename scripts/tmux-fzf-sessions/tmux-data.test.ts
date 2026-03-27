@@ -310,9 +310,9 @@ describe("findClaudePaneTargets", () => {
 });
 
 describe("formatSessionLine", () => {
-  test("formats current session in yellow", () => {
+  test("formats current session in bold white", () => {
     const line = formatSessionLine("dev", "dev", []);
-    expect(line).toContain("\x1b[33m"); // yellow
+    expect(line).toContain("\x1b[1m"); // bold
     expect(stripAnsi(line)).toBe("dev");
   });
 
