@@ -35,7 +35,7 @@ cp "$CONFIG_EXAMPLE" "$CONFIG_FILE"
 echo -e "${GREEN}Step 1: ElevenLabs API Key${NC}"
 echo "Get your API key from: https://elevenlabs.io/app/settings/api-keys"
 echo
-read -p "Enter your ElevenLabs API Key: " API_KEY
+read -rp "Enter your ElevenLabs API Key: " API_KEY
 
 if [ -z "$API_KEY" ]; then
     echo -e "${RED}API Key is required${NC}"
@@ -62,7 +62,7 @@ read -p "Use default voice? (y/n): " -n 1 -r
 echo
 
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    read -p "Enter Voice ID: " VOICE_ID
+    read -rp "Enter Voice ID: " VOICE_ID
     if [ ! -z "$VOICE_ID" ]; then
         if [[ "$OSTYPE" == "darwin"* ]]; then
             sed -i '' "s/JBFqnCBsd6RMkjVDRZzb/$VOICE_ID/" "$CONFIG_FILE"
@@ -79,7 +79,7 @@ echo "Available models:"
 echo "  1. eleven_turbo_v2_5 (Fast, English, 32k chars)"
 echo "  2. eleven_multilingual_v2 (High quality, multilingual, 5k chars)"
 echo
-read -p "Select model (1 or 2) [1]: " MODEL_CHOICE
+read -rp "Select model (1 or 2) [1]: " MODEL_CHOICE
 
 if [ "$MODEL_CHOICE" = "2" ]; then
     if [[ "$OSTYPE" == "darwin"* ]]; then
