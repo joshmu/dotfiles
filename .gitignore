@@ -18,3 +18,7 @@ config.json
 
 # ignore my mcp registry
 mcp-registry.json
+
+# dependencies
+node_modules/
+bun.lock

@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+export {};
 
 interface TranscriptResponse {
   transcript?: Array<{
@@ -72,7 +73,9 @@ async function fetchTranscript(videoId: string): Promise<TranscriptResponse> {
     const data = await response.json();
     return data;
   } catch (error) {
-    throw new Error(`Failed to fetch transcript: ${error.message}`);
+    throw new Error(
+      `Failed to fetch transcript: ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
 }
 
@@ -98,7 +101,9 @@ print(json.dumps({"transcript": result}))
   return JSON.parse(output.trim());
 }
 
-async function fetchTranscriptChain(videoId: string): Promise<{ data: TranscriptResponse; fallback: boolean }> {
+async function fetchTranscriptChain(
+  videoId: string,
+): Promise<{ data: TranscriptResponse; fallback: boolean }> {
   try {
     const data = await fetchTranscript(videoId);
     if (data.error) {
@@ -138,7 +143,7 @@ function formatTranscript(data: TranscriptResponse): string {
 
   // Join all transcript segments into a single text
   return data.transcript
-    .map(segment => segment.text)
+    .map((segment) => segment.text)
     .join(" ")
     .replace(/\s+/g, " ")
     .trim();
@@ -150,7 +155,7 @@ async function main() {
   if (args.length === 0) {
     const output: ScriptOutput = {
       success: false,
-      error: "Please provide a YouTube URL as an argument"
+      error: "Please provide a YouTube URL as an argument",
     };
     console.log(JSON.stringify(output, null, 2));
     process.exit(1);
@@ -163,7 +168,7 @@ async function main() {
     const output: ScriptOutput = {
       success: false,
       error: `Could not extract video ID from URL: ${url}`,
-      url
+      url,
     };
     console.log(JSON.stringify(output, null, 2));
     process.exit(1);
@@ -175,7 +180,7 @@ async function main() {
       success: false,
       error: `Invalid video ID length. YouTube video IDs should be exactly 11 characters. Got: ${videoId}`,
       videoId,
-      url
+      url,
     };
     console.log(JSON.stringify(output, null, 2));
     process.exit(1);

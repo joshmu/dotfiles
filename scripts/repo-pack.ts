@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+export {};
 
 interface ScriptOutput {
   success: boolean;
@@ -9,26 +10,29 @@ interface ScriptOutput {
 
 async function fetchRepoContext(url: string): Promise<string> {
   const formData = new FormData();
-  formData.append('url', url);
-  formData.append('format', 'xml');
-  formData.append('options', JSON.stringify({
-    removeComments: false,
-    removeEmptyLines: false,
-    showLineNumbers: false,
-    fileSummary: true,
-    directoryStructure: true,
-    outputParsable: false,
-    compress: false
-  }));
+  formData.append("url", url);
+  formData.append("format", "xml");
+  formData.append(
+    "options",
+    JSON.stringify({
+      removeComments: false,
+      removeEmptyLines: false,
+      showLineNumbers: false,
+      fileSummary: true,
+      directoryStructure: true,
+      outputParsable: false,
+      compress: false,
+    }),
+  );
 
-  const response = await fetch('https://api.repomix.com/api/pack', {
-    method: 'POST',
+  const response = await fetch("https://api.repomix.com/api/pack", {
+    method: "POST",
     headers: {
-      'accept': '*/*',
-      'origin': 'https://repomix.com',
-      'referer': 'https://repomix.com/',
+      accept: "*/*",
+      origin: "https://repomix.com",
+      referer: "https://repomix.com/",
     },
-    body: formData
+    body: formData,
   });
 
   if (!response.ok) {
@@ -44,7 +48,7 @@ async function main() {
   if (args.length === 0) {
     const output: ScriptOutput = {
       success: false,
-      error: "Please provide a GitHub URL as an argument"
+      error: "Please provide a GitHub URL as an argument",
     };
     console.log(JSON.stringify(output, null, 2));
     process.exit(1);
@@ -53,11 +57,11 @@ async function main() {
   const url = args[0];
 
   // Basic GitHub URL validation
-  if (!url.includes('github.com')) {
+  if (!url.includes("github.com")) {
     const output: ScriptOutput = {
       success: false,
       error: `Not a GitHub URL: ${url}`,
-      url
+      url,
     };
     console.log(JSON.stringify(output, null, 2));
     process.exit(1);
@@ -69,15 +73,15 @@ async function main() {
     const output: ScriptOutput = {
       success: true,
       url,
-      content
+      content,
     };
 
     console.log(JSON.stringify(output, null, 2));
   } catch (error) {
     const output: ScriptOutput = {
       success: false,
-      error: error.message,
-      url
+      error: error instanceof Error ? error.message : String(error),
+      url,
     };
     console.log(JSON.stringify(output, null, 2));
     process.exit(1);

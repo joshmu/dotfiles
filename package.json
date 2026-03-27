@@ -1,0 +1,16 @@
+{
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint scripts/",
+    "format": "oxfmt scripts/",
+    "format:check": "oxfmt --check scripts/",
+    "validate": "bun run typecheck && bun run lint && bun run format:check",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "oxlint": "latest",
+    "oxfmt": "latest",
+    "typescript": "^5.9.0"
+  }
+}
