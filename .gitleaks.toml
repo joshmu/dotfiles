@@ -1,0 +1,10 @@
+[allowlist]
+description = "Dotfiles config files containing legitimate API keys/tokens"
+paths = [
+  '''claude_desktop_config\.json''',
+  '''cursor/mcp\.json''',
+  '''mcp-registry\.json''',
+  '''scripts/bitbucket/config\.json''',
+  '''scripts/elevenlabs/config\.json''',
+  '''scripts/gen-img/config\.json''',
+]
