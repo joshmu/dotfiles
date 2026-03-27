@@ -9,9 +9,11 @@
     "test": "bun test"
   },
   "devDependencies": {
+    "@commitlint/cli": "^20.5.0",
+    "@commitlint/config-conventional": "^20.5.0",
     "@types/bun": "latest",
-    "oxlint": "latest",
     "oxfmt": "latest",
+    "oxlint": "latest",
     "typescript": "^5.9.0"
   }
 }
