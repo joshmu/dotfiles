@@ -5,7 +5,8 @@
     "format": "oxfmt scripts/",
     "format:check": "oxfmt --check scripts/",
     "shellcheck": "shellcheck scripts/**/*.sh",
-    "validate": "bun run typecheck && bun run lint && bun run format:check && bun run shellcheck",
+    "bash32-compat": "bash scripts/check-bash32-compat.sh scripts/**/*.sh",
+    "validate": "bun run typecheck && bun run lint && bun run format:check && bun run shellcheck && bun run bash32-compat",
     "test": "bun test"
   },
   "devDependencies": {
