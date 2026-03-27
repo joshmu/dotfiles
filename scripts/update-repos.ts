@@ -11,7 +11,7 @@
 
 import { spawn } from "bun";
 import { existsSync, readdirSync } from "fs";
-import { join, resolve, basename } from "path";
+import { join, basename } from "path";
 
 // ANSI color codes
 const colors = {

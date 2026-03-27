@@ -2,10 +2,10 @@
 import { parseArgs } from "util";
 import { BitbucketAPI } from "./lib/api";
 import { loadConfig, getCurrentRepo } from "./lib/config";
-import type { BitbucketPullRequestUpdate, BitbucketMarkupContent } from "./lib/types";
+import type { BitbucketPullRequestUpdate } from "./lib/types";
 
 // Parse command line arguments
-const { values, positionals } = parseArgs({
+const { values } = parseArgs({
   args: Bun.argv,
   options: {
     help: {

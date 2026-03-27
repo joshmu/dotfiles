@@ -44,7 +44,7 @@ export class BitbucketAPI {
 
       try {
         responseData = responseText ? JSON.parse(responseText) : {};
-      } catch (e) {
+      } catch {
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${responseText}`);
         }
@@ -81,7 +81,7 @@ export class BitbucketAPI {
       }
 
       return responseData as T;
-    } catch (error) {
+    } catch {
       // Network errors and other fetch failures
       if (retryCount < this.maxRetries && error instanceof Error) {
         if (error.message.includes("ECONNREFUSED") || error.message.includes("ETIMEDOUT")) {
@@ -190,7 +190,7 @@ export class BitbucketAPI {
         `/repositories/${workspace}/${repoSlug}/refs/branches/${encodeURIComponent(branchName)}`,
       );
       return true;
-    } catch (error) {
+    } catch {
       // Branch doesn't exist or API error
       return false;
     }

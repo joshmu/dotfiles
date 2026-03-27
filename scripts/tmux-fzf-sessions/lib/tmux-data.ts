@@ -68,6 +68,7 @@ export function getSessionGroup(claudePanes: ClaudePaneInfo[]): SessionGroup {
   return "idle";
 }
 
+// oxlint-disable-next-line no-control-regex -- intentional ANSI escape matching
 export const stripAnsi = (str: string) => str.replace(/\x1b\[[0-9;]*m/g, "");
 
 export const cleanSessionName = (name: string) => name.replace(/ 󰚩( 󰚩)*$/, "");

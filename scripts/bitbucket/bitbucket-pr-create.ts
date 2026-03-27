@@ -2,11 +2,11 @@
 import { parseArgs } from "util";
 import { BitbucketAPI } from "./lib/api";
 import { loadConfig, getCurrentRepo, getCurrentBranch } from "./lib/config";
-import type { BitbucketPullRequestCreate, BitbucketMarkupContent } from "./lib/types";
+import type { BitbucketPullRequestCreate } from "./lib/types";
 import { loadPRTemplate, processTemplate, generateTemplateVariables } from "./lib/template";
 
 // Parse command line arguments
-const { values, positionals } = parseArgs({
+const { values } = parseArgs({
   args: Bun.argv,
   options: {
     help: {

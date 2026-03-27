@@ -4,7 +4,7 @@ import { BitbucketAPI } from "./lib/api";
 import { loadConfig } from "./lib/config";
 
 // Parse command line arguments
-const { values, positionals } = parseArgs({
+const { values } = parseArgs({
   args: Bun.argv,
   options: {
     help: {

@@ -47,7 +47,7 @@ function extractVideoId(url: string): string | null {
     // youtube.com/live/VIDEO_ID
     /\/live\/([a-zA-Z0-9_-]{11})(?:[?&\s]|$)/,
     // User/channel URLs with video ID at the end
-    /[#\/]([a-zA-Z0-9_-]{11})(?:[?&\s]|$)/,
+    /[#/]([a-zA-Z0-9_-]{11})(?:[?&\s]|$)/,
   ];
 
   for (const pattern of patterns) {

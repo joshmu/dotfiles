@@ -32,7 +32,6 @@ import {
   parsePaneData,
   parseProcessTree,
   parseSessionActivity,
-  parseWindowData,
   renderPaneSeparator,
   renderTreeHeader,
   stripAnsi,

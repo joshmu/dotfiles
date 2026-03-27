@@ -5,7 +5,7 @@ import { loadConfig, getCurrentRepo } from "./lib/config";
 import type { BitbucketPullRequest } from "./lib/types";
 
 // Parse command line arguments
-const { values, positionals } = parseArgs({
+const { values } = parseArgs({
   args: Bun.argv,
   options: {
     help: {
