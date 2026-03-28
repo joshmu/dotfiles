@@ -26,7 +26,7 @@ jobs:
           path: ~/.bun/install/cache
           key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
           restore-keys: bun-${{ runner.os }}-
-      - run: bun install --frozen-lockfile
+      - run: bun ci
       - run: bun run validate
       - run: bun test
       - uses: gitleaks/gitleaks-action@v2
