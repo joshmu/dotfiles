@@ -91,7 +91,7 @@ alias oc=opencode
 alias cld='CLAUDE_AUTO_REFLECT=1 claude --allow-dangerously-skip-permissions'
 alias cldc='CLAUDE_AUTO_REFLECT=1 claude --continue'
 alias cldy='CLAUDE_AUTO_REFLECT=1 claude --dangerously-skip-permissions'
-alias cldt='caffeinate -i claude --allow-dangerously-skip-permissions --channels plugin:telegram@claude-plugins-official'
+alias cldt='caffeinate -i claude --allow-dangerously-skip-permissions --channels plugin:telegram@claude-plugins-official --dangerously-load-development-channels server:event-orchestrator'
 alias ralph='~/.claude/scripts/ralph/ralph.sh'
 alias ralph-prd='~/.claude/scripts/ralph-prd/ralph-prd.sh'
 alias claude-monitor='~/dotfiles/scripts/claude-monitor/monitor'
