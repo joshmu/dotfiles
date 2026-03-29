@@ -28,16 +28,15 @@ import {
   cleanSessionName,
   findClaudePaneTargets,
   formatSessionLine,
-  getSessionGroup,
   parsePaneData,
   parseProcessTree,
   parseSessionActivity,
   renderPaneSeparator,
   renderTreeHeader,
+  sortSessions,
   stripAnsi,
   type ClaudePaneInfo,
   type ClaudeState,
-  type SessionGroup,
 } from "./lib/tmux-data";
 
 // Config
@@ -106,23 +105,11 @@ async function generateSessionList(): Promise<string> {
   ];
   const claudeTargets = findClaudePaneTargets(allAgentPids, paneByPid, pidToParent, panes);
 
-  const GROUP_PRIORITY: Record<SessionGroup, number> = {
-    waiting: 0,
-    working: 1,
-    idle: 2,
-    none: 3,
-  };
-
-  const sessions = parseSessionActivity(sessionsData)
-    .sort((a, b) => {
-      const pa = GROUP_PRIORITY[getSessionGroup(claudeTargets.get(a) || [])];
-      const pb = GROUP_PRIORITY[getSessionGroup(claudeTargets.get(b) || [])];
-      return pa - pb;
-    })
-    .map((name) => {
-      const claudePanes = claudeTargets.get(name) || [];
-      return formatSessionLine(name, current, claudePanes);
-    });
+  const sorted = sortSessions(parseSessionActivity(sessionsData), current, claudeTargets);
+  const sessions = sorted.map((name) => {
+    const claudePanes = claudeTargets.get(name) || [];
+    return formatSessionLine(name, current, claudePanes);
+  });
 
   const directories = SHOW_ZOXIDE
     ? zoxideData

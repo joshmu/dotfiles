@@ -207,6 +207,38 @@ export function findClaudePaneTargets(
   return targets;
 }
 
+/**
+ * Sort sessions with current session always first, remaining sorted by
+ * Claude state group priority (waiting > working > idle > none).
+ * Preserves relative order within each group (stable sort).
+ */
+export function sortSessions(
+  sessions: string[],
+  currentSession: string,
+  claudeTargets: Map<string, ClaudePaneInfo[]>,
+): string[] {
+  const GROUP_PRIORITY: Record<SessionGroup, number> = {
+    waiting: 0,
+    working: 1,
+    idle: 2,
+    none: 3,
+  };
+
+  const sorted = [...sessions].sort((a, b) => {
+    const pa = GROUP_PRIORITY[getSessionGroup(claudeTargets.get(a) || [])];
+    const pb = GROUP_PRIORITY[getSessionGroup(claudeTargets.get(b) || [])];
+    return pa - pb;
+  });
+
+  const idx = sorted.indexOf(currentSession);
+  if (idx > 0) {
+    sorted.splice(idx, 1);
+    sorted.unshift(currentSession);
+  }
+
+  return sorted;
+}
+
 function claudeIconColor(state: ClaudeState): string {
   if (state === "waiting") return YELLOW;
   if (state === "idle") return DARK_GRAY;

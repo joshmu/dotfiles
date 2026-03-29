@@ -12,6 +12,7 @@ import {
   parseWindowData,
   renderPaneSeparator,
   renderTreeHeader,
+  sortSessions,
   stripAnsi,
   type ClaudePaneInfo,
   type ClaudeState,
@@ -638,5 +639,61 @@ describe("computeWindowClaudeInfo", () => {
   test("extraAgentCount=0 with no claude panes returns null", () => {
     const result = computeWindowClaudeInfo([], 0);
     expect(result).toBeNull();
+  });
+});
+
+describe("sortSessions", () => {
+  const noTargets = new Map<string, ClaudePaneInfo[]>();
+
+  test("promotes current session to first position", () => {
+    const result = sortSessions(["alpha", "beta", "gamma"], "gamma", noTargets);
+    expect(result).toEqual(["gamma", "alpha", "beta"]);
+  });
+
+  test("current session already first is a no-op", () => {
+    const result = sortSessions(["current", "other"], "current", noTargets);
+    expect(result).toEqual(["current", "other"]);
+  });
+
+  test("current session not in list leaves order unchanged", () => {
+    const result = sortSessions(["alpha", "beta"], "missing", noTargets);
+    expect(result).toEqual(["alpha", "beta"]);
+  });
+
+  test("group priority preserved for non-current sessions", () => {
+    const targets = new Map<string, ClaudePaneInfo[]>([
+      ["waiting-sess", [{ target: "waiting-sess:0.0", state: "waiting" }]],
+      ["working-sess", [{ target: "working-sess:0.0", state: "working" }]],
+      ["idle-sess", [{ target: "idle-sess:0.0", state: "idle" }]],
+    ]);
+    const result = sortSessions(
+      ["idle-sess", "waiting-sess", "plain-sess", "working-sess"],
+      "plain-sess",
+      targets,
+    );
+    expect(result).toEqual(["plain-sess", "waiting-sess", "working-sess", "idle-sess"]);
+  });
+
+  test("current session beats higher-priority group", () => {
+    const targets = new Map<string, ClaudePaneInfo[]>([
+      ["waiting-sess", [{ target: "waiting-sess:0.0", state: "waiting" }]],
+    ]);
+    const result = sortSessions(["waiting-sess", "current-sess"], "current-sess", targets);
+    expect(result).toEqual(["current-sess", "waiting-sess"]);
+  });
+
+  test("activity order preserved within same group", () => {
+    const result = sortSessions(["recent-none", "old-none"], "other", noTargets);
+    expect(result).toEqual(["recent-none", "old-none"]);
+  });
+
+  test("empty sessions list", () => {
+    const result = sortSessions([], "anything", noTargets);
+    expect(result).toEqual([]);
+  });
+
+  test("single session that is current", () => {
+    const result = sortSessions(["only"], "only", noTargets);
+    expect(result).toEqual(["only"]);
   });
 });
