@@ -11,6 +11,9 @@ This is a personal dotfiles repository for macOS system configuration, shell cus
 # Install/update all dotfiles using dotbot
 ./install
 
+# Install git hooks (pre-commit, commit-msg) after cloning
+bash scripts/install-hooks.sh
+
 # Install packages via Homebrew (manages formulae, casks, and VSCode extensions)
 brew bundle install --file=Brewfile
 

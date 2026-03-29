@@ -1,0 +1,24 @@
+#!/bin/bash
+set -euo pipefail
+
+echo "Running pre-commit checks..."
+
+echo "→ Type checking..."
+bun run typecheck
+
+echo "→ Linting..."
+bun run lint
+
+echo "→ Format checking..."
+bun run format:check
+
+echo "→ Shellcheck..."
+bun run shellcheck
+
+echo "→ Bash 3.2 compatibility..."
+bun run bash32-compat
+
+echo "→ Running tests..."
+bun test
+
+echo "✓ All pre-commit checks passed"
