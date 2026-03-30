@@ -44,8 +44,8 @@ interface Options {
   parallel: number;
 }
 
-function parseArgs(): Options {
-  const args = process.argv.slice(2);
+export function parseArgs(argv?: string[]): Options {
+  const args = argv ?? process.argv.slice(2);
   const options: Options = {
     stash: false,
     dryRun: false,
@@ -123,7 +123,7 @@ ${colors.bright}Examples:${colors.reset}
 
 ${colors.bright}Default behavior:${colors.reset}
   - Skips repositories with uncommitted changes for safety
-  - Switches to default branch before updating (master/main/stage/qa/develop/dev)
+  - Switches to default branch before updating (main/master/stage/qa/develop/dev)
   - Shows branch switches with arrow notation (e.g., feature → develop)
   - Processes 10 repositories in parallel for faster updates
 `);
@@ -198,27 +198,54 @@ async function getCurrentBranch(repoPath: string): Promise<string> {
   return success ? output.trim() : "unknown";
 }
 
+// Parse raw `git branch -a` output into a deduplicated list of branch names
+export function parseBranchOutput(output: string): string[] {
+  const branches = output
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0 && !line.includes("->"))
+    .map((line) => line.replace(/^\*?\s*/, "").replace(/^remotes\/origin\//, ""));
+  return [...new Set(branches)];
+}
+
 // Get all branches (local and remote)
 async function getAllBranches(repoPath: string): Promise<string[]> {
   const { success, output } = await runGitCommand(repoPath, ["branch", "-a"]);
   if (!success) return [];
-
-  return output
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0)
-    .map((line) => {
-      // Remove prefix markers like * and remotes/origin/
-      return line.replace(/^\*?\s*/, "").replace(/^remotes\/origin\//, "");
-    })
-    .filter((branch, index, arr) => arr.indexOf(branch) === index); // Remove duplicates
+  return parseBranchOutput(output);
 }
 
-// Find the default branch based on precedence
-async function findDefaultBranch(repoPath: string): Promise<string | null> {
-  const branches = await getAllBranches(repoPath);
-  const precedence = ["master", "main", "stage", "qa", "develop", "dev"];
+// Read the remote HEAD from local refs (no network — call after git fetch)
+async function getLocalRemoteHead(repoPath: string): Promise<string | null> {
+  const { success, output } = await runGitCommand(repoPath, [
+    "symbolic-ref",
+    "refs/remotes/origin/HEAD",
+  ]);
+  if (success) {
+    // e.g. "refs/remotes/origin/main" → "main"
+    return output.trim().replace("refs/remotes/origin/", "");
+  }
+  return null;
+}
 
+// Pure branch resolution logic — picks the best branch from a list,
+// using remoteHead to disambiguate main vs master when both exist
+export const DEFAULT_BRANCH_PRECEDENCE = ["main", "master", "stage", "qa", "develop", "dev"];
+
+export function resolveDefaultBranch(
+  branches: string[],
+  remoteHead: string | null,
+  precedence: string[] = DEFAULT_BRANCH_PRECEDENCE,
+): string | null {
+  const hasMain = branches.includes("main");
+  const hasMaster = branches.includes("master");
+
+  // When both main and master exist, use remote HEAD to disambiguate
+  if (hasMain && hasMaster && (remoteHead === "main" || remoteHead === "master")) {
+    return remoteHead;
+  }
+
+  // Standard precedence
   for (const preferredBranch of precedence) {
     if (branches.includes(preferredBranch)) {
       return preferredBranch;
@@ -228,21 +255,27 @@ async function findDefaultBranch(repoPath: string): Promise<string | null> {
   return null;
 }
 
+// Find the default branch using local refs (call after git fetch for accuracy)
+async function findDefaultBranch(repoPath: string): Promise<string | null> {
+  const branches = await getAllBranches(repoPath);
+  const remoteHead = await getLocalRemoteHead(repoPath);
+  return resolveDefaultBranch(branches, remoteHead);
+}
+
 // Switch to default branch if needed
 async function switchToDefaultBranch(
   repoPath: string,
   currentBranch: string,
 ): Promise<{ switched: boolean; fromBranch: string; toBranch: string }> {
+  // Fetch first so branch list and remote HEAD ref are fresh
+  await runGitCommand(repoPath, ["fetch", "--quiet"]);
+
   const defaultBranch = await findDefaultBranch(repoPath);
 
   if (!defaultBranch || currentBranch === defaultBranch) {
     return { switched: false, fromBranch: currentBranch, toBranch: currentBranch };
   }
 
-  // Fetch to ensure we have the latest remote branches
-  await runGitCommand(repoPath, ["fetch", "--quiet"]);
-
-  // Try to checkout the default branch
   const checkoutResult = await runGitCommand(repoPath, ["checkout", defaultBranch]);
 
   if (checkoutResult.success) {
@@ -343,7 +376,7 @@ async function updateRepo(
 }
 
 // Utility function to chunk array into batches
-function chunk<T>(array: T[], size: number): T[][] {
+export function chunk<T>(array: T[], size: number): T[][] {
   const chunks: T[][] = [];
   for (let i = 0; i < array.length; i += size) {
     chunks.push(array.slice(i, i + size));
@@ -440,8 +473,10 @@ async function main() {
   process.exit(results.failed.length > 0 ? 1 : 0);
 }
 
-// Run the script
-main().catch((error) => {
-  log.error(`Unexpected error: ${error}`);
-  process.exit(1);
-});
+// Run the script (only when executed directly, not when imported for testing)
+if (import.meta.main) {
+  main().catch((error) => {
+    log.error(`Unexpected error: ${error}`);
+    process.exit(1);
+  });
+}
