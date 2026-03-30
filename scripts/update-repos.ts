@@ -255,10 +255,22 @@ export function resolveDefaultBranch(
   return null;
 }
 
+export function previewBranchSwitch(
+  currentBranch: string,
+  branches: string[],
+  remoteHead: string | null,
+): { fromBranch: string; toBranch: string } | null {
+  const defaultBranch = resolveDefaultBranch(branches, remoteHead);
+  if (!defaultBranch || defaultBranch === currentBranch) return null;
+  return { fromBranch: currentBranch, toBranch: defaultBranch };
+}
+
 // Find the default branch using local refs (call after git fetch for accuracy)
 async function findDefaultBranch(repoPath: string): Promise<string | null> {
-  const branches = await getAllBranches(repoPath);
-  const remoteHead = await getLocalRemoteHead(repoPath);
+  const [branches, remoteHead] = await Promise.all([
+    getAllBranches(repoPath),
+    getLocalRemoteHead(repoPath),
+  ]);
   return resolveDefaultBranch(branches, remoteHead);
 }
 
@@ -304,14 +316,24 @@ async function updateRepo(
     };
   }
 
-  // Switch to default branch if needed (and not skipped)
+  // Resolve default branch — dry-run previews only, real run switches
   let branchSwitchInfo = "";
   if (!options.skipDefaultBranch && !isDirty) {
-    const switchResult = await switchToDefaultBranch(repoPath, branch);
-    if (switchResult.switched) {
-      branchSwitchInfo = `${switchResult.fromBranch} → ${switchResult.toBranch}`;
-      branch = switchResult.toBranch;
-      if (!options.dryRun) {
+    if (options.dryRun) {
+      const [branches, remoteHead] = await Promise.all([
+        getAllBranches(repoPath),
+        getLocalRemoteHead(repoPath),
+      ]);
+      const preview = previewBranchSwitch(branch, branches, remoteHead);
+      if (preview) {
+        branchSwitchInfo = `${preview.fromBranch} → ${preview.toBranch}`;
+        branch = preview.toBranch;
+      }
+    } else {
+      const switchResult = await switchToDefaultBranch(repoPath, branch);
+      if (switchResult.switched) {
+        branchSwitchInfo = `${switchResult.fromBranch} → ${switchResult.toBranch}`;
+        branch = switchResult.toBranch;
         log.step(`${repoName} [${branchSwitchInfo}]`);
       }
     }

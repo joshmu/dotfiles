@@ -1,5 +1,11 @@
 import { describe, test, expect } from "bun:test";
-import { parseArgs, chunk, parseBranchOutput, resolveDefaultBranch } from "./update-repos";
+import {
+  parseArgs,
+  chunk,
+  parseBranchOutput,
+  resolveDefaultBranch,
+  previewBranchSwitch,
+} from "./update-repos";
 
 describe("parseArgs", () => {
   test("returns defaults with no args", () => {
@@ -163,5 +169,29 @@ describe("resolveDefaultBranch", () => {
 
   test("respects custom precedence list", () => {
     expect(resolveDefaultBranch(["main", "develop"], null, ["develop", "main"])).toBe("develop");
+  });
+});
+
+describe("previewBranchSwitch", () => {
+  test("returns switch info when default branch differs from current", () => {
+    const result = previewBranchSwitch("feature/x", ["main", "feature/x"], null);
+    expect(result).toEqual({ fromBranch: "feature/x", toBranch: "main" });
+  });
+
+  test("returns null when already on default branch", () => {
+    expect(previewBranchSwitch("main", ["main", "develop"], null)).toBeNull();
+  });
+
+  test("returns null when no default branch found", () => {
+    expect(previewBranchSwitch("feature/x", ["feature/x", "feature/y"], null)).toBeNull();
+  });
+
+  test("uses remote HEAD to disambiguate main vs master", () => {
+    const result = previewBranchSwitch("feature/x", ["main", "master", "feature/x"], "master");
+    expect(result).toEqual({ fromBranch: "feature/x", toBranch: "master" });
+  });
+
+  test("returns null when current branch is the disambiguated choice", () => {
+    expect(previewBranchSwitch("master", ["main", "master"], "master")).toBeNull();
   });
 });
