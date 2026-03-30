@@ -228,10 +228,8 @@ cached_eval "zoxide" "zoxide init zsh"
 cached_eval "uv-completion" "uv generate-shell-completion zsh"
 cached_eval "uvx-completion" "uvx --generate-shell-completion zsh"
 
-# fnm - Fast Node Manager (auto-switches on cd, reads .nvmrc files)
+# fnm - interactive cd hook (basic env already loaded in .zshenv)
 eval "$(fnm env --use-on-cd --version-file-strategy=recursive --log-level=quiet --shell zsh)"
-# Activate project node version on shell startup (chpwd hook doesn't fire in sandbox/non-interactive shells)
-fnm use --silent-if-unchanged --log-level=quiet 2>/dev/null
 
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
 export SDKMAN_DIR="/Users/joshmu/.sdkman"
