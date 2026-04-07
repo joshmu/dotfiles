@@ -5,7 +5,7 @@ pager:
 
 defaults:
   preview:
-    open: false
+    open: true
     width: 80
   prsLimit: 20
   issuesLimit: 20
