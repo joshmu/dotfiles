@@ -29,4 +29,16 @@ describe("buildClaudeArgs", () => {
       "--allow-dangerously-skip-permissions --model opus",
     );
   });
+
+  test("skips base flag when extraArgs contains --dangerously-skip-permissions", () => {
+    expect(buildClaudeArgs("--dangerously-skip-permissions")).toBe(
+      "--dangerously-skip-permissions",
+    );
+  });
+
+  test("skips base flag when extraArgs contains --dangerously-skip-permissions with other flags", () => {
+    expect(buildClaudeArgs("--dangerously-skip-permissions --model opus")).toBe(
+      "--dangerously-skip-permissions --model opus",
+    );
+  });
 });
