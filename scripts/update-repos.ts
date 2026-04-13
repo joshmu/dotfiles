@@ -306,6 +306,15 @@ async function updateRepo(
   const repoName = basename(repoPath);
   let branch = await getCurrentBranch(repoPath);
 
+  // Skip repos with no remote configured
+  const remoteResult = await runGitCommand(repoPath, ["remote"]);
+  if (!remoteResult.success || remoteResult.output.trim().length === 0) {
+    return {
+      status: "skipped",
+      message: `${repoName} [${branch}] (no remote)`,
+    };
+  }
+
   // Check for uncommitted changes
   const isDirty = await hasUncommittedChanges(repoPath);
 
