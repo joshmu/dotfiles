@@ -4,6 +4,7 @@ import {
   cleanSessionName,
   computeWindowClaudeInfo,
   findClaudePaneTargets,
+  findClaudePaneTargetsFromHooks,
   formatSessionLine,
   getSessionGroup,
   parsePaneData,
@@ -14,6 +15,7 @@ import {
   renderTreeHeader,
   sortSessions,
   stripAnsi,
+  toClaudeState,
   type ClaudePaneInfo,
   type ClaudeState,
   type PaneInfo,
@@ -639,6 +641,127 @@ describe("computeWindowClaudeInfo", () => {
   test("extraAgentCount=0 with no claude panes returns null", () => {
     const result = computeWindowClaudeInfo([], 0);
     expect(result).toBeNull();
+  });
+});
+
+describe("toClaudeState", () => {
+  test("returns working for 'working'", () => {
+    expect(toClaudeState("working")).toBe("working");
+  });
+
+  test("returns waiting for 'waiting'", () => {
+    expect(toClaudeState("waiting")).toBe("waiting");
+  });
+
+  test("returns idle for 'idle'", () => {
+    expect(toClaudeState("idle")).toBe("idle");
+  });
+
+  test("returns unknown for undefined", () => {
+    expect(toClaudeState(undefined)).toBe("unknown");
+  });
+
+  test("returns unknown for unrecognized string", () => {
+    expect(toClaudeState("something-else")).toBe("unknown");
+  });
+});
+
+describe("findClaudePaneTargetsFromHooks", () => {
+  test("returns empty map for empty panes", () => {
+    const result = findClaudePaneTargetsFromHooks([]);
+    expect(result.size).toBe(0);
+  });
+
+  test("returns empty map when no panes have claudeState", () => {
+    const panes: PaneInfo[] = [
+      { session: "dev", windowIndex: 0, paneIndex: 0, pid: "100" },
+      { session: "work", windowIndex: 0, paneIndex: 0, pid: "200" },
+    ];
+    const result = findClaudePaneTargetsFromHooks(panes);
+    expect(result.size).toBe(0);
+  });
+
+  test("detects single pane with working state", () => {
+    const panes: PaneInfo[] = [
+      { session: "dev", windowIndex: 0, paneIndex: 0, pid: "100", claudeState: "working" },
+    ];
+    const result = findClaudePaneTargetsFromHooks(panes);
+    expect(result.get("dev")).toEqual([{ target: "dev:0.0", state: "working" }]);
+  });
+
+  test("maps all valid states correctly", () => {
+    const panes: PaneInfo[] = [
+      { session: "a", windowIndex: 0, paneIndex: 0, pid: "1", claudeState: "working" },
+      { session: "b", windowIndex: 0, paneIndex: 0, pid: "2", claudeState: "waiting" },
+      { session: "c", windowIndex: 0, paneIndex: 0, pid: "3", claudeState: "idle" },
+    ];
+    const result = findClaudePaneTargetsFromHooks(panes);
+    expect(result.get("a")![0].state).toBe("working");
+    expect(result.get("b")![0].state).toBe("waiting");
+    expect(result.get("c")![0].state).toBe("idle");
+  });
+
+  test("groups multiple panes in same session", () => {
+    const panes: PaneInfo[] = [
+      { session: "dev", windowIndex: 0, paneIndex: 0, pid: "100", claudeState: "working" },
+      { session: "dev", windowIndex: 1, paneIndex: 0, pid: "200", claudeState: "idle" },
+    ];
+    const result = findClaudePaneTargetsFromHooks(panes);
+    expect(result.get("dev")).toEqual([
+      { target: "dev:0.0", state: "working" },
+      { target: "dev:1.0", state: "idle" },
+    ]);
+  });
+
+  test("handles multiple sessions", () => {
+    const panes: PaneInfo[] = [
+      { session: "dev", windowIndex: 0, paneIndex: 0, pid: "100", claudeState: "working" },
+      { session: "work", windowIndex: 0, paneIndex: 0, pid: "200", claudeState: "waiting" },
+    ];
+    const result = findClaudePaneTargetsFromHooks(panes);
+    expect(result.has("dev")).toBe(true);
+    expect(result.has("work")).toBe(true);
+    expect(result.get("dev")![0].state).toBe("working");
+    expect(result.get("work")![0].state).toBe("waiting");
+  });
+
+  test("skips panes without claudeState in mixed input", () => {
+    const panes: PaneInfo[] = [
+      { session: "dev", windowIndex: 0, paneIndex: 0, pid: "100" },
+      { session: "dev", windowIndex: 1, paneIndex: 0, pid: "200", claudeState: "working" },
+      { session: "dev", windowIndex: 2, paneIndex: 0, pid: "300" },
+    ];
+    const result = findClaudePaneTargetsFromHooks(panes);
+    expect(result.get("dev")).toEqual([{ target: "dev:1.0", state: "working" }]);
+  });
+
+  test("treats unrecognized claudeState as unknown", () => {
+    const panes: PaneInfo[] = [
+      { session: "dev", windowIndex: 0, paneIndex: 0, pid: "100", claudeState: "something" },
+    ];
+    const result = findClaudePaneTargetsFromHooks(panes);
+    expect(result.get("dev")![0].state).toBe("unknown");
+  });
+
+  test("produces same results as findClaudePaneTargets hook fallback", () => {
+    // Simulate the scenario: no PIDs found by pgrep, hooks provide all data
+    const panes: PaneInfo[] = [
+      { session: "dev", windowIndex: 0, paneIndex: 0, pid: "100" },
+      { session: "dev", windowIndex: 1, paneIndex: 0, pid: "200", claudeState: "working" },
+      { session: "work", windowIndex: 0, paneIndex: 0, pid: "300", claudeState: "idle" },
+    ];
+    const byPid = buildPaneByPid(panes);
+    const pidToParent = new Map<string, string>();
+
+    const pidResult = findClaudePaneTargets([], byPid, pidToParent, panes);
+    const hookResult = findClaudePaneTargetsFromHooks(panes);
+
+    // Both should find the same sessions
+    expect([...hookResult.keys()].sort()).toEqual([...pidResult.keys()].sort());
+    // Both should find the same targets with same states
+    for (const [session, hookPanes] of hookResult) {
+      expect(hookPanes).toEqual(pidResult.get(session));
+    }
   });
 });
 

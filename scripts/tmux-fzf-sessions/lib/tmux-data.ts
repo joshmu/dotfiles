@@ -150,9 +150,25 @@ export function buildPaneByPid(panes: PaneInfo[]): Map<string, PaneInfo> {
   return map;
 }
 
-function toClaudeState(raw?: string): ClaudeState {
+export function toClaudeState(raw?: string): ClaudeState {
   if (raw === "working" || raw === "waiting" || raw === "idle") return raw;
   return "unknown";
+}
+
+/**
+ * Build Claude pane targets from @claude-state hook data only (no PID walking).
+ * Faster alternative to findClaudePaneTargets when hook data is reliable.
+ */
+export function findClaudePaneTargetsFromHooks(panes: PaneInfo[]): Map<string, ClaudePaneInfo[]> {
+  const targets = new Map<string, ClaudePaneInfo[]>();
+  for (const pane of panes) {
+    if (!pane.claudeState) continue;
+    const target = `${pane.session}:${pane.windowIndex}.${pane.paneIndex}`;
+    const arr = targets.get(pane.session) || [];
+    arr.push({ target, state: toClaudeState(pane.claudeState) });
+    targets.set(pane.session, arr);
+  }
+  return targets;
 }
 
 /**

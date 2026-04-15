@@ -4,10 +4,9 @@
  *
  * Features:
  * - Lists all tmux sessions sorted by last activity
- * - Shows Claude process indicators (󰚩) for sessions running Claude
+ * - Shows Claude process indicators (󰚩) via @claude-state hook data
  * - Highlights current session in bold white, others in green
  * - Preview shows session window tree + Claude pane content
- * - Optional zoxide directory listing for quick session creation
  *
  * Keybindings:
  * - Enter: Switch to selected session, or create new session from typed query
@@ -24,26 +23,18 @@
 
 import { $ } from "bun";
 import {
-  buildPaneByPid,
   cleanSessionName,
-  findClaudePaneTargets,
+  findClaudePaneTargetsFromHooks,
   formatSessionLine,
   parsePaneData,
-  parseProcessTree,
   parseSessionActivity,
+  parseWindowData,
   renderPaneSeparator,
   renderTreeHeader,
   sortSessions,
   stripAnsi,
-  type ClaudePaneInfo,
   type ClaudeState,
 } from "./lib/tmux-data";
-
-// Config
-const SHOW_ZOXIDE = false;
-const BLUE = "\x1b[34m";
-const DIM = "\x1b[38;5;245m";
-const RESET = "\x1b[0m";
 
 const SCRIPT_PATH = new URL(import.meta.url).pathname;
 
@@ -69,16 +60,7 @@ const currentSession = async () => {
 // --- Generate the formatted session list ---
 
 async function generateSessionList(): Promise<string> {
-  const [
-    paneData,
-    claudePids,
-    codexPids,
-    opencodePids,
-    allProcs,
-    sessionsData,
-    zoxideData,
-    current,
-  ] = await Promise.all([
+  const [paneData, sessionsData, current] = await Promise.all([
     run([
       "tmux",
       "list-panes",
@@ -86,24 +68,12 @@ async function generateSessionList(): Promise<string> {
       "-F",
       "#{session_name}:#{window_index}:#{pane_index}:#{pane_pid}:#{@claude-state}",
     ]),
-    run(["pgrep", "-x", "claude"]),
-    run(["pgrep", "-x", "codex"]),
-    run(["pgrep", "-x", "opencode"]),
-    run(["ps", "-A", "-o", "pid=,ppid="]),
     run(["tmux", "list-sessions", "-F", "#{session_activity}:#{session_name}"]),
-    SHOW_ZOXIDE ? run(["zoxide", "query", "-l"]) : Promise.resolve(""),
     currentSession(),
   ]);
 
   const panes = parsePaneData(paneData);
-  const paneByPid = buildPaneByPid(panes);
-  const pidToParent = parseProcessTree(allProcs);
-  const allAgentPids = [
-    ...claudePids.split("\n"),
-    ...codexPids.split("\n"),
-    ...opencodePids.split("\n"),
-  ];
-  const claudeTargets = findClaudePaneTargets(allAgentPids, paneByPid, pidToParent, panes);
+  const claudeTargets = findClaudePaneTargetsFromHooks(panes);
 
   const sorted = sortSessions(parseSessionActivity(sessionsData), current, claudeTargets);
   const sessions = sorted.map((name) => {
@@ -111,15 +81,7 @@ async function generateSessionList(): Promise<string> {
     return formatSessionLine(name, current, claudePanes);
   });
 
-  const directories = SHOW_ZOXIDE
-    ? zoxideData
-        .split("\n")
-        .filter(Boolean)
-        .slice(0, 20)
-        .map((dir) => `${BLUE}${dir}${RESET}`)
-    : [];
-
-  return [...sessions, ...directories].join("\n");
+  return sessions.join("\n");
 }
 
 // --- CLI mode: --kill ---
@@ -158,26 +120,17 @@ if (process.argv[2] === "--list") {
 
 if (process.argv[2] === "--preview" && process.argv[3]) {
   const rawArg = process.argv[3];
-
-  // Zoxide directory — just show listing
-  if (stripAnsi(rawArg).startsWith("/")) {
-    const dir = stripAnsi(rawArg);
-    const listing = await run(["ls", "-la", dir]);
-    process.stdout.write(`${DIM}${listing}${RESET}\n`);
-    process.exit(0);
-  }
-
   const sessionName = cleanSessionName(stripAnsi(rawArg));
 
-  // Fetch data scoped to this session for speed
-  const [paneData, windowData, claudePids, codexPids, opencodePids, allProcs] = await Promise.all([
+  // Fetch data scoped to this session (use full format for parsePaneData/parseWindowData reuse)
+  const [paneData, windowData] = await Promise.all([
     run([
       "tmux",
       "list-panes",
       "-t",
       sessionName,
       "-F",
-      "#{window_index}:#{pane_index}:#{pane_pid}:#{@claude-state}",
+      "#{session_name}:#{window_index}:#{pane_index}:#{pane_pid}:#{@claude-state}",
     ]),
     run([
       "tmux",
@@ -185,86 +138,20 @@ if (process.argv[2] === "--preview" && process.argv[3]) {
       "-t",
       sessionName,
       "-F",
-      "#{window_index}:#{window_name}:#{window_panes}",
+      "#{session_name}:#{window_index}:#{window_name}:#{window_panes}",
     ]),
-    run(["pgrep", "-x", "claude"]),
-    run(["pgrep", "-x", "codex"]),
-    run(["pgrep", "-x", "opencode"]),
-    run(["ps", "-A", "-o", "pid=,ppid="]),
   ]);
 
-  // Parse windows
-  const windows = windowData
-    .split("\n")
-    .filter(Boolean)
-    .map((line) => {
-      const parts = line.split(":");
-      if (parts.length < 3) return null;
-      return {
-        session: sessionName,
-        index: parseInt(parts[0]),
-        name: parts[1],
-        paneCount: parseInt(parts[2]),
-      };
-    })
-    .filter(Boolean) as Array<{
-    session: string;
-    index: number;
-    name: string;
-    paneCount: number;
-  }>;
+  const panes = parsePaneData(paneData);
+  const windows = parseWindowData(windowData);
+  const claudeTargetMap = findClaudePaneTargetsFromHooks(panes);
+  const claudeTargets = claudeTargetMap.get(sessionName) || [];
 
-  // Parse panes (scoped format — no session prefix)
-  const paneByPid = new Map<
-    string,
-    { session: string; windowIndex: number; paneIndex: number; pid: string; claudeState?: string }
-  >();
-  for (const line of paneData.split("\n")) {
-    const parts = line.split(":");
-    if (parts.length >= 3) {
-      paneByPid.set(parts[2], {
-        session: sessionName,
-        windowIndex: parseInt(parts[0]),
-        paneIndex: parseInt(parts[1]),
-        pid: parts[2],
-        claudeState: parts[3] || undefined,
-      });
-    }
-  }
-
-  const pidToParent = parseProcessTree(allProcs);
-
-  // Find Claude pane targets in this session
-  const claudeTargets: ClaudePaneInfo[] = [];
+  // Build per-window Claude state for tree header
   const claudeWindowInfo = new Map<number, ClaudeState>();
-
-  const allAgentPids = [
-    ...claudePids.split("\n"),
-    ...codexPids.split("\n"),
-    ...opencodePids.split("\n"),
-  ];
-  for (const cpid of allAgentPids) {
-    if (!cpid || !/^\d+$/.test(cpid)) continue;
-
-    let ppid = cpid;
-    for (let i = 0; i < 5; i++) {
-      ppid = pidToParent.get(ppid) || "";
-      if (!ppid || ppid === "1") break;
-
-      const pane = paneByPid.get(ppid);
-      if (pane) {
-        const target = `${sessionName}:${pane.windowIndex}.${pane.paneIndex}`;
-        const state: ClaudeState =
-          pane.claudeState === "working" ||
-          pane.claudeState === "waiting" ||
-          pane.claudeState === "idle"
-            ? pane.claudeState
-            : "unknown";
-        claudeTargets.push({ target, state });
-        claudeWindowInfo.set(pane.windowIndex, state);
-        break;
-      }
-    }
+  for (const { target, state } of claudeTargets) {
+    const windowIndex = parseInt(target.split(":")[1]);
+    claudeWindowInfo.set(windowIndex, state);
   }
 
   // Sort waiting panes first for priority visibility
@@ -278,12 +165,16 @@ if (process.argv[2] === "--preview" && process.argv[3]) {
   const maxLines = Math.max(20, 40 - windows.length - 3);
 
   if (claudeTargets.length > 1) {
-    // Multiple Claude panes: stack with labeled separators
+    // Multiple Claude panes: stack with labeled separators, parallel capture
     const linesPerPane = Math.max(5, Math.floor(maxLines / claudeTargets.length));
-    for (const { target, state } of claudeTargets) {
-      process.stdout.write(renderPaneSeparator(target, state) + "\n");
-      const paneContent = await run(["tmux", "capture-pane", "-ept", target, "-p"]);
-      const contentLines = paneContent.split("\n");
+    const captures = await Promise.all(
+      claudeTargets.map(({ target }) => run(["tmux", "capture-pane", "-ept", target, "-p"])),
+    );
+    for (let i = 0; i < claudeTargets.length; i++) {
+      process.stdout.write(
+        renderPaneSeparator(claudeTargets[i].target, claudeTargets[i].state) + "\n",
+      );
+      const contentLines = captures[i].split("\n");
       process.stdout.write(contentLines.slice(-linesPerPane).join("\n") + "\n");
     }
   } else {
@@ -354,27 +245,4 @@ if (!selected && query && key === "enter") {
 
 if (!selected) process.exit(0);
 
-const isSession = !selected.startsWith("/");
-
-// Enter or ctrl-o: switch to session
-if (isSession) {
-  await $`tmux switch-client -t ${cleanSessionName(selected)}`.quiet();
-  process.exit(0);
-}
-
-// Directory selected - create/switch to session
-const selectedName = selected.split("/").pop()?.replace(/\./g, "_") || "session";
-const tmuxActive = process.env.TMUX || (await run(["pgrep", "tmux"]));
-
-if (!tmuxActive) {
-  await $`tmux new-session -s ${selectedName} -c ${selected}`.quiet();
-  process.exit(0);
-}
-
-const sessionExists =
-  (await $`tmux has-session -t ${selectedName}`.quiet().nothrow()).exitCode === 0;
-if (!sessionExists) {
-  await $`tmux new-session -ds ${selectedName} -c ${selected}`.quiet();
-}
-
-await $`tmux switch-client -t ${selectedName}`.quiet();
+await $`tmux switch-client -t ${cleanSessionName(selected)}`.quiet();
