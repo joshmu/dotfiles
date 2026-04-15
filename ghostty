@@ -66,6 +66,10 @@ keybind = cmd+5=goto_tab:5
 # support for claude code multiline
 keybind = shift+enter=text:\x1b\r
 
+# Tmux window navigation (sends prefix + p/n)
+keybind = cmd+shift+h=text:\x02p
+keybind = cmd+shift+l=text:\x02n
+
 # Mouse settings
 mouse-hide-while-typing = true
 copy-on-select = true
