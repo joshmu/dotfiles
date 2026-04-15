@@ -70,6 +70,9 @@ keybind = shift+enter=text:\x1b\r
 keybind = cmd+shift+h=text:\x02p
 keybind = cmd+shift+l=text:\x02n
 
+# Tmux session switcher (sends prefix + s)
+keybind = cmd+shift+p=text:\x02s
+
 # Mouse settings
 mouse-hide-while-typing = true
 copy-on-select = true
