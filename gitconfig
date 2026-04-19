@@ -56,3 +56,5 @@
 	format = ssh
 [gpg "ssh"]
 	allowedSignersFile = /Users/joshmu/.config/git/allowed_signers
+[url "git@github.com:"]
+	insteadOf = https://github.com/
