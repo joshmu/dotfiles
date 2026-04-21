@@ -3,6 +3,8 @@
 export EDITOR="nvim"
 export VISUAL="nvim"
 
+export PERSONAL_VAULT="$HOME/Desktop/obsidian"
+
 # uv
 export PATH="/Users/joshmu/.local/bin:$PATH"
 
