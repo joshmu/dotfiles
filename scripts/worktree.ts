@@ -253,10 +253,10 @@ async function createWorktree(
   await mkdir(worktreesDir, { recursive: true });
 
   // Determine branch name
-  // Skip feature/ prefix if purpose already has a conventional branch prefix
+  // Skip default prefix if purpose already has a conventional branch prefix
   const BRANCH_PREFIXES = [
-    "feature/",
     "feat/",
+    "feature/",
     "fix/",
     "hotfix/",
     "chore/",
@@ -269,7 +269,7 @@ async function createWorktree(
     "release/",
   ];
   const hasPrefix = BRANCH_PREFIXES.some((p) => purpose.startsWith(p));
-  const branchName = branch || (hasPrefix ? purpose : `feature/${purpose}`);
+  const branchName = branch || (hasPrefix ? purpose : `feat/${purpose}`);
 
   // Fetch latest changes from origin
   log.step(`Fetching latest changes from origin`);
@@ -488,10 +488,23 @@ ${colors.cyan}Commands:${colors.reset}
   ${colors.green}help${colors.reset}                              Show this help
 
 ${colors.cyan}Create Options:${colors.reset}
-  --branch <name>      Specify branch name (default: feature/<purpose>, or <purpose> if it has a prefix like fix/, feat/, etc.)
+  --branch <name>      Specify branch name (overrides auto-derivation rules below)
   --base <branch>      Specify base branch (default: auto-detect main/master from remote)
   --existing-branch    Use existing branch instead of creating new
   --no-env             Skip local file sync
+
+${colors.cyan}Branch naming (how <purpose> maps to a branch):${colors.reset}
+  If <purpose> starts with one of these prefixes, it is used as-is:
+    feat/ feature/ fix/ hotfix/ chore/ docs/ refactor/ test/ ci/ build/ perf/ release/
+  Otherwise gw prepends feat/ automatically.
+
+  ${colors.yellow}Do NOT pre-flatten slashes${colors.reset} — gw handles path separation internally:
+    - Branch name keeps slashes (e.g. fix/my-thing)
+    - Worktree directory replaces them with hyphens (fix-my-thing)
+  Pre-flattening (e.g. passing fix_my-thing) defeats prefix detection and forces feat/
+  to be prepended, producing feat/fix_my-thing.
+
+  Pass --branch <full-name> if you need a branch name that does not follow these rules.
 
 ${colors.cyan}Sync Options:${colors.reset}
   --source <path>      Source worktree (auto-detected if omitted)
