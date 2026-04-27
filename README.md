@@ -65,7 +65,7 @@ The repository uses **dotbot** (git submodule at `./dotbot/`) with configuration
 - Editor configs: `~/.config/nvim`, `~/.vimrc`, `~/.tmux.conf`
 - Git: `~/.gitconfig`, `~/Library/Application Support/lazygit/config.yml`
 - Terminal: `~/.config/kitty/`, ghostty config
-- Application configs: Claude Desktop, Cursor, Codex, Obsidian snippets
+- Application configs: Claude Desktop, Cursor, Obsidian snippets
 
 ### Shell Configuration
 - **Primary shell**: zsh with oh-my-posh prompt (config: `oh-my-mu.json`)
@@ -94,7 +94,7 @@ Custom keybindings in `lazygit-config.yml`:
 ### Tool Integrations
 - **Brewfile**: Declarative package management (brew formulae, casks, VSCode extensions)
 - **Claude Desktop**: Config at `claude_desktop_config.json`
-- **Cursor**: MCP config at `cursor/mcp.json`, rules in `cursor/rules/`
+- **Cursor**: MCP config at `cursor/mcp.json`
 - **Obsidian**: Vim bindings and snippets symlinked to vault
 
 ## Common Patterns

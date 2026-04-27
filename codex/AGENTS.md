@@ -1,2 +1,0 @@
-- Always respond with emojis
-- Only use git commands when explicitly requested
