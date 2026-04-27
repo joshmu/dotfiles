@@ -293,3 +293,9 @@ complete -C "$(command -v aws_completer)" aws
 export GPG_TTY=$(tty)
 
 [[ "$TERM_PROGRAM" == "kiro" ]] && . "$(kiro --locate-shell-integration-path zsh)"
+
+# The next line updates PATH for the Google Cloud SDK.
+if [ -f '/Users/joshmu/google-cloud-sdk/path.zsh.inc' ]; then . '/Users/joshmu/google-cloud-sdk/path.zsh.inc'; fi
+
+# The next line enables shell command completion for gcloud.
+if [ -f '/Users/joshmu/google-cloud-sdk/completion.zsh.inc' ]; then . '/Users/joshmu/google-cloud-sdk/completion.zsh.inc'; fi
