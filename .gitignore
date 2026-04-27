@@ -22,3 +22,6 @@ mcp-registry.json
 # dependencies
 node_modules/
 bun.lock
+
+# bun build artifacts
+*.bun-build
