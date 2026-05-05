@@ -36,6 +36,10 @@ open-pr-with-target <target-branch>  # e.g., open-pr-with-target develop
 # Update all git repos in current directory
 update-repos                          # runs update-repos.ts
 
+# Inspect a GitHub token's privileges (read-only: scopes, expiration, capabilities)
+check-gh-token <token>                # also reads $GH_TOKEN, $GITHUB_TOKEN, or `gh auth token`
+echo "$TOKEN" | check-gh-token --stdin
+
 # Package management - automatically detected from lock files
 pnpm install                          # preferred for new repos
 npm install / yarn install            # based on lock file present
@@ -49,6 +53,7 @@ All scripts in `scripts/` are TypeScript files using Bun runtime with shebang `#
 - `yt-transcript.ts` - YouTube transcript extraction
 - `open-pr-with-target.sh` - PR creation with custom target branch
 - `check-merge-conflicts.sh` - Pre-PR merge conflict checker
+- `check-gh-token.sh` - Inspect GitHub token scopes/permissions/expiration (read-only, exposed via `bin/check-gh-token`)
 - `notify-me` - System notification utility
 - `bitbucket/` - Bitbucket CLI tools (`bb-repos`, `bb-pr-create`, `bb-pr-update`)
 - `sonar/` - SonarCloud tools (`sonar-verify`, `sonar-scan`, `sonar-compare`)
@@ -129,6 +134,7 @@ Key aliases from `.aliases`:
 - `gen-img` → AI image generation
 - `bb-*` → Bitbucket CLI tools
 - `sonar-*` → SonarCloud tools
+- `check-gh-token` → GitHub token privilege inspector (read-only)
 
 ### Notifications
 System notifications via AppleScript wrapper in `scripts/notify-me` or shell function:
