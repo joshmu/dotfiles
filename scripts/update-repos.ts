@@ -159,6 +159,93 @@ async function runGitCommand(
   }
 }
 
+// Execute a shell command (for piped git operations like patch-id)
+async function runShell(
+  repoPath: string,
+  cmd: string,
+): Promise<{ success: boolean; output: string }> {
+  try {
+    const proc = spawn({
+      cmd: ["bash", "-c", cmd],
+      cwd: repoPath,
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    const output = await new Response(proc.stdout).text();
+    const error = await new Response(proc.stderr).text();
+    await proc.exited;
+    return { success: proc.exitCode === 0, output: output + error };
+  } catch (error) {
+    return {
+      success: false,
+      output: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+// Attempt to auto-resolve a divergent branch state without losing work.
+//
+// Strategy 1 (safe reset): if every local-only commit has a content-identical
+// counterpart on the remote (matching `git patch-id`), the local commits are
+// already represented upstream — likely they were rebased remotely. A hard
+// reset to @{u} loses no content.
+//
+// Strategy 2 (safe rebase): if the local and remote commits touch disjoint
+// file sets, a rebase cannot produce a content conflict. We rebase local
+// commits on top of remote.
+//
+// If neither applies, returns { resolved: false } and the caller skips the
+// repo for manual resolution.
+async function tryAutoResolveDivergent(
+  repoPath: string,
+): Promise<{ resolved: true; method: "reset" | "rebase" } | { resolved: false }> {
+  const patchIdsCmd = (range: string) =>
+    `git rev-list ${range} | while read sha; do git show "$sha" | git patch-id --stable; done | awk '{print $1}'`;
+
+  const [localIds, remoteIds] = await Promise.all([
+    runShell(repoPath, patchIdsCmd("@{u}..HEAD")),
+    runShell(repoPath, patchIdsCmd("HEAD..@{u}")),
+  ]);
+
+  if (!localIds.success || !remoteIds.success) return { resolved: false };
+
+  const localSet = new Set(localIds.output.trim().split("\n").filter(Boolean));
+  const remoteSet = new Set(remoteIds.output.trim().split("\n").filter(Boolean));
+
+  // #1: every local commit is already on remote → reset is safe
+  if (localSet.size > 0 && [...localSet].every((id) => remoteSet.has(id))) {
+    const reset = await runGitCommand(repoPath, ["reset", "--hard", "@{u}"]);
+    if (reset.success) return { resolved: true, method: "reset" };
+    return { resolved: false };
+  }
+
+  // #2: disjoint file sets → rebase cannot conflict.
+  //
+  // Use `git log --name-only` (files touched by commits in the range) rather
+  // than `git diff --name-only` (cumulative tree delta), because diff includes
+  // files that differ for any reason — including unrelated changes that
+  // already existed on the divergent base — which produces false overlap.
+  const [localFiles, remoteFiles] = await Promise.all([
+    runGitCommand(repoPath, ["log", "@{u}..HEAD", "--name-only", "--pretty=format:"]),
+    runGitCommand(repoPath, ["log", "HEAD..@{u}", "--name-only", "--pretty=format:"]),
+  ]);
+  if (!localFiles.success || !remoteFiles.success) return { resolved: false };
+
+  const localFileSet = new Set(localFiles.output.trim().split("\n").filter(Boolean));
+  const remoteFileSet = new Set(remoteFiles.output.trim().split("\n").filter(Boolean));
+  const overlap = [...localFileSet].some((f) => remoteFileSet.has(f));
+
+  if (!overlap && localFileSet.size > 0 && remoteFileSet.size > 0) {
+    const rebase = await runGitCommand(repoPath, ["rebase", "@{u}"]);
+    if (rebase.success) return { resolved: true, method: "rebase" };
+    // Rebase started but conflicted unexpectedly — abort cleanly
+    await runGitCommand(repoPath, ["rebase", "--abort"]);
+    return { resolved: false };
+  }
+
+  return { resolved: false };
+}
+
 // Check if a directory is a git repository
 function isGitRepo(path: string): boolean {
   return existsSync(join(path, ".git"));
@@ -384,17 +471,29 @@ async function updateRepo(
   }
 
   // Pull latest changes — fast-forward only so divergent branches don't fail
-  // the whole daily auto-update; they're reported as skipped for manual review.
+  // the whole daily auto-update.
   const pullResult = await runGitCommand(repoPath, ["pull", "--ff-only"]);
 
   if (!pullResult.success) {
     const out = pullResult.output;
     const divergent = /divergent branches|Not possible to fast-forward|non-fast-forward/i.test(out);
+    if (divergent) {
+      // Try safe auto-resolution before giving up.
+      const resolution = await tryAutoResolveDivergent(repoPath);
+      if (resolution.resolved) {
+        return {
+          status: "updated",
+          message: `${repoName} [${branch}] (auto-resolved via ${resolution.method})`,
+        };
+      }
+      return {
+        status: "skipped",
+        message: `${repoName} [${branch}] (divergent — manual merge/rebase needed)`,
+      };
+    }
     return {
-      status: divergent ? "skipped" : "failed",
-      message: divergent
-        ? `${repoName} [${branch}] (divergent — manual merge/rebase needed)`
-        : `${repoName} [${branch}]: ${out.split("\n")[0]}`,
+      status: "failed",
+      message: `${repoName} [${branch}]: ${out.split("\n")[0]}`,
     };
   }
 
