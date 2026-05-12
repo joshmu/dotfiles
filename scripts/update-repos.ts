@@ -383,13 +383,18 @@ async function updateRepo(
     }
   }
 
-  // Pull latest changes
-  const pullResult = await runGitCommand(repoPath, ["pull"]);
+  // Pull latest changes — fast-forward only so divergent branches don't fail
+  // the whole daily auto-update; they're reported as skipped for manual review.
+  const pullResult = await runGitCommand(repoPath, ["pull", "--ff-only"]);
 
   if (!pullResult.success) {
+    const out = pullResult.output;
+    const divergent = /divergent branches|Not possible to fast-forward|non-fast-forward/i.test(out);
     return {
-      status: "failed",
-      message: `${repoName} [${branch}]: ${pullResult.output.split("\n")[0]}`,
+      status: divergent ? "skipped" : "failed",
+      message: divergent
+        ? `${repoName} [${branch}] (divergent — manual merge/rebase needed)`
+        : `${repoName} [${branch}]: ${out.split("\n")[0]}`,
     };
   }
 
