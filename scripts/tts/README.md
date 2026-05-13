@@ -124,6 +124,23 @@ Edit `~/dotfiles/scripts/tts/config.json`:
 
 Recursion safety: `haiku.ts` passes `--settings '{"disableAllHooks":true}'` so the spawned `claude -p` subprocess does not re-fire Stop/Notification hooks.
 
+## Playback serialization
+
+Multiple Claude Code sessions fire Stop/Notification hooks independently, so without a lock their `afplay` calls overlap (CoreAudio mixes them cleanly — not garbled, but unusable).
+
+`play.sh` is the single playback entry point used by both callers:
+
+```bash
+~/dotfiles/scripts/tts/play.sh --file <audio-path>    # locked afplay
+~/dotfiles/scripts/tts/play.sh --say  <text>          # locked macOS say
+```
+
+Implementation: `/usr/bin/lockf -k /tmp/claude-tts.lock <cmd>`. BSD `lockf -k` blocks indefinitely until the lock releases, then acquires and runs the wrapped command, with FIFO-ish lock ordering. The lock is held by the fd, so on crash (SIGKILL etc.) it auto-releases — no reaper needed.
+
+- Audio generation (Haiku LLM, Kokoro synth, ElevenLabs API) stays unlocked. Only the speaker is serialized.
+- Override the lock path: `CLAUDE_TTS_LOCK=/some/other/path` (default `/tmp/claude-tts.lock`).
+- Override the wrapper itself: `CLAUDE_TTS_PLAY_SCRIPT=/path/to/other-wrapper`. Any replacement must accept `--file <path>` and `--say <text>`.
+
 ## Tests
 
 ```bash
