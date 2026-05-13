@@ -1,0 +1,30 @@
+{
+  "cascade": ["elevenlabs", "kokoro", "say-default"],
+  "providers": {
+    "elevenlabs": {
+      "togglePath": "~/.claude/.toggles/elevenlabs",
+      "maxChars": 250,
+      "summarizer": "canned",
+      "scriptPath": "~/dotfiles/scripts/elevenlabs/elevenlabs-tts.ts"
+    },
+    "kokoro": {
+      "togglePath": "~/.claude/.toggles/kokoro",
+      "voice": "af_bella",
+      "modelDir": "~/.cache/kokoro",
+      "summarizer": "haiku"
+    },
+    "say-default": {
+      "summarizer": "canned"
+    }
+  },
+  "summarizers": {
+    "canned": {},
+    "haiku": {
+      "maxChars": 200,
+      "lines": 2,
+      "timeoutMs": 30000,
+      "fallbackSummarizer": "canned",
+      "model": "haiku"
+    }
+  }
+}
