@@ -24,7 +24,7 @@ flowchart TD
     end
 
     subgraph KO_GRP[Kokoro tier - local neural, free]
-        KO_S[Canned summarizer] --> KO_T[/Formatted phrase/]
+        KO_S[Haiku summarizer] --> KO_T[/Dynamic summary/]
         KO_T --> KO_P[[kokoro.py]]
     end
 
@@ -34,7 +34,8 @@ flowchart TD
     end
 
     EL_S -.reads.-> EvtMap[(Event message map)]
-    KO_S -.reads.-> EvtMap
+    KO_S -.reads.-> Tx[(transcript.jsonl)]
+    KO_S -.calls.-> Haiku[[claude -p --model haiku]]
     SAY_S -.reads.-> EvtMap
 
     EL_P --> Audio[/audio path on stdout/]
@@ -78,21 +79,25 @@ trash ~/.claude/.toggles/elevenlabs       # disable
 # prints audio path on stdout; pipe to afplay or use via speak.sh
 ```
 
-### Hook mode (canned-summarizer formatting from a JSON ctx)
+### Hook mode (per-tier summarizer-driven)
+
+`~/.claude/hooks/utils/notification.ts` invokes this path on `Notification` events:
 
 ```bash
-echo '{"hook_event_name":"Notification","sessionName":"src","windowName":"main","message":"Claude is waiting for your input"}' \
+echo '{"hook_event_name":"Notification","sessionName":"src","windowName":"main","transcript_path":"/path/to/transcript.jsonl","message":"Claude is waiting for your input"}' \
   | ~/dotfiles/scripts/tts/tts.ts --hook-mode
 ```
 
-In hook mode the canned summarizer renders the message in the format `<session>-<window> - <msg>` (lowercased session, tight `session-window`, spaced before message).
+The orchestrator walks the cascade, picks the first tier with its toggle ON, and runs that tier's summarizer:
 
-Note: `notification.ts` currently builds this exact string itself and calls the orchestrator in **manual mode** with the prebuilt text. Hook mode remains available for any other caller that wants the summarizer to handle formatting.
+- **kokoro tier (default ON)** → `haiku` summarizer reads `transcript_path`, calls `claude -p --model haiku`, emits `<session>-<window> - <one-or-two-sentence dynamic summary>`.
+- **elevenlabs / say-default tiers** → `canned` summarizer emits `<session>-<window> - <event-phrase>` (or the raw message text if injected).
 
 Examples:
 
-- Notification w/ `message: "Claude is waiting for your input"` → `breville-claude - Claude is waiting for your input`
-- Notification w/ no message → `breville-claude - ready` (canned phrase by event)
+- Kokoro w/ live transcript → `breville-memory - Build passed. Two snapshot tests updated.` (haiku-generated)
+- Say fallback → `breville-memory - ready` (canned phrase by event)
+- Notification w/ raw message + canned tier → `breville-memory - Claude is waiting for your input`
 
 ## Configuration
 
@@ -103,13 +108,16 @@ Edit `~/dotfiles/scripts/tts/config.json`:
   "cascade": ["elevenlabs", "kokoro", "say-default"],
   "providers": {
     "elevenlabs": { "summarizer": "canned" },
-    "kokoro": { "summarizer": "canned" },
+    "kokoro": { "summarizer": "haiku" },
     "say-default": { "summarizer": "canned" }
   }
 }
 ```
 
-All tiers use the canned summarizer. No headless LLM invocation. If you want LLM-generated summaries later, drop a new summarizer file in `summarizers/` that hits the Anthropic API directly (do NOT spawn `claude -p` — it fires Stop hooks recursively).
+- **elevenlabs / say-default** → `canned` summarizer renders `<session>-<window> - <event-phrase>` (or raw message text if one was injected). Quota-safe, no LLM calls.
+- **kokoro** → `haiku` summarizer invokes `claude -p --model haiku` with `disableAllHooks=true` from `cwd=/tmp`. It reads the last assistant turn from `transcript_path` and produces `<session>-<window> - <one-or-two-sentence summary>`. Falls back to `canned` on timeout / empty / error.
+
+Recursion safety: `haiku.ts` passes `--settings '{"disableAllHooks":true}'` so the spawned `claude -p` subprocess does not re-fire Stop/Notification hooks.
 
 ## Tests
 
