@@ -8,6 +8,8 @@ Three-tier cascade with per-tier summarizer mapping. Used by:
   - `Stop` → manual mode with prebuilt canned phrase `<session>-<window> - Finished`
   - `SubagentStop` and other events → visual only, no TTS
 
+Both entry points are silenced when a Zoom meeting is active. See **Zoom-meeting mute** below.
+
 ## Architecture
 
 ```mermaid
@@ -141,6 +143,16 @@ cd ~/dotfiles/scripts/tts && bun test
 2. Contract: read JSON ctx from stdin (`{hookEvent, sessionName, transcriptPath}`), print summary text on stdout
 3. Add an entry to `config.json` under `summarizers`
 4. Reference by name in any provider's `summarizer` field
+
+## Zoom-meeting mute
+
+Both `speak.sh` and `notification.ts` skip audio when a Zoom meeting is active. Detection lives in `~/dotfiles/scripts/zoom-meeting-active.sh` (exits `0` when muted, `1` when audible) and checks for the `CptHost` subprocess Zoom spawns only during meetings — the `zoom.us` app process exists whenever Zoom is open, so it's not a reliable signal.
+
+- Visual osascript notifications and Telegram notifications continue to fire from the hook path; only the audio is silenced.
+- Audio generation (Haiku LLM / Kokoro / ElevenLabs) is also skipped when muted — no wasted spend during meetings.
+- Override the detector at either entry point: `ZOOM_MEETING_ACTIVE_SCRIPT=/path/to/other-script`.
+- Disable the mute entirely: `chmod -x ~/dotfiles/scripts/zoom-meeting-active.sh` (or delete it).
+- Manual check: `~/dotfiles/scripts/zoom-meeting-active.sh && echo muted || echo audible`.
 
 ## Troubleshooting
 
