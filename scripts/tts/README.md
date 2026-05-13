@@ -8,7 +8,7 @@ Three-tier cascade with per-tier summarizer mapping. Used by:
   - `Stop` → manual mode with prebuilt canned phrase `<session>-<window> - Finished`
   - `SubagentStop` and other events → visual only, no TTS
 
-Both entry points are silenced when a Zoom meeting is active. See **Zoom-meeting mute** below.
+Both entry points are silenced when on a call or recording (active Zoom meeting, any mic in use, or any webcam in use). See **Audio mute gates** below.
 
 ## Architecture
 
@@ -144,15 +144,23 @@ cd ~/dotfiles/scripts/tts && bun test
 3. Add an entry to `config.json` under `summarizers`
 4. Reference by name in any provider's `summarizer` field
 
-## Zoom-meeting mute
+## Audio mute gates
 
-Both `speak.sh` and `notification.ts` skip audio when a Zoom meeting is active. Detection lives in `~/dotfiles/scripts/zoom-meeting-active.sh` (exits `0` when muted, `1` when audible) and checks for the `CptHost` subprocess Zoom spawns only during meetings — the `zoom.us` app process exists whenever Zoom is open, so it's not a reliable signal.
+Both `speak.sh` and `notification.ts` skip audio when any of these detectors exits `0`. Notification.ts runs all three in parallel via `Promise.all`; speak.sh short-circuits on the first match.
+
+| Script                                      | Detects                 | Mechanism                                                                                                                                                      | Env var override             |
+| ------------------------------------------- | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| `~/dotfiles/scripts/zoom-meeting-active.sh` | Active Zoom meeting     | `pgrep -x CptHost` (the audio/video subprocess Zoom only spawns during calls; `zoom.us` itself is always alive when Zoom is open and is not a reliable signal) | `ZOOM_MEETING_ACTIVE_SCRIPT` |
+| `~/dotfiles/scripts/mic-in-use.swift`       | Any input device in use | CoreAudio: iterates all input-capable devices, checks `kAudioDevicePropertyDeviceIsRunningSomewhere`. Catches Zoom, Meet, Teams, OpenWhispr, browser mic, etc. | `MIC_IN_USE_SCRIPT`          |
+| `~/dotfiles/scripts/webcam-in-use.swift`    | Any camera in use       | CoreMediaIO: iterates all CMIO devices, checks `kCMIODevicePropertyDeviceIsRunningSomewhere`. Catches FaceTime cam, external/virtual webcams.                  | `WEBCAM_IN_USE_SCRIPT`       |
+
+Behaviour:
 
 - Visual osascript notifications and Telegram notifications continue to fire from the hook path; only the audio is silenced.
-- Audio generation (Haiku LLM / Kokoro / ElevenLabs) is also skipped when muted — no wasted spend during meetings.
-- Override the detector at either entry point: `ZOOM_MEETING_ACTIVE_SCRIPT=/path/to/other-script`.
-- Disable the mute entirely: `chmod -x ~/dotfiles/scripts/zoom-meeting-active.sh` (or delete it).
-- Manual check: `~/dotfiles/scripts/zoom-meeting-active.sh && echo muted || echo audible`.
+- Audio generation (Haiku LLM / Kokoro / ElevenLabs) is also skipped when muted — no wasted spend.
+- Swift detectors interpret on every call (~400ms warm, ~2.8s cold). Acceptable for non-interactive hooks; if the cold start ever becomes an issue, pre-compile via `swiftc -O <file>.swift -o <bin>` and point the env override at the binary.
+- Disable an individual gate: `chmod -x ~/dotfiles/scripts/<name>` (or delete it).
+- Manual check: e.g. `~/dotfiles/scripts/mic-in-use.swift && echo muted || echo audible`.
 
 ## Troubleshooting
 
