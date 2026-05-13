@@ -1,8 +1,21 @@
 import { describe, test, expect } from "bun:test";
 import { existsSync } from "fs";
 import { join } from "path";
+import { execSync } from "child_process";
 
 const script = `${import.meta.dir}/kokoro.py`;
+
+// kokoro.py uses `uv run --script` shebang. Skip if uv is missing
+// (e.g. on a fresh CI runner) so contract tests don't false-alarm.
+function hasUv(): boolean {
+  try {
+    execSync("command -v uv", { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+const uvAvailable = hasUv();
 
 async function runScript(
   args: string[] = [],
@@ -21,7 +34,7 @@ async function runScript(
 }
 
 describe("kokoro provider — contract tests", () => {
-  test("empty text → exit 0, no stdout", async () => {
+  test.skipIf(!uvAvailable)("empty text → exit 0, no stdout", async () => {
     const proc = Bun.spawn([script], { stdin: "pipe", stdout: "pipe", stderr: "pipe" });
     proc.stdin.write("");
     proc.stdin.end();
@@ -31,7 +44,7 @@ describe("kokoro provider — contract tests", () => {
     expect(stdout.trim()).toBe("");
   });
 
-  test("missing model files → exit non-zero, no stdout", async () => {
+  test.skipIf(!uvAvailable)("missing model files → exit non-zero, no stdout", async () => {
     const r = await runScript(["hello world"], {
       TTS_PROVIDER_CONFIG: JSON.stringify({ modelDir: "/tmp/nonexistent-kokoro-models-xyz" }),
     });

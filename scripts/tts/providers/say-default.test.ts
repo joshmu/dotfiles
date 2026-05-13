@@ -1,6 +1,9 @@
 import { describe, test, expect } from "bun:test";
 import { existsSync, statSync } from "fs";
 
+// `say` is macOS-only; skip on Linux CI runners.
+const isMac = process.platform === "darwin";
+
 const script = `${import.meta.dir}/say-default.ts`;
 
 async function runScript(
@@ -27,7 +30,7 @@ describe("say-default provider", () => {
     expect(r.stdout.trim()).toBe("");
   });
 
-  test("text via argv → prints existing audio file path on last line", async () => {
+  test.skipIf(!isMac)("text via argv → prints existing audio file path on last line", async () => {
     const r = await runScript(["hello tts test"]);
     expect(r.code).toBe(0);
     const lines = r.stdout.trim().split("\n");
@@ -37,7 +40,7 @@ describe("say-default provider", () => {
     expect(statSync(path).size).toBeGreaterThan(0);
   });
 
-  test("text via stdin → prints path", async () => {
+  test.skipIf(!isMac)("text via stdin → prints path", async () => {
     const r = await runScript([], "stdin test");
     expect(r.code).toBe(0);
     const path = r.stdout.trim().split("\n").pop()!;
