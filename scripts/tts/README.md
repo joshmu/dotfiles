@@ -3,7 +3,10 @@
 Three-tier cascade with per-tier summarizer mapping. Used by:
 
 - `~/.claude/skills/speak/speak.sh` (manual `/speak <text>` invocation)
-- `~/.claude/hooks/utils/notification.ts` (auto-fires on Claude Code `Notification` hook only — `Stop`/`SubagentStop` produce visual notif but stay silent)
+- `~/.claude/hooks/utils/notification.ts` — auto-fires on:
+  - `Notification` → hook-mode → kokoro tier → haiku summarizer (dynamic transcript summary)
+  - `Stop` → manual mode with prebuilt canned phrase `<session>-<window> - Finished`
+  - `SubagentStop` and other events → visual only, no TTS
 
 ## Architecture
 
