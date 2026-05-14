@@ -179,6 +179,19 @@ Behaviour:
 - Disable an individual gate: `chmod -x ~/dotfiles/scripts/<name>` (or delete it).
 - Manual check: e.g. `~/dotfiles/scripts/mic-in-use.swift && echo muted || echo audible`.
 
+## Media playback primitives (not yet wired)
+
+Sibling scripts that wrap [`media-control`](https://github.com/ungive/media-control) (Homebrew). Not currently used by `notification.ts` or `speak.sh` — intended for a future pause-media → play-TTS → resume-media flow rather than a hard mute.
+
+| Script                                | Purpose                                                 | Backend                            |
+| ------------------------------------- | ------------------------------------------------------- | ---------------------------------- |
+| `~/dotfiles/scripts/media-playing.sh` | Exit 0 if any MediaRemote-aware app is actively playing | `media-control get \| jq .playing` |
+| `~/dotfiles/scripts/media-toggle.sh`  | Toggle play/pause (mirrors F8 media key)                | `media-control toggle-play-pause`  |
+
+Covers Spotify, Music.app, Safari/Chrome/Arc/Firefox HTML5 video (YouTube etc. via MediaSession), VLC, Podcasts.app. CoreAudio `IsRunningSomewhere` was tried first but is sticky — true whenever a media app holds the output device open, regardless of actual playback. MediaRemote's NowPlaying state is the correct layer.
+
+Setup: `brew install media-control jq`. On macOS 15.4+ Apple gated MediaRemote behind an entitlement, so direct private-framework calls from unsigned scripts no longer dispatch; `media-control` works around this via an Apple-signed `/usr/bin/perl` shim.
+
 ## Troubleshooting
 
 - **Kokoro silent / falls through to say**: check `~/.cache/kokoro/kokoro-v1.0.onnx` exists (`ls -la ~/.cache/kokoro/`); re-run `setup.sh`
