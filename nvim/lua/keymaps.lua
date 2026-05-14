@@ -78,6 +78,15 @@ vim.keymap.set('n', '<leader>oc', function()
   require('utils.code_helpers').openIDEWithWorkspaceEnabledIfAvailable 'cursor'
 end, { desc = '[O]pen in [C]ursor' })
 
+vim.keymap.set('n', '<leader>oo', function()
+  local path = vim.fn.expand '%:p'
+  if path == '' then
+    vim.notify('No file for current buffer', vim.log.levels.WARN)
+    return
+  end
+  vim.fn.jobstart({ 'open', path }, { detach = true })
+end, { desc = '[O]pen file in default app' })
+
 -- Centered scroll
 vim.keymap.set('n', '<leader>zz', '<cmd>let &scrolloff=999-&scrolloff<CR>')
 
