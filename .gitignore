@@ -15,6 +15,7 @@ cursor/rules/tech-stack-info.mdc
 .claude-trace
 .env
 config.json
+!caveman/config.json
 
 # ignore my mcp registry
 mcp-registry.json

@@ -1,0 +1,6 @@
+{
+  "_docs": "Caveman plugin config. Source of truth for schema + valid modes: https://github.com/JuliusBrussee/caveman/blob/main/src/hooks/caveman-config.js",
+  "_validModes": ["off", "lite", "full", "ultra", "wenyan-lite", "wenyan", "wenyan-full", "wenyan-ultra", "commit", "review", "compress"],
+  "_resolutionOrder": "1) $CAVEMAN_DEFAULT_MODE env  2) this file (defaultMode field)  3) fallback 'full'",
+  "defaultMode": "off"
+}
