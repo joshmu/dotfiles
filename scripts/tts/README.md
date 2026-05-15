@@ -63,10 +63,11 @@ Installs `uv` if missing, downloads Kokoro ONNX models (~350 MB) to `~/.cache/ko
 
 File-presence convention at `~/.claude/.toggles/<name>`:
 
-| File         | Tier                           | Default            |
-| ------------ | ------------------------------ | ------------------ |
-| `elevenlabs` | ElevenLabs (paid, quota-bound) | OFF — opt-in       |
-| `kokoro`     | Kokoro local neural            | **ON** after setup |
+| File         | Tier / Feature                       | Default            |
+| ------------ | ------------------------------------ | ------------------ |
+| `elevenlabs` | ElevenLabs (paid, quota-bound)       | OFF — opt-in       |
+| `kokoro`     | Kokoro local neural                  | **ON** after setup |
+| `media-duck` | Pause media during TTS, resume after | **ON** after setup |
 
 `say` is always available as final fallback.
 
@@ -140,6 +141,16 @@ Implementation: `/usr/bin/lockf -k /tmp/claude-tts.lock <cmd>`. BSD `lockf -k` b
 - Audio generation (Haiku LLM, Kokoro synth, ElevenLabs API) stays unlocked. Only the speaker is serialized.
 - Override the lock path: `CLAUDE_TTS_LOCK=/some/other/path` (default `/tmp/claude-tts.lock`).
 - Override the wrapper itself: `CLAUDE_TTS_PLAY_SCRIPT=/path/to/other-wrapper`. Any replacement must accept `--file <path>` and `--say <text>`.
+
+## Media ducking
+
+When `~/.claude/.toggles/media-duck` exists, `play.sh` calls `media-control pause` before the TTS audio fires and `media-control play` after (via `EXIT` trap, so killed TTS still restores). Detection (`~/dotfiles/scripts/media-playing.sh`) runs inside the `lockf` window so concurrent TTS sessions can't strand media in the paused state.
+
+Covers anything MediaRemote sees: Spotify, Music, Safari/Chrome/Arc/Firefox HTML5 video, VLC, Podcasts.app.
+
+- Disable: `trash ~/.claude/.toggles/media-duck`.
+- No fade — pause/resume only. macOS has no public per-process volume API; the asymmetry of fade-for-3-apps vs pause-for-rest isn't worth the code.
+- Requires `media-control` (Homebrew). If missing or the toggle file is absent, `play.sh` short-circuits to plain afplay — no behaviour change.
 
 ## Tests
 

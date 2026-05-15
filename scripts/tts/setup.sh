@@ -3,6 +3,7 @@
 #   - Verifies/installs uv (for kokoro.py inline-script deps).
 #   - Downloads Kokoro ONNX model + voices to ~/.cache/kokoro.
 #   - Touches ~/.claude/.toggles/kokoro (default tier ON).
+#   - Touches ~/.claude/.toggles/media-duck (pause media during TTS, default ON).
 # Idempotent: re-running is safe.
 
 set -uo pipefail
@@ -11,6 +12,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 KOKORO_DIR="${KOKORO_DIR:-$HOME/.cache/kokoro}"
 TOGGLES_DIR="$HOME/.claude/.toggles"
 KOKORO_TOGGLE="$TOGGLES_DIR/kokoro"
+MEDIA_DUCK_TOGGLE="$TOGGLES_DIR/media-duck"
 
 MODEL_URL="https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx"
 VOICES_URL="https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin"
@@ -84,6 +86,13 @@ main() {
     touch "$KOKORO_TOGGLE"
   else
     info "kokoro toggle already enabled"
+  fi
+
+  if [ ! -f "$MEDIA_DUCK_TOGGLE" ]; then
+    info "enabling media-duck (touch $MEDIA_DUCK_TOGGLE)"
+    touch "$MEDIA_DUCK_TOGGLE"
+  else
+    info "media-duck toggle already enabled"
   fi
 
   info "priming kokoro.py uv-resolve (first run only)"
