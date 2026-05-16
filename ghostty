@@ -56,8 +56,10 @@ confirm-close-surface = false
 
 # Key bindings
 
-# Quick Terminal — pop-down from top with cmd+`
-keybind = global:cmd+grave_accent=toggle_quick_terminal
+# Quick Terminal — pop-down from top with cmd+` 
+## not using globally due to current app window management navigation
+# keybind = global:cmd+grave_accent=toggle_quick_terminal
+keybind = cmd+grave_accent=toggle_quick_terminal
 quick-terminal-position = top
 quick-terminal-animation-duration = 0.15
 
