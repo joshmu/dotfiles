@@ -29,10 +29,20 @@
 # resize-overlay-duration = 4s 200ms
 
 # Theme and appearance
-# theme = catppuccin-mocha
+# Uncomment ONE theme line. Reload with cmd+shift+, after editing.
+
+theme = "Ghostty Default Style Dark"
+# theme = "Catppuccin Mocha"
+# theme = "TokyoNight Moon"
+
+# background-opacity = 0.95
+background-blur-radius = 20
 
 # Font configuration
+
+# MesloLGS — current/baseline
 font-family = "MesloLGS Nerd Font Mono"
+
 font-size = 14
 
 # Window settings
@@ -45,6 +55,11 @@ scrollback-limit = 10000
 confirm-close-surface = false
 
 # Key bindings
+
+# Quick Terminal — pop-down from top with cmd+`
+keybind = global:cmd+grave_accent=toggle_quick_terminal
+quick-terminal-position = top
+quick-terminal-animation-duration = 0.15
 
 # macOS option key as alt (left option = alt, right option = special chars)
 macos-option-as-alt = left
