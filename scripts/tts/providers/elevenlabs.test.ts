@@ -67,7 +67,9 @@ describe("elevenlabs provider adapter", () => {
     });
     expect(r.code).toBe(0);
     // truncated length = maxChars + 1 for ellipsis (51), should be << 500
-    expect(r.stderr).toMatch(/stub received: (5[01]) chars/);
+    // strip ANSI color codes that may be interleaved in stub stderr
+    const cleanStderr = r.stderr.replace(/\[[0-9;]*m/g, "");
+    expect(cleanStderr).toMatch(/stub received: (5[01]) chars/);
   });
 
   test("missing scriptPath in config → exit non-zero", async () => {
