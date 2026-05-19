@@ -21,6 +21,7 @@
       ~/Library/Application Support/com.mitchellh.ghostty/config: ghostty
       ~/.config/karabiner:
       ~/.gitconfig:
+      ~/.actrc: actrc
       ~/.bashrc: .bashrc
       ~/.bash_profile: .bash_profile
       ~/.hushlogin: .hushlogin
