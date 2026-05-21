@@ -4,7 +4,10 @@ import {
   chunk,
   parseBranchOutput,
   resolveDefaultBranch,
+  resolveMostActiveEnvBranch,
   previewBranchSwitch,
+  ENV_BRANCHES,
+  DEFAULT_BRANCH_PRECEDENCE,
 } from "./update-repos";
 
 describe("parseArgs", () => {
@@ -43,6 +46,14 @@ describe("parseArgs", () => {
 
   test("defaults --repair-remote-head to false", () => {
     expect(parseArgs([]).repairRemoteHead).toBe(false);
+  });
+
+  test("parses --by-activity", () => {
+    expect(parseArgs(["--by-activity"]).byActivity).toBe(true);
+  });
+
+  test("defaults --by-activity to false", () => {
+    expect(parseArgs([]).byActivity).toBe(false);
   });
 
   test("parses --parallel with value", () => {
@@ -190,6 +201,54 @@ describe("resolveDefaultBranch", () => {
 
   test("respects custom precedence list", () => {
     expect(resolveDefaultBranch(["main", "develop"], null, ["develop", "main"])).toBe("develop");
+  });
+});
+
+describe("resolveMostActiveEnvBranch", () => {
+  test("picks most recently committed env branch", () => {
+    const branches = ["main", "qa", "develop"];
+    const ts = { main: 1700000000, qa: 1716000000, develop: 1710000000 };
+    expect(resolveMostActiveEnvBranch(branches, ts)).toBe("qa");
+  });
+
+  test("returns only env branch when one exists", () => {
+    expect(resolveMostActiveEnvBranch(["master", "feature/x"], { master: 100 })).toBe("master");
+  });
+
+  test("ignores feature branches even when more recent", () => {
+    const ts = { main: 1000, "feature/hot": 2000 };
+    expect(resolveMostActiveEnvBranch(["main", "feature/hot"], ts)).toBe("main");
+  });
+
+  test("returns null when no env branches present", () => {
+    expect(resolveMostActiveEnvBranch(["feature/x", "bugfix/y"], {})).toBeNull();
+  });
+
+  test("returns null for empty branch list", () => {
+    expect(resolveMostActiveEnvBranch([], {})).toBeNull();
+  });
+
+  test("tie-breaks on equal timestamps via precedence (qa before develop)", () => {
+    // DEFAULT_BRANCH_PRECEDENCE has qa at index 3, develop at index 4 — qa wins ties.
+    const ts = { develop: 500, qa: 500 };
+    expect(resolveMostActiveEnvBranch(["develop", "qa"], ts)).toBe("qa");
+  });
+
+  test("skips env branches with no timestamp entry", () => {
+    expect(resolveMostActiveEnvBranch(["qa", "stage"], { qa: 100 })).toBe("qa");
+  });
+
+  test("ENV_BRANCHES exports expected long-lived branches", () => {
+    expect(ENV_BRANCHES).toContain("main");
+    expect(ENV_BRANCHES).toContain("master");
+    expect(ENV_BRANCHES).toContain("develop");
+    expect(ENV_BRANCHES).toContain("development");
+    expect(ENV_BRANCHES).toContain("dev");
+    expect(ENV_BRANCHES).toContain("qa");
+    expect(ENV_BRANCHES).toContain("uat");
+    expect(ENV_BRANCHES).toContain("stage");
+    expect(ENV_BRANCHES).toContain("preprod");
+    expect(ENV_BRANCHES).toContain("prod");
   });
 });
 

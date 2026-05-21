@@ -42,6 +42,7 @@ interface Options {
   help: boolean;
   skipDefaultBranch: boolean;
   repairRemoteHead: boolean;
+  byActivity: boolean;
   parallel: number;
 }
 
@@ -53,6 +54,7 @@ export function parseArgs(argv?: string[]): Options {
     help: false,
     skipDefaultBranch: false,
     repairRemoteHead: false,
+    byActivity: false,
     parallel: 10, // Default to 10 parallel operations
   };
 
@@ -71,6 +73,9 @@ export function parseArgs(argv?: string[]): Options {
         break;
       case "--repair-remote-head":
         options.repairRemoteHead = true;
+        break;
+      case "--by-activity":
+        options.byActivity = true;
         break;
       case "--parallel":
         const nextArg = args[i + 1];
@@ -116,6 +121,9 @@ ${colors.bright}Options:${colors.reset}
                          (changes remain stashed - run 'git stash pop' to restore)
   --skip-default-branch  Don't switch to default branch before updating
   --repair-remote-head   Refresh stale origin/HEAD symrefs (set-head --auto) and exit
+  --by-activity          Pick most-recently-committed env branch per repo
+                         (main/master/develop/dev/qa/uat/stage/preprod/prod);
+                         fast-forwards all env branches before switching
   --parallel <n>         Number of repos to update concurrently (default: 10, max: 20)
   --dry-run              Show what would be done without making changes
   -h, --help             Show this help message
@@ -308,6 +316,95 @@ async function getAllBranches(repoPath: string): Promise<string[]> {
   return parseBranchOutput(output);
 }
 
+// Read committer Unix timestamp of the tip of an origin ref.
+// Returns null when the ref doesn't exist locally (call after fetch).
+async function getBranchCommitTimestamp(repoPath: string, branch: string): Promise<number | null> {
+  const { success, output } = await runGitCommand(repoPath, [
+    "log",
+    "-1",
+    "--format=%ct",
+    `origin/${branch}`,
+  ]);
+  if (!success) return null;
+  const ts = parseInt(output.trim(), 10);
+  return isNaN(ts) ? null : ts;
+}
+
+// Fast-forward a local branch to its remote counterpart without checking it
+// out. Uses `git fetch origin <br>:<br>` which is safe (refuses on non-FF).
+// On non-FF returns false; caller decides whether to warn.
+async function fastForwardLocalBranch(repoPath: string, branch: string): Promise<boolean> {
+  const { success } = await runGitCommand(repoPath, ["fetch", "origin", `${branch}:${branch}`]);
+  return success;
+}
+
+// Compute the most-active env branch for a repo. Fetches origin once, reads
+// commit timestamps for env branches that exist on the remote, and runs the
+// pure resolver. Fast-forwards matching local refs (no checkout). Returns
+// null when no env branches exist on origin.
+async function findMostActiveEnvBranch(
+  repoPath: string,
+): Promise<{ branch: string; timestamp: number } | null> {
+  await runGitCommand(repoPath, ["fetch", "origin", "--prune", "--quiet"]);
+
+  // Read all remote branches via for-each-ref (faster than git branch -a)
+  const refs = await runGitCommand(repoPath, [
+    "for-each-ref",
+    "--format=%(refname:short)",
+    "refs/remotes/origin/",
+  ]);
+  if (!refs.success) return null;
+
+  const remoteBranches = refs.output
+    .split("\n")
+    .map((l) => l.trim().replace(/^origin\//, ""))
+    .filter((b) => b && b !== "HEAD" && ENV_BRANCHES.includes(b));
+
+  if (remoteBranches.length === 0) return null;
+
+  // Collect timestamps in parallel
+  const timestamps: Record<string, number> = {};
+  const tsResults = await Promise.all(
+    remoteBranches.map(async (b) => [b, await getBranchCommitTimestamp(repoPath, b)] as const),
+  );
+  for (const [b, t] of tsResults) {
+    if (t !== null) timestamps[b] = t;
+  }
+
+  // Fast-forward matching local branches in parallel — pure ref-update,
+  // no checkout, no merge. Non-FF silently skipped (caller can re-run).
+  const localList = await getAllBranches(repoPath);
+  await Promise.all(
+    remoteBranches
+      .filter((b) => localList.includes(b))
+      .map((b) => fastForwardLocalBranch(repoPath, b)),
+  );
+
+  const winner = resolveMostActiveEnvBranch(remoteBranches, timestamps);
+  if (!winner) return null;
+  const timestamp = timestamps[winner];
+  if (timestamp === undefined) return null;
+  return { branch: winner, timestamp };
+}
+
+// Switch to the most-active env branch if not already there. Caller computes
+// the target via findMostActiveEnvBranch first; this just performs the
+// checkout (so dry-run can skip the mutation).
+async function switchToMostActiveEnvBranch(
+  repoPath: string,
+  currentBranch: string,
+  target: string,
+): Promise<{ switched: boolean; fromBranch: string; toBranch: string }> {
+  if (target === currentBranch) {
+    return { switched: false, fromBranch: currentBranch, toBranch: currentBranch };
+  }
+  const checkoutResult = await runGitCommand(repoPath, ["checkout", target]);
+  if (checkoutResult.success) {
+    return { switched: true, fromBranch: currentBranch, toBranch: target };
+  }
+  return { switched: false, fromBranch: currentBranch, toBranch: currentBranch };
+}
+
 // Read the remote HEAD from local refs (no network — call after git fetch).
 // Local symref can be stale: `git fetch` does NOT refresh it; only
 // `git remote set-head origin --auto` does. Caller should prefer
@@ -355,6 +452,42 @@ export const ENV_BRANCHES = [
 // Pure branch resolution logic — picks the best branch from a list,
 // honouring remote HEAD only when it's a known long-lived env branch.
 export const DEFAULT_BRANCH_PRECEDENCE = ["main", "master", "stage", "qa", "develop", "dev"];
+
+// Pick the env branch with the most recent commit timestamp. Used by
+// --by-activity to reflect "where the action actually is" per repo.
+// Ties broken by tiebreakerPrecedence order (deterministic).
+export function resolveMostActiveEnvBranch(
+  branches: string[],
+  commitTimestamps: Record<string, number>,
+  allowedEnvBranches: string[] = ENV_BRANCHES,
+  tiebreakerPrecedence: string[] = DEFAULT_BRANCH_PRECEDENCE,
+): string | null {
+  const candidates = branches.filter(
+    (b) => allowedEnvBranches.includes(b) && commitTimestamps[b] !== undefined,
+  );
+  if (candidates.length === 0) return null;
+
+  let winner = candidates[0];
+  let winnerTs = commitTimestamps[winner];
+  for (const c of candidates.slice(1)) {
+    const ts = commitTimestamps[c];
+    if (ts > winnerTs) {
+      winner = c;
+      winnerTs = ts;
+    } else if (ts === winnerTs) {
+      // Tie-break: pick the one earlier in tiebreakerPrecedence (or current
+      // winner if neither is in the list).
+      const winnerRank = tiebreakerPrecedence.indexOf(winner);
+      const candRank = tiebreakerPrecedence.indexOf(c);
+      const norm = (r: number) => (r === -1 ? Infinity : r);
+      if (norm(candRank) < norm(winnerRank)) {
+        winner = c;
+        winnerTs = ts;
+      }
+    }
+  }
+  return winner;
+}
 
 export function resolveDefaultBranch(
   branches: string[],
@@ -461,10 +594,30 @@ async function updateRepo(
     };
   }
 
-  // Resolve default branch — dry-run previews only, real run switches
+  // Resolve target branch — dry-run previews only, real run switches.
+  // --by-activity picks the most-recently-committed env branch; otherwise
+  // we use the precedence + authoritative-remote-HEAD logic.
   let branchSwitchInfo = "";
   if (!options.skipDefaultBranch && !isDirty) {
-    if (options.dryRun) {
+    if (options.byActivity) {
+      const target = await findMostActiveEnvBranch(repoPath);
+      if (target && target.branch !== branch) {
+        const dateStr = new Date(target.timestamp * 1000).toISOString().slice(0, 10);
+        branchSwitchInfo = `${branch} → ${target.branch}`;
+        if (options.dryRun) {
+          branchSwitchInfo += ` (most recent ${dateStr})`;
+          branch = target.branch;
+        } else {
+          const switchResult = await switchToMostActiveEnvBranch(repoPath, branch, target.branch);
+          if (switchResult.switched) {
+            branch = switchResult.toBranch;
+            log.step(`${repoName} [${branchSwitchInfo}] (most recent ${dateStr})`);
+          } else {
+            branchSwitchInfo = "";
+          }
+        }
+      }
+    } else if (options.dryRun) {
       const [branches, remoteHead] = await Promise.all([
         getAllBranches(repoPath),
         getLocalRemoteHead(repoPath),
