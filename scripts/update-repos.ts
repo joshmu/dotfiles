@@ -41,6 +41,7 @@ interface Options {
   dryRun: boolean;
   help: boolean;
   skipDefaultBranch: boolean;
+  repairRemoteHead: boolean;
   parallel: number;
 }
 
@@ -51,6 +52,7 @@ export function parseArgs(argv?: string[]): Options {
     dryRun: false,
     help: false,
     skipDefaultBranch: false,
+    repairRemoteHead: false,
     parallel: 10, // Default to 10 parallel operations
   };
 
@@ -66,6 +68,9 @@ export function parseArgs(argv?: string[]): Options {
         break;
       case "--skip-default-branch":
         options.skipDefaultBranch = true;
+        break;
+      case "--repair-remote-head":
+        options.repairRemoteHead = true;
         break;
       case "--parallel":
         const nextArg = args[i + 1];
@@ -110,6 +115,7 @@ ${colors.bright}Options:${colors.reset}
   --stash                Stash uncommitted changes before pulling
                          (changes remain stashed - run 'git stash pop' to restore)
   --skip-default-branch  Don't switch to default branch before updating
+  --repair-remote-head   Refresh stale origin/HEAD symrefs (set-head --auto) and exit
   --parallel <n>         Number of repos to update concurrently (default: 10, max: 20)
   --dry-run              Show what would be done without making changes
   -h, --help             Show this help message
@@ -302,7 +308,10 @@ async function getAllBranches(repoPath: string): Promise<string[]> {
   return parseBranchOutput(output);
 }
 
-// Read the remote HEAD from local refs (no network — call after git fetch)
+// Read the remote HEAD from local refs (no network — call after git fetch).
+// Local symref can be stale: `git fetch` does NOT refresh it; only
+// `git remote set-head origin --auto` does. Caller should prefer
+// getAuthoritativeRemoteHead for fresh truth.
 async function getLocalRemoteHead(repoPath: string): Promise<string | null> {
   const { success, output } = await runGitCommand(repoPath, [
     "symbolic-ref",
@@ -315,8 +324,36 @@ async function getLocalRemoteHead(repoPath: string): Promise<string | null> {
   return null;
 }
 
+// Read remote HEAD authoritatively via `git ls-remote --symref origin HEAD`.
+// One network round-trip (bytes only). Falls back to local symref when offline.
+async function getAuthoritativeRemoteHead(repoPath: string): Promise<string | null> {
+  const lsRemote = await runGitCommand(repoPath, ["ls-remote", "--symref", "origin", "HEAD"]);
+  if (lsRemote.success) {
+    const m = lsRemote.output.match(/^ref:\s+refs\/heads\/(\S+)\s+HEAD/m);
+    if (m) return m[1];
+  }
+  return getLocalRemoteHead(repoPath);
+}
+
+// Allowlist of long-lived environment branches. Used by both the default
+// resolver (gate "trust remoteHead" on known env branches) and the activity
+// mode. Repos with feature/release branches as their GitHub default fall back
+// to precedence rather than silently following weird defaults.
+export const ENV_BRANCHES = [
+  "main",
+  "master",
+  "develop",
+  "development",
+  "dev",
+  "qa",
+  "uat",
+  "stage",
+  "preprod",
+  "prod",
+];
+
 // Pure branch resolution logic — picks the best branch from a list,
-// using remoteHead to disambiguate main vs master when both exist
+// honouring remote HEAD only when it's a known long-lived env branch.
 export const DEFAULT_BRANCH_PRECEDENCE = ["main", "master", "stage", "qa", "develop", "dev"];
 
 export function resolveDefaultBranch(
@@ -324,15 +361,15 @@ export function resolveDefaultBranch(
   remoteHead: string | null,
   precedence: string[] = DEFAULT_BRANCH_PRECEDENCE,
 ): string | null {
-  const hasMain = branches.includes("main");
-  const hasMaster = branches.includes("master");
-
-  // When both main and master exist, use remote HEAD to disambiguate
-  if (hasMain && hasMaster && (remoteHead === "main" || remoteHead === "master")) {
+  // Authoritative signal: if the remote tells us its HEAD AND it's a known
+  // long-lived env branch AND it exists locally, honour it — regardless of
+  // precedence rank. Gating on ENV_BRANCHES protects legacy repos whose
+  // GitHub default points at a feature/release branch.
+  if (remoteHead && branches.includes(remoteHead) && ENV_BRANCHES.includes(remoteHead)) {
     return remoteHead;
   }
 
-  // Standard precedence
+  // Fallback precedence — for offline runs or drifted symrefs.
   for (const preferredBranch of precedence) {
     if (branches.includes(preferredBranch)) {
       return preferredBranch;
@@ -356,12 +393,15 @@ export function previewBranchSwitch(
 async function findDefaultBranch(repoPath: string): Promise<string | null> {
   const [branches, remoteHead] = await Promise.all([
     getAllBranches(repoPath),
-    getLocalRemoteHead(repoPath),
+    getAuthoritativeRemoteHead(repoPath),
   ]);
   return resolveDefaultBranch(branches, remoteHead);
 }
 
-// Switch to default branch if needed
+// Switch to default branch if needed.
+// Logs a drift warning when the authoritative remote HEAD differs from the
+// local symref — surfaces stale .git/refs/remotes/origin/HEAD in cron output
+// so you can run `--repair-remote-head` to flush them.
 async function switchToDefaultBranch(
   repoPath: string,
   currentBranch: string,
@@ -373,6 +413,15 @@ async function switchToDefaultBranch(
 
   if (!defaultBranch || currentBranch === defaultBranch) {
     return { switched: false, fromBranch: currentBranch, toBranch: currentBranch };
+  }
+
+  // Drift audit: compare authoritative pick vs what local symref alone would say
+  const localOnly = await getLocalRemoteHead(repoPath);
+  if (localOnly && localOnly !== defaultBranch) {
+    const repoName = basename(repoPath);
+    log.warn(
+      `${repoName}: local symref drifted (says ${localOnly}, remote says ${defaultBranch}) — run --repair-remote-head`,
+    );
   }
 
   const checkoutResult = await runGitCommand(repoPath, ["checkout", defaultBranch]);
@@ -519,6 +568,35 @@ export function chunk<T>(array: T[], size: number): T[][] {
   return chunks;
 }
 
+// Sweep all repos and refresh stale origin/HEAD symrefs.
+// `git remote set-head origin --auto` is idempotent and harmless;
+// it queries the remote and rewrites .git/refs/remotes/origin/HEAD.
+async function runRepairRemoteHead(repos: string[]): Promise<void> {
+  log.info("Repairing origin/HEAD symrefs across all repos");
+  let changed = 0;
+  let skipped = 0;
+  for (const repoPath of repos) {
+    const repoName = basename(repoPath);
+    const before = await runGitCommand(repoPath, ["symbolic-ref", "refs/remotes/origin/HEAD"]);
+    const set = await runGitCommand(repoPath, ["remote", "set-head", "origin", "--auto"]);
+    if (!set.success) {
+      log.warn(`${repoName}: ${set.output.split("\n")[0]}`);
+      skipped++;
+      continue;
+    }
+    const after = await runGitCommand(repoPath, ["symbolic-ref", "refs/remotes/origin/HEAD"]);
+    const beforeRef = before.success ? before.output.trim() : "(unset)";
+    const afterRef = after.success ? after.output.trim() : "(unset)";
+    if (beforeRef !== afterRef) {
+      log.step(
+        `${repoName}: ${beforeRef.replace("refs/remotes/origin/", "")} → ${afterRef.replace("refs/remotes/origin/", "")}`,
+      );
+      changed++;
+    }
+  }
+  log.info(`Summary: ${changed} symref(s) updated, ${skipped} skipped`);
+}
+
 // Main function
 async function main() {
   const options = parseArgs();
@@ -539,6 +617,11 @@ async function main() {
   }
 
   log.info(`Found ${repos.length} git repositories`);
+
+  if (options.repairRemoteHead) {
+    await runRepairRemoteHead(repos);
+    process.exit(0);
+  }
 
   if (options.dryRun) {
     log.info("Running in dry-run mode (no changes will be made)");

@@ -37,6 +37,14 @@ describe("parseArgs", () => {
     expect(parseArgs(["--skip-default-branch"]).skipDefaultBranch).toBe(true);
   });
 
+  test("parses --repair-remote-head", () => {
+    expect(parseArgs(["--repair-remote-head"]).repairRemoteHead).toBe(true);
+  });
+
+  test("defaults --repair-remote-head to false", () => {
+    expect(parseArgs([]).repairRemoteHead).toBe(false);
+  });
+
   test("parses --parallel with value", () => {
     expect(parseArgs(["--parallel", "5"]).parallel).toBe(5);
   });
@@ -135,11 +143,24 @@ describe("resolveDefaultBranch", () => {
     expect(resolveDefaultBranch(["main", "master"], "main")).toBe("main");
   });
 
-  test("ignores remote HEAD when it is not main or master", () => {
-    expect(resolveDefaultBranch(["main", "master", "develop"], "develop")).toBe("main");
+  test("trusts remoteHead pointing to develop when present in branches", () => {
+    // Repos where remote default is develop/dev/release should be honoured —
+    // not silently overridden by main/master precedence.
+    expect(resolveDefaultBranch(["main", "master", "develop"], "develop")).toBe("develop");
   });
 
-  test("ignores remote HEAD when only one of main/master exists", () => {
+  test("ignores remoteHead pointing to a non-env-branch (e.g. release/v2)", () => {
+    // Legacy repos with feature/release branches as GitHub default fall back
+    // to precedence rather than silently following weird defaults.
+    expect(resolveDefaultBranch(["release/v2", "develop"], "release/v2")).toBe("develop");
+  });
+
+  test("falls back to precedence when remoteHead points to a branch not in list", () => {
+    // Drifted / dangling symref — defensive fallback, no surprise.
+    expect(resolveDefaultBranch(["main", "master"], "gone-branch")).toBe("main");
+  });
+
+  test("falls back to precedence when remoteHead names a branch absent locally", () => {
     expect(resolveDefaultBranch(["main", "develop"], "master")).toBe("main");
   });
 
