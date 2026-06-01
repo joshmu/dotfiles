@@ -9,7 +9,8 @@ export GPG_TTY=$(tty)
 
 # Disable telemetry across all tools which support it
 # https://consoledonottrack.com/
-export DO_NOT_TRACK=1
+# THIS PREVENT CLAUDE CODE REMOTE CONTROL FEATURTES FROM WORKING, SO COMMENTED OUT FOR NOW
+# export DO_NOT_TRACK=1
 
 # AICHAT
 # https://github.com/sigoden/aichat/wiki/Environment-Variables#client-related-envs
