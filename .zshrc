@@ -12,7 +12,11 @@ fi
 
 # OH MY POSH
 #eval "$(oh-my-posh init zsh)"
-cached_eval "oh-my-posh" "oh-my-posh init zsh --config ~/.oh-my-mu.json"
+# Cache the resolved init BODY, not oh-my-posh's `source '<hashfile>'` pointer.
+# The hashfile name is a config hash; oh-my-posh rewrites it (version/config change)
+# and a frozen pointer dangles -> "no such file" at shell start. `oh-my-posh` stays
+# the first word so cached_eval still regenerates when the binary is upgraded.
+cached_eval "oh-my-posh" "oh-my-posh init zsh --config ~/.oh-my-mu.json | sed -E \"s/^source '(.*)'\$/\\1/\" | xargs cat"
 
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
 # Initialization code that may require console input (password prompts, [y/n]
@@ -105,8 +109,10 @@ source $ZSH/oh-my-zsh.sh
 
 # export MANPATH="/usr/local/man:$MANPATH"
 
-# You may need to manually set your language environment
-# export LANG=en_US.UTF-8
+# Language environment — REQUIRED. Without a UTF-8 locale, zsh falls back to the
+# C locale (MB_CUR_MAX=1) and counts each UTF-8 byte as a display column, which
+# breaks prompt/RPROMPT width math (oh-my-posh box corners drift / don't connect).
+export LANG=en_US.UTF-8
 
 # Preferred editor for local and remote sessions
 # if [[ -n $SSH_CONNECTION ]]; then

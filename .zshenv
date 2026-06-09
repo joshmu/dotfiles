@@ -12,5 +12,5 @@ export PATH="/Users/joshmu/.local/bin:$PATH"
 # --use-on-cd required: v1.39.0 applies version at init time only when this flag is present
 # chpwd hook is harmless in non-interactive shells (never fires)
 if command -v fnm &>/dev/null; then
-  eval "$(fnm env --use-on-cd --version-file-strategy=recursive --shell zsh)"
+  eval "$(fnm env --use-on-cd --version-file-strategy=recursive --log-level=quiet --shell zsh)"
 fi
