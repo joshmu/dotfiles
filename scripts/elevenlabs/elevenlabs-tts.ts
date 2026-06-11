@@ -131,6 +131,15 @@ class ElevenLabsTTS {
 
     log.info("Generating speech with ElevenLabs...");
 
+    // Bound the network call so a stalled connection can't hang callers (e.g.
+    // the notification hook) on the OS TCP timeout. On abort the caller's
+    // cascade falls through to a local tier (kokoro → say).
+    const controller = new AbortController();
+    const timeoutId = setTimeout(
+      () => controller.abort(),
+      Number(process.env.ELEVENLABS_TIMEOUT_MS) || 10000,
+    );
+
     try {
       const response = await fetch(url, {
         method: "POST",
@@ -139,6 +148,7 @@ class ElevenLabsTTS {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(requestBody),
+        signal: controller.signal,
       });
 
       if (!response.ok) {
@@ -171,6 +181,8 @@ class ElevenLabsTTS {
     } catch (error) {
       log.error(`Failed to generate speech: ${error}`);
       throw error;
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 
