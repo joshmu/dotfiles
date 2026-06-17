@@ -31,8 +31,8 @@
       ~/Library/Application Support/lazygit/config.yml: lazygit-config.yml
       ~/Library/Application Support/lazydocker/config.yml: lazydocker-config.yml
       ~/.config/gh-dash/config.yml: gh-dash-config.yml
-      ~/Desktop/obsidian/.obsidian/snippets: obsidian/snippets
-      ~/Desktop/obsidian/.obsidian.vimrc: obsidian/obsidian.vimrc
+      ~/vault/.obsidian/snippets: obsidian/snippets
+      ~/vault/.obsidian.vimrc: obsidian/obsidian.vimrc
       ~/.cursor/mcp.json: cursor/mcp.json
       ~/Library/Application Support/Claude/claude_desktop_config.json: claude_desktop_config.json
       ~/scripts: scripts

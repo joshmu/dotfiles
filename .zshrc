@@ -208,7 +208,7 @@ export PATH="$HOME/bin:$PATH"
 #export PATH="/Library/Frameworks/Python.framework/Versions/3.11/bin:${PATH}"
 
 # Obsidian local path
-export OBSIDIAN_PATH="/Users/joshmu/Desktop/obsidian"
+export OBSIDIAN_PATH="/Users/joshmu/vault"
 
 # terraform completion (bashcompinit loaded in consolidated compinit below)
 

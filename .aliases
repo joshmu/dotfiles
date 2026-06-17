@@ -116,7 +116,7 @@ alias img="chafa"
 alias kimi="ccr code"
 export PATH="$HOME/Desktop/code/ag-cli/bin:$PATH"
 # authoritative export lives in ~/.zshenv; this mirror is for discoverability
-: "${PERSONAL_VAULT:=$HOME/Desktop/obsidian}"
+: "${PERSONAL_VAULT:=$HOME/vault}"
 function ai-local() {
   output=$(ollama run codellama "$@")
   echo "$output" | glow

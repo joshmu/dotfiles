@@ -6,7 +6,7 @@ export HOMEBREW_NO_ANALYTICS=1
 export EDITOR="nvim"
 export VISUAL="nvim"
 
-export PERSONAL_VAULT="$HOME/Desktop/obsidian"
+export PERSONAL_VAULT="$HOME/vault"
 
 # uv
 export PATH="/Users/joshmu/.local/bin:$PATH"
