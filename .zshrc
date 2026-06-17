@@ -192,7 +192,7 @@ command -v rbenv >/dev/null && eval "$(rbenv init - --no-rehash zsh)"
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
-alias luamake=/Users/joshmu/Desktop/code/other/lua-language-server/3rd/luamake/luamake
+alias luamake=$HOME/Desktop/code/other/lua-language-server/3rd/luamake/luamake
 
 ### Added by the Heroku Toolbelt
 #export PATH="/usr/local/heroku/bin:$PATH"
@@ -208,12 +208,12 @@ export PATH="$HOME/bin:$PATH"
 #export PATH="/Library/Frameworks/Python.framework/Versions/3.11/bin:${PATH}"
 
 # Obsidian local path
-export OBSIDIAN_PATH="/Users/joshmu/vault"
+export OBSIDIAN_PATH="$HOME/vault"
 
 # terraform completion (bashcompinit loaded in consolidated compinit below)
 
 # pnpm
-export PNPM_HOME="/Users/joshmu/Library/pnpm"
+export PNPM_HOME="$HOME/Library/pnpm"
 case ":$PATH:" in
   *":$PNPM_HOME:"*) ;;
   *) export PATH="$PNPM_HOME:$PATH" ;;
@@ -239,8 +239,8 @@ cached_eval "uvx-completion" "uvx --generate-shell-completion zsh"
 command -v fnm >/dev/null && eval "$(fnm env --use-on-cd --version-file-strategy=recursive --log-level=quiet --shell zsh)"
 
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
-export SDKMAN_DIR="/Users/joshmu/.sdkman"
-[[ -s "/Users/joshmu/.sdkman/bin/sdkman-init.sh" ]] && source "/Users/joshmu/.sdkman/bin/sdkman-init.sh"
+export SDKMAN_DIR="$HOME/.sdkman"
+[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
 export PATH="$HOME/.jenv/bin:$PATH"
 # eval "$(jenv init -)"
 
@@ -253,17 +253,17 @@ source ~/completion-for-pnpm.zsh
 [ -f "$HOME/.local/bin/env" ] && . "$HOME/.local/bin/env"
 # The following lines have been added by Docker Desktop to enable Docker CLI completions.
 # Docker CLI completions (fpath only, compinit consolidated below)
-fpath=(/Users/joshmu/.docker/completions $fpath)
+fpath=($HOME/.docker/completions $fpath)
 
 # FX - JSON PRETTY PRINTER - fx.wtf
 cached_eval "fx-completion" "fx --comp bash"
 
 # Added by LM Studio CLI (lms)
-export PATH="$PATH:/Users/joshmu/.lmstudio/bin"
+export PATH="$PATH:$HOME/.lmstudio/bin"
 # End of LM Studio CLI section
 
 # Added by Windsurf
-export PATH="/Users/joshmu/.codeium/windsurf/bin:$PATH"
+export PATH="$HOME/.codeium/windsurf/bin:$PATH"
 
 # Added by me so that I can have a personal bin folder
 export PATH="$HOME/bin:$PATH"
@@ -302,7 +302,7 @@ export GPG_TTY=$(tty)
 [[ "$TERM_PROGRAM" == "kiro" ]] && . "$(kiro --locate-shell-integration-path zsh)"
 
 # The next line updates PATH for the Google Cloud SDK.
-if [ -f '/Users/joshmu/google-cloud-sdk/path.zsh.inc' ]; then . '/Users/joshmu/google-cloud-sdk/path.zsh.inc'; fi
+if [ -f "$HOME/google-cloud-sdk/path.zsh.inc" ]; then . "$HOME/google-cloud-sdk/path.zsh.inc"; fi
 
 # The next line enables shell command completion for gcloud.
-if [ -f '/Users/joshmu/google-cloud-sdk/completion.zsh.inc' ]; then . '/Users/joshmu/google-cloud-sdk/completion.zsh.inc'; fi
+if [ -f "$HOME/google-cloud-sdk/completion.zsh.inc" ]; then . "$HOME/google-cloud-sdk/completion.zsh.inc"; fi

@@ -8,8 +8,13 @@ export VISUAL="nvim"
 
 export PERSONAL_VAULT="$HOME/vault"
 
+# Per-machine overrides (gitignored ~/.zshenv.local) + agent-observability hook path.
+# Shared contract with the joshmu/claude settings.json hooks: ${AGENT_OBSERVABILITY_PATH}/hooks/*.ts
+[ -f "$HOME/.zshenv.local" ] && source "$HOME/.zshenv.local"
+export AGENT_OBSERVABILITY_PATH="${AGENT_OBSERVABILITY_PATH:-$HOME/Desktop/code/agent-observability}"
+
 # uv
-export PATH="/Users/joshmu/.local/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"
 
 # fnm - basic env for non-interactive shells (Claude agents, scripts, CI)
 # --use-on-cd required: v1.39.0 applies version at init time only when this flag is present

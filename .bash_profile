@@ -28,8 +28,8 @@ export PATH="/usr/local/heroku/bin:$PATH"
 export PATH="$HOME/bin:$PATH"
 
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
-export SDKMAN_DIR="/Users/joshmu/.sdkman"
-[[ -s "/Users/joshmu/.sdkman/bin/sdkman-init.sh" ]] && source "/Users/joshmu/.sdkman/bin/sdkman-init.sh"
+export SDKMAN_DIR="$HOME/.sdkman"
+[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
 
 complete -C /opt/homebrew/bin/terraform terraform
 . "$HOME/.cargo/env"
@@ -37,6 +37,6 @@ complete -C /opt/homebrew/bin/terraform terraform
 . "$HOME/.local/bin/env"
 
 # Added by LM Studio CLI (lms)
-export PATH="$PATH:/Users/joshmu/.lmstudio/bin"
+export PATH="$PATH:$HOME/.lmstudio/bin"
 # End of LM Studio CLI section
 

@@ -13,7 +13,7 @@
 
 # https://code.claude.com/docs/en/cli-reference
 
-timeout 30s /Users/joshmu/.local/bin/claude -p "$1" \
+timeout 30s $HOME/.local/bin/claude -p "$1" \
   --model haiku \
   --allowedTools "Read" "Grep" "Glob" \
   --disallowedTools "Write" "Edit" "MultiEdit" "Bash" "TodoWrite" \

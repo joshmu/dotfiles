@@ -16,7 +16,7 @@ eval "$(fnm env --use-on-cd --version-file-strategy=recursive --log-level=quiet 
 . "$HOME/.local/bin/env"
 
 # Added by LM Studio CLI (lms)
-export PATH="$PATH:/Users/joshmu/.lmstudio/bin"
+export PATH="$PATH:$HOME/.lmstudio/bin"
 # End of LM Studio CLI section
 
 
