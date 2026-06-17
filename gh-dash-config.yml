@@ -12,7 +12,7 @@ defaults:
   refetchIntervalMinutes: 30
 
 repoPaths:
-  brevilledigital/*: ~/work/breville/source/*
+  brevilledigital/*: ~/work/brg/repos/*
   joshmu/*: ~/Desktop/code/*
 
 prSections:
