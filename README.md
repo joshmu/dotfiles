@@ -21,6 +21,34 @@ brew bundle install --file=Brewfile
 brew bundle dump --force --file=Brewfile
 ```
 
+### Fresh-machine prerequisites
+
+These are required for a clean setup on a new machine (not handled by `./install`):
+
+```bash
+# 1. oh-my-zsh + the custom plugins referenced in .zshrc, or the shell errors on startup
+RUNZSH=no CHSH=no KEEP_ZSHRC=yes sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+ZSH_CUSTOM="$HOME/.oh-my-zsh/custom"
+git clone https://github.com/zsh-users/zsh-autosuggestions      "$ZSH_CUSTOM/plugins/zsh-autosuggestions"
+git clone https://github.com/zsh-users/zsh-syntax-highlighting  "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting"
+git clone https://github.com/MichaelAquilina/zsh-you-should-use "$ZSH_CUSTOM/plugins/you-should-use"
+git clone https://github.com/paulirish/git-open                 "$ZSH_CUSTOM/plugins/git-open"
+git clone https://github.com/marlonrichert/zsh-autocomplete     "$ZSH_CUSTOM/plugins/zsh-autocomplete"
+
+# 2. Per-machine git signing key (NOT tracked — varies per machine)
+cp gitconfig.local.example ~/.gitconfig.local
+#   then edit ~/.gitconfig.local so user.signingkey points at THIS machine's
+#   public signing key (e.g. ~/.ssh/<signing-key>.pub), and register that key on
+#   GitHub as a Signing key. The shared `gitconfig` includes ~/.gitconfig.local.
+
+# 3. Local allowed signers (for `git log --show-signature`; not tracked)
+#   ~/.config/git/allowed_signers — one line per identity, e.g.:
+#   you@example.com namespaces="git" ssh-ed25519 AAAA... <comment>
+```
+
+> **Note:** `HOMEBREW_NO_ANALYTICS=1` is exported in `.zshenv`, so Homebrew analytics
+> are disabled on every machine automatically.
+
 ### Development Tools
 ```bash
 # Git worktree automation - create/manage worktrees interactively

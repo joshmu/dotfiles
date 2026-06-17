@@ -1,6 +1,11 @@
 # This is Git's per-user configuration file.
+
+# Machine-specific values (e.g. user.signingkey) live in an untracked
+# ~/.gitconfig.local on each machine. See gitconfig.local.example / README.
+[include]
+	path = ~/.gitconfig.local
+
 [user]
-	signingkey = /Users/joshmu/.ssh/id_rsa.pub
 	email = hello@joshmu.dev
 	name = Josh Mu
 
@@ -55,6 +60,6 @@
 [gpg]
 	format = ssh
 [gpg "ssh"]
-	allowedSignersFile = /Users/joshmu/.config/git/allowed_signers
+	allowedSignersFile = ~/.config/git/allowed_signers
 [url "git@github.com:"]
 	insteadOf = https://github.com/

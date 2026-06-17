@@ -187,7 +187,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 
 # rbenv
 export PATH="$HOME/.rbenv/bin:$PATH"
-eval "$(rbenv init - --no-rehash zsh)"
+command -v rbenv >/dev/null && eval "$(rbenv init - --no-rehash zsh)"
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
@@ -235,7 +235,7 @@ cached_eval "uv-completion" "uv generate-shell-completion zsh"
 cached_eval "uvx-completion" "uvx --generate-shell-completion zsh"
 
 # fnm - interactive cd hook (basic env already loaded in .zshenv)
-eval "$(fnm env --use-on-cd --version-file-strategy=recursive --log-level=quiet --shell zsh)"
+command -v fnm >/dev/null && eval "$(fnm env --use-on-cd --version-file-strategy=recursive --log-level=quiet --shell zsh)"
 
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
 export SDKMAN_DIR="/Users/joshmu/.sdkman"
@@ -249,7 +249,7 @@ export PATH="$HOME/.jenv/bin:$PATH"
 source ~/.aliases
 source ~/completion-for-pnpm.zsh
 
-. "$HOME/.local/bin/env"
+[ -f "$HOME/.local/bin/env" ] && . "$HOME/.local/bin/env"
 # The following lines have been added by Docker Desktop to enable Docker CLI completions.
 # Docker CLI completions (fpath only, compinit consolidated below)
 fpath=(/Users/joshmu/.docker/completions $fpath)
@@ -276,7 +276,7 @@ export PAGER="nvimpager"
 # python version management
 export PYENV_ROOT="$HOME/.pyenv"
 [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init - --no-rehash zsh)"
+command -v pyenv >/dev/null && eval "$(pyenv init - --no-rehash zsh)"
 
 # ----------------------
 # COMPLETION SYSTEM (consolidated — single compinit call)

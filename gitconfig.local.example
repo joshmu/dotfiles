@@ -1,0 +1,13 @@
+# Machine-specific git config.
+#
+# Copy this to ~/.gitconfig.local on each machine (it is NOT tracked by the repo).
+# The shared `gitconfig` pulls it in via:  [include] path = ~/.gitconfig.local
+#
+# This holds values that differ per machine — primarily the SSH commit signing
+# key, whose filename can vary from machine to machine (e.g. id_ed25519.pub).
+# The public key referenced here must be registered on GitHub as a *Signing key*
+# (Settings -> SSH and GPG keys -> New SSH key -> Key type: Signing key) for commits
+# to show as "Verified".
+
+[user]
+	signingkey = ~/.ssh/id_ed25519.pub

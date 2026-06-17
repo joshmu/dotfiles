@@ -1,4 +1,7 @@
-. "$HOME/.cargo/env"
+[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
+
+# Disable Homebrew analytics on all machines
+export HOMEBREW_NO_ANALYTICS=1
 
 export EDITOR="nvim"
 export VISUAL="nvim"
