@@ -6,7 +6,11 @@ function M.openIDEAtPosition(shouldCloseBuffer, ideShellCmd)
   ideShellCmd = ideShellCmd or 'code' -- Default to vscode
 
   local curpos = vim.fn.getcurpos()
-  local command = string.format('!%s --goto %s:%d:%d', ideShellCmd, vim.fn.expand '%:p', curpos[2], curpos[3])
+  -- Cursor (agent-era builds) opens the Agents window by default on a fresh CLI launch; the
+  -- in-app "Open Agents Window on startup" toggle does NOT cover terminal launches, so pass
+  -- --classic to force the classic editor window. Cursor-only flag — never send it to vscode `code`.
+  local classic = ideShellCmd == 'cursor' and ' --classic' or ''
+  local command = string.format('!%s --goto %s:%d:%d%s', ideShellCmd, vim.fn.expand '%:p', curpos[2], curpos[3], classic)
   vim.cmd(':silent ' .. command)
 
   if shouldCloseBuffer then
