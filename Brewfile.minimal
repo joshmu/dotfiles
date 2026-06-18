@@ -1,7 +1,11 @@
 tap "atlassian/acli"
 tap "oven-sh/bun"
+# Official Amazon AWS command-line interface
+brew "awscli"
 # Clone of cat(1) with syntax highlighting and Git integration
 brew "bat"
+# Versatile and fast Unicode/ASCII/ANSI graphics renderer
+brew "chafa"
 # GNU File, Shell, and Text utilities
 brew "coreutils"
 # Power of curl, ease of use of httpie
@@ -42,6 +46,8 @@ brew "neovim"
 brew "nvimpager"
 # Prompt theme engine for any shell
 brew "oh-my-posh"
+# Create, run, and share large language models (LLMs)
+brew "ollama"
 # Search tool like grep and The Silver Searcher
 brew "ripgrep"
 # Static analysis and lint tool, for (ba)sh scripts
