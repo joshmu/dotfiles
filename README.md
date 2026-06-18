@@ -14,11 +14,14 @@ This is a personal dotfiles repository for macOS system configuration, shell cus
 # Install git hooks (pre-commit, commit-msg) after cloning
 bash scripts/install-hooks.sh
 
-# Install packages via Homebrew (manages formulae, casks, and VSCode extensions)
+# Install packages via Homebrew (full superset — union across all machines)
 brew bundle install --file=Brewfile
 
-# Update Brewfile with current installed packages
-brew bundle dump --force --file=Brewfile
+# Lean machine instead: install only the minimal subset (this machine's snapshot)
+brew bundle install --file=Brewfile.minimal
+
+# Refresh the per-machine minimal snapshot (safe; never clobbers the superset)
+brew bundle dump --force --file=Brewfile.minimal
 ```
 
 ### Fresh-machine prerequisites
@@ -128,7 +131,9 @@ Custom keybindings in `lazygit-config.yml`:
 - **nvimpager**: Configured as `$PAGER` for git and man pages
 
 ### Tool Integrations
-- **Brewfile**: Declarative package management (brew formulae, casks, VSCode extensions)
+- **Brewfile**: Declarative package management (brew formulae, casks, VSCode extensions). Two files:
+  - `Brewfile` — full **superset** (union across all machines), hand-curated. Add packages here manually; do **not** `brew bundle dump` over it (any single machine has only a subset, so a dump would delete everything not installed locally).
+  - `Brewfile.minimal` — lean **subset** snapshot of a single machine (CLI dev toolchain incl. `shellcheck`, `fnm`, `bun`, `gitleaks`, etc.). Regenerate with `brew bundle dump --force --file=Brewfile.minimal`.
 - **Claude Desktop**: Config at `claude_desktop_config.json`
 - **Cursor**: MCP config at `cursor/mcp.json`
 - **Obsidian**: Vim bindings and snippets symlinked to vault
@@ -180,7 +185,7 @@ notify "message text"  # function defined in .aliases
 
 ## Important Notes
 
-- **Brewfile management**: Always use `brew bundle dump` to update Brewfile after installing new packages
+- **Brewfile management**: Edit the full `Brewfile` (superset) by hand. Never `brew bundle dump` over it — a single machine holds only a subset, so a dump would drop everything not installed locally. `brew bundle dump --force --file=Brewfile.minimal` only ever targets the per-machine minimal snapshot.
 - **Dotbot symlinks**: Changes to files in this repo immediately affect system (files are symlinked, not copied)
 - **Script execution**: TypeScript scripts use Bun runtime (require `bun` installed via Homebrew)
 - **Package manager selection**: Prefer pnpm for new projects; detect from lock files otherwise
