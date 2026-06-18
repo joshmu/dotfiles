@@ -17,7 +17,7 @@ fi
 # changes -> "no such file" at shell start). Robust across oh-my-posh versions, whose
 # non-print output format differs (v26 `source '...'` vs v29 `export ...;source $'...'`).
 # cached_eval caches the body and regenerates when the oh-my-posh binary is upgraded.
-cached_eval "oh-my-posh" "oh-my-posh init zsh --config ~/.oh-my-mu.json --print"
+cached_eval "oh-my-posh" "oh-my-posh init zsh --config ~/.oh-my-mu.json --print" ~/.oh-my-mu.json
 
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
 # Initialization code that may require console input (password prompts, [y/n]

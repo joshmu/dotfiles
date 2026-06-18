@@ -11,6 +11,12 @@
           "template": " {{ .UserName }} ",
           "foreground": "#cdd6f4",
           "background": "#45475a",
+          "foreground_templates": [
+            "{{ if .Env.POSH_USER_COLOR }}#f8f8f2{{ end }}"
+          ],
+          "background_templates": [
+            "{{ if .Env.POSH_USER_COLOR }}{{ .Env.POSH_USER_COLOR }}{{ end }}"
+          ],
           "type": "session",
           "style": "diamond"
         },

@@ -18,6 +18,15 @@ export AGENT_OBSERVABILITY_PATH="${AGENT_OBSERVABILITY_PATH:-$HOME/Desktop/code/
 # generated before the ~/.oh-my-mu.json symlink existed, or if that cache is cleared).
 export POSH_THEME="$HOME/.oh-my-mu.json"
 
+# Per-user prompt colour: hash `whoami` to a stable colour (shared with the tmux
+# left block via the same script) for the oh-my-posh username segment. Set here
+# next to POSH_THEME so it's present whenever the prompt renders, not dependent on
+# .zshrc ordering. Interactive-only — the prompt never renders in scripts, so skip
+# the subprocess cost there.
+if [[ -o interactive ]]; then
+  export POSH_USER_COLOR="$(~/dotfiles/scripts/user-hash-color.sh)"
+fi
+
 # uv
 export PATH="$HOME/.local/bin:$PATH"
 
