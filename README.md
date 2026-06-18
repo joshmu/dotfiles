@@ -44,6 +44,9 @@ cp gitconfig.local.example ~/.gitconfig.local
 # 3. Local allowed signers (for `git log --show-signature`; not tracked)
 #   ~/.config/git/allowed_signers — one line per identity, e.g.:
 #   you@example.com namespaces="git" ssh-ed25519 AAAA... <comment>
+
+# 4. Curated macOS defaults (key-repeat / press-and-hold, Finder, Dock, trackpad)
+bash scripts/macos-defaults.sh
 ```
 
 > **Note:** `HOMEBREW_NO_ANALYTICS=1` is exported in `.zshenv`, so Homebrew analytics
