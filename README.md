@@ -111,6 +111,8 @@ The repository uses **dotbot** (git submodule at `./dotbot/`) with configuration
 - **Aliases**: Defined in `.aliases` (sourced by `.zshrc`)
 - **Private aliases**: Optionally loaded from `~/.aliases_private` (not in repo)
 - **Package completions**: `completion-for-pnpm.zsh` for pnpm shell completions
+- **Per-user whoami colour**: `scripts/user-hash-color.sh` hashes `whoami` (cksum) into a stable colour from a dark palette deliberately distinct from Dracula's bright segments, so each account (e.g. work `Josh.Mu` vs personal `joshmu`) gets its own identity badge. Consumed in two places: the oh-my-posh username segment reads `POSH_USER_COLOR` (exported from `.zshenv`), and the tmux left block is recoloured by `scripts/tmux-user-block.sh` (run via `run-shell` after tpm in `tmux.conf`, overriding Dracula's hardcoded green).
+- **oh-my-posh cache gotcha**: the prompt loads through `cached_eval` (`zsh/eval-cache.zsh`), which caches `oh-my-posh init`. The cached init bakes a **fixed `POSH_SESSION_ID`**, and `print primary` resolves the theme from the per-session config cache (NOT from `POSH_THEME` at render time — that's ignored). So editing `oh-my-mu.json` does nothing until the init regenerates (new session id → fresh cache). `cached_eval` takes an optional watch-file and the oh-my-posh call passes `~/.oh-my-mu.json`, so theme edits auto-apply on the next shell. Do NOT run `oh-my-posh cache clear` alone — it drops the config and the prompt falls back to the default theme until the init is regenerated. Manual full reset: `trash ~/.cache/zsh/oh-my-posh.zsh && oh-my-posh cache clear && exec zsh`.
 
 ### Lazygit Customization
 Custom keybindings in `lazygit-config.yml`:
