@@ -8,10 +8,10 @@
       "segments": [
         {
           "leading_diamond": "\u256d\u2500\ue0b6",
-          "template": " {{ if .WSL }}WSL at {{ end }}{{.Icon}} ",
+          "template": " {{ .UserName }} ",
           "foreground": "#cdd6f4",
           "background": "#45475a",
-          "type": "os",
+          "type": "session",
           "style": "diamond"
         },
         {
