@@ -13,6 +13,11 @@ export PERSONAL_VAULT="$HOME/vault"
 [ -f "$HOME/.zshenv.local" ] && source "$HOME/.zshenv.local"
 export AGENT_OBSERVABILITY_PATH="${AGENT_OBSERVABILITY_PATH:-$HOME/Desktop/code/agent-observability}"
 
+# oh-my-posh: pin the theme directly so the prompt never depends on the session->config cache
+# in ~/.cache/oh-my-posh (which silently falls back to the default theme if the cached init was
+# generated before the ~/.oh-my-mu.json symlink existed, or if that cache is cleared).
+export POSH_THEME="$HOME/.oh-my-mu.json"
+
 # uv
 export PATH="$HOME/.local/bin:$PATH"
 
