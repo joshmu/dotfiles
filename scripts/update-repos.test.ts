@@ -1,4 +1,7 @@
-import { describe, test, expect } from "bun:test";
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import { mkdtempSync, mkdirSync, rmSync } from "fs";
+import { tmpdir } from "os";
+import { join } from "path";
 import {
   parseArgs,
   chunk,
@@ -6,6 +9,8 @@ import {
   resolveDefaultBranch,
   resolveMostActiveEnvBranch,
   previewBranchSwitch,
+  discoverGitRepos,
+  SKIP_DIRS,
   ENV_BRANCHES,
   DEFAULT_BRANCH_PRECEDENCE,
 } from "./update-repos";
@@ -273,5 +278,92 @@ describe("previewBranchSwitch", () => {
 
   test("returns null when current branch is the disambiguated choice", () => {
     expect(previewBranchSwitch("master", ["main", "master"], "master")).toBeNull();
+  });
+});
+
+describe("parseArgs roots", () => {
+  test("collects bare path args as roots", () => {
+    const opts = parseArgs(["/a/b", "/c/d"]);
+    expect(opts.roots).toEqual(["/a/b", "/c/d"]);
+  });
+
+  test("separates roots from flags", () => {
+    const opts = parseArgs(["~/repos", "--skip-default-branch", "~/code"]);
+    expect(opts.roots).toEqual(["~/repos", "~/code"]);
+    expect(opts.skipDefaultBranch).toBe(true);
+  });
+
+  test("does not treat --parallel value as a root", () => {
+    const opts = parseArgs(["~/repos", "--parallel", "5"]);
+    expect(opts.roots).toEqual(["~/repos"]);
+    expect(opts.parallel).toBe(5);
+  });
+
+  test("defaults to empty roots", () => {
+    expect(parseArgs([]).roots).toEqual([]);
+  });
+});
+
+describe("discoverGitRepos", () => {
+  let base: string;
+
+  // Build a fixture tree:
+  //   base/repoA/.git              → discovered
+  //   base/container/repoB/.git    → discovered (container walked through)
+  //   base/container/repoB/nested/.git → NOT discovered (pruned at repoB)
+  //   base/node_modules/pkg/.git   → NOT discovered (skip dir)
+  //   base/plain/                  → no repo, nothing discovered
+  //   base/singleRepo/.git         → discovered when passed as a root directly
+  beforeAll(() => {
+    base = mkdtempSync(join(tmpdir(), "update-repos-test-"));
+    const mkrepo = (p: string) => mkdirSync(join(p, ".git"), { recursive: true });
+    mkrepo(join(base, "repoA"));
+    mkrepo(join(base, "container", "repoB"));
+    mkrepo(join(base, "container", "repoB", "nested"));
+    mkrepo(join(base, "node_modules", "pkg"));
+    mkdirSync(join(base, "plain", "sub"), { recursive: true });
+    mkrepo(join(base, "singleRepo"));
+  });
+
+  afterAll(() => {
+    rmSync(base, { recursive: true, force: true });
+  });
+
+  test("discovers repos in a container, pruning at the repo boundary", () => {
+    const repos = discoverGitRepos([join(base, "container")]);
+    expect(repos).toEqual([join(base, "container", "repoB")]);
+    // nested repo inside repoB must NOT appear
+    expect(repos).not.toContain(join(base, "container", "repoB", "nested"));
+  });
+
+  test("walks nested containers and skips heavy/vendored dirs", () => {
+    const repos = discoverGitRepos([base]);
+    expect(repos).toContain(join(base, "repoA"));
+    expect(repos).toContain(join(base, "container", "repoB"));
+    expect(repos).toContain(join(base, "singleRepo"));
+    // node_modules contents pruned
+    expect(repos).not.toContain(join(base, "node_modules", "pkg"));
+    // boundary prune holds even via the top-level walk
+    expect(repos).not.toContain(join(base, "container", "repoB", "nested"));
+  });
+
+  test("treats a root that is itself a repo as a single repo", () => {
+    expect(discoverGitRepos([join(base, "singleRepo")])).toEqual([join(base, "singleRepo")]);
+  });
+
+  test("skips missing roots without throwing", () => {
+    const repos = discoverGitRepos([join(base, "does-not-exist"), join(base, "repoA")]);
+    expect(repos).toEqual([join(base, "repoA")]);
+  });
+
+  test("dedupes overlapping roots", () => {
+    const repos = discoverGitRepos([base, join(base, "container")]);
+    const repoB = join(base, "container", "repoB");
+    expect(repos.filter((r) => r === repoB)).toHaveLength(1);
+  });
+
+  test("SKIP_DIRS covers the repo-boundary marker and node_modules", () => {
+    expect(SKIP_DIRS.has(".git")).toBe(true);
+    expect(SKIP_DIRS.has("node_modules")).toBe(true);
   });
 });

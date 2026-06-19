@@ -44,6 +44,11 @@ interface Options {
   repairRemoteHead: boolean;
   byActivity: boolean;
   parallel: number;
+  // Explicit root directories to discover repos under. Each root is walked
+  // recursively, pruning at the first repo boundary (a dir containing .git),
+  // so containers (many repos), nested containers, and single repos are all
+  // handled uniformly. Empty → fall back to scanning the current directory.
+  roots: string[];
 }
 
 export function parseArgs(argv?: string[]): Options {
@@ -56,6 +61,7 @@ export function parseArgs(argv?: string[]): Options {
     repairRemoteHead: false,
     byActivity: false,
     parallel: 10, // Default to 10 parallel operations
+    roots: [],
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -98,8 +104,11 @@ export function parseArgs(argv?: string[]): Options {
       default:
         if (!arg.startsWith("--") && i > 0 && args[i - 1] === "--parallel") {
           // This is handled in the --parallel case
-        } else {
+        } else if (arg.startsWith("--")) {
           log.warn(`Unknown option: ${arg}`);
+        } else {
+          // Bare argument → treat as a root directory to scan.
+          options.roots.push(arg);
         }
     }
   }
@@ -111,10 +120,13 @@ function showHelp() {
   console.log(`
 ${colors.bright}Repository Updater${colors.reset}
 
-Updates all git repositories found in the current directory.
+Updates git repositories discovered under one or more root directories.
+With no root given, scans the current directory. Each root is walked
+recursively and pruned at the first repo boundary, so containers, nested
+containers, and single repos are all handled. Missing roots are skipped.
 
 ${colors.bright}Usage:${colors.reset}
-  update-repos [options]
+  update-repos [roots...] [options]
 
 ${colors.bright}Options:${colors.reset}
   --stash                Stash uncommitted changes before pulling
@@ -129,7 +141,9 @@ ${colors.bright}Options:${colors.reset}
   -h, --help             Show this help message
 
 ${colors.bright}Examples:${colors.reset}
-  update-repos                          # Update 10 repos at a time, switch to default branch
+  update-repos                          # Scan current directory
+  update-repos ~/work/brg/repos ~/Desktop/code ~/.claude ~/dotfiles
+                                        # Scan multiple curated roots (missing ones skipped)
   update-repos --parallel 5             # Update 5 repos concurrently
   update-repos --skip-default-branch    # Update without switching branches
   update-repos --stash --parallel 15    # Stash changes and update 15 repos at a time
@@ -265,26 +279,75 @@ function isGitRepo(path: string): boolean {
   return existsSync(join(path, ".git"));
 }
 
-// Find all git repositories in current directory
-function findGitRepos(basePath: string): string[] {
-  const repos: string[] = [];
+// Directories we never descend into while discovering repos. `.git` is the
+// repo-boundary marker (handled by pruning), the rest are heavy/irrelevant
+// trees that would only slow the walk or surface vendored repos we don't own.
+export const SKIP_DIRS = new Set([
+  ".git",
+  "node_modules",
+  ".next",
+  "dist",
+  "build",
+  "out",
+  "vendor",
+  ".cache",
+  ".turbo",
+  "coverage",
+  ".venv",
+  "venv",
+  "__pycache__",
+  ".pnpm",
+  ".yarn",
+]);
 
-  try {
-    const entries = readdirSync(basePath, { withFileTypes: true });
+// Recursively discover git repos under one or more root directories.
+//
+// Walk semantics: each directory is checked first — if it is itself a repo
+// (contains .git) it is recorded and we STOP descending (prune at the repo
+// boundary). This means nested worktrees, submodules, and vendored repos
+// inside a discovered repo are never touched. Non-repo containers are walked
+// further, so a container-of-containers (e.g. code/ → open-source/ → repo)
+// resolves to its leaf repos. A root that is itself a single repo (dotfiles,
+// .claude) resolves to just that repo.
+//
+// Missing roots are skipped with a warning rather than failing — this is what
+// makes a single root list portable across machines (a machine simply skips
+// the roots it doesn't have).
+export function discoverGitRepos(roots: string[], maxDepth = 5): string[] {
+  const found = new Set<string>();
+
+  const walk = (dir: string, depth: number) => {
+    if (depth > maxDepth) return;
+
+    // Repo boundary: record and do not descend.
+    if (isGitRepo(dir)) {
+      found.add(dir);
+      return;
+    }
+
+    let entries;
+    try {
+      entries = readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return; // unreadable dir — skip quietly
+    }
 
     for (const entry of entries) {
-      if (entry.isDirectory()) {
-        const fullPath = join(basePath, entry.name);
-        if (isGitRepo(fullPath)) {
-          repos.push(fullPath);
-        }
-      }
+      if (!entry.isDirectory()) continue;
+      if (SKIP_DIRS.has(entry.name)) continue;
+      walk(join(dir, entry.name), depth + 1);
     }
-  } catch (error) {
-    log.error(`Failed to read directory: ${error}`);
+  };
+
+  for (const root of roots) {
+    if (!existsSync(root)) {
+      log.warn(`Root not found, skipping: ${root}`);
+      continue;
+    }
+    walk(root, 0);
   }
 
-  return repos.sort();
+  return [...found].sort();
 }
 
 // Check if repo has uncommitted changes
@@ -759,13 +822,18 @@ async function main() {
     process.exit(0);
   }
 
-  const currentDir = process.cwd();
-  log.info(`Scanning for git repositories in: ${currentDir}`);
+  const roots = options.roots.length > 0 ? options.roots : [process.cwd()];
 
-  const repos = findGitRepos(currentDir);
+  if (options.roots.length > 0) {
+    log.info(`Scanning roots: ${roots.join(", ")}`);
+  } else {
+    log.info(`Scanning for git repositories in: ${process.cwd()}`);
+  }
+
+  const repos = discoverGitRepos(roots);
 
   if (repos.length === 0) {
-    log.warn("No git repositories found in current directory");
+    log.warn("No git repositories found");
     process.exit(0);
   }
 
