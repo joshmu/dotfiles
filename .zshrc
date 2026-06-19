@@ -150,6 +150,22 @@ bindkey -v
 #bindkey '^j' autosuggest-accept
 bindkey '^ ' autosuggest-accept
 
+# ZSH-AUTOCOMPLETE — restore arrow-key navigation of the completion list.
+# The current (2026) zsh-autocomplete reassigned the arrows to history-search,
+# so pressing Down hunted history (ringing the terminal bell at the boundary)
+# instead of stepping into the live list shown below the prompt. The 2022
+# version on the personal machine let Down walk into that list directly.
+# Reproduce that: on a non-empty line Down enters the menu (menu-select); on an
+# empty line Down still scrolls history. Up is left as history (matches old UX).
+# Must come AFTER `source $ZSH/oh-my-zsh.sh` above, which loads the plugin.
+_mu-down-or-menu() {
+  if [[ -n $BUFFER ]]; then zle menu-select; else zle down-line-or-history; fi
+}
+zle -N _mu-down-or-menu
+bindkey '^[[B' _mu-down-or-menu '^[OB' _mu-down-or-menu          # Down: enter the live menu
+bindkey -M menuselect '^[[A' up-line-or-history   '^[OA' up-line-or-history    # in-menu: Up
+bindkey -M menuselect '^[[B' down-line-or-history '^[OB' down-line-or-history  # in-menu: Down
+
 # REMOVE COMP NAME FROM PROMPT
 # removed 'promp_context()' as it is uneeded with p10k
 # prompt_context() {
