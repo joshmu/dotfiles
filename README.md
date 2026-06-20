@@ -50,6 +50,13 @@ cp gitconfig.local.example ~/.gitconfig.local
 
 # 4. Curated macOS defaults (key-repeat / press-and-hold, Finder, Dock, trackpad)
 bash scripts/macos-defaults.sh
+
+# 5. Per-machine agent-observability path (only if it sits off the default — NOT tracked)
+#   ~/.claude settings.json hooks resolve ${AGENT_OBSERVABILITY_PATH}/hooks/*.ts.
+#   .zshenv defaults it to ~/Desktop/code/agent-observability; on a machine where the
+#   repo lives elsewhere, create the gitignored override (see .zshenv for detail):
+echo 'export AGENT_OBSERVABILITY_PATH="$HOME/code/agent-observability"' > ~/.zshenv.local
+#   Resolved at shell launch, so relaunch any long-lived process (Claude cc-daemon) after.
 ```
 
 > **Note:** `HOMEBREW_NO_ANALYTICS=1` is exported in `.zshenv`, so Homebrew analytics

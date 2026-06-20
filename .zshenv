@@ -3,13 +3,29 @@
 # Disable Homebrew analytics on all machines
 export HOMEBREW_NO_ANALYTICS=1
 
+# gws (Google Workspace CLI): force file-backed credential storage. The default
+# macOS keychain backend needs an interactive UI to unlock, so it fails with
+# "User interaction is not allowed" from non-interactive shells (Claude agents,
+# cron-spawned sentinel) — and on that failure gws DELETES the encrypted creds.
+# File backend stores creds under ~/.config/gws so headless automation can read them.
+export GOOGLE_WORKSPACE_CLI_KEYRING_BACKEND=file
+
 export EDITOR="nvim"
 export VISUAL="nvim"
 
 export PERSONAL_VAULT="$HOME/vault"
 
-# Per-machine overrides (gitignored ~/.zshenv.local) + agent-observability hook path.
-# Shared contract with the joshmu/claude settings.json hooks: ${AGENT_OBSERVABILITY_PATH}/hooks/*.ts
+# agent-observability hook path — the ~/.claude settings.json hooks reference it as
+# ${AGENT_OBSERVABILITY_PATH}/hooks/*.ts, so if this is empty those hooks resolve to
+# /hooks/*.ts and fail. Resolution order:
+#   1. ~/.zshenv.local — optional per-machine override. Gitignored and NOT in this
+#      repo, so it never syncs; each machine writes its own. Needed only when the repo
+#      sits off the default path, e.g.:
+#        export AGENT_OBSERVABILITY_PATH="$HOME/code/agent-observability"
+#   2. the :- default below ($HOME/Desktop/code/agent-observability).
+# Resolved at SHELL LAUNCH — a long-lived process (e.g. Claude's shared cc-daemon that
+# spawns agents-view background agents) started before this was wired keeps a stale or
+# empty value and only picks up the correct one after a full relaunch.
 [ -f "$HOME/.zshenv.local" ] && source "$HOME/.zshenv.local"
 export AGENT_OBSERVABILITY_PATH="${AGENT_OBSERVABILITY_PATH:-$HOME/Desktop/code/agent-observability}"
 
