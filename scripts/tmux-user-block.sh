@@ -14,7 +14,8 @@ here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 c="$("$here/user-hash-color.sh")"   # per-user block background
 fg="#f8f8f2"                         # white text — readable on every (dark) palette colour
-statusbg="#44475a"                   # Dracula status bar bg (neutral)
+sessionbg="#282a36"                  # Dracula dark_gray — darker than the #44475a window blocks
+                                     # so the session name doesn't read as another window
 white="#f8f8f2"                      # Dracula default fg, for the neutral session text
 prefixbg="#f1fa8c"                   # Dracula yellow, shown while the prefix is held
 
@@ -27,4 +28,4 @@ icon="$(tmux show-options -gv @dracula-show-left-icon 2>/dev/null || true)"
 # Flat coloured block behind the whoami value only, then the session name in the
 # neutral status bar. Colour never extends past the value (no arrow/tip).
 tmux set-option -g status-left \
-  "#[fg=${fg},bg=${c}]#{?client_prefix,#[bg=${prefixbg}],} ${icon} #[fg=${white},bg=${statusbg},nobold] #S "
+  "#[fg=${fg},bg=${c}]#{?client_prefix,#[bg=${prefixbg}],} ${icon} #[fg=${white},bg=${sessionbg},nobold] #S "
