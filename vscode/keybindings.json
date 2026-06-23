@@ -1,0 +1,523 @@
+[
+  {
+    "key": "ctrl+c",
+    "command": "editor.action.wordHighlight.trigger"
+  },
+  // wrap html elem
+  {
+    "key": "shift+cmd+a",
+    "command": "editor.emmet.action.wrapWithAbbreviation"
+  },
+  // switch vscode window
+  {
+    "key": "alt+tab",
+    "command": "workbench.action.quickSwitchWindow"
+  },
+  // move through search fields
+  {
+    "key": "shift+cmd+j",
+    "command": "search.focus.nextInputBox",
+    // "when": "inSearchEditor && inputBoxFocus || inputBoxFocus && searchViewletVisible"
+    "when": "inSearchEditor || searchViewletVisible"
+  },
+  {
+    "key": "shift+cmd+k",
+    "command": "search.focus.previousInputBox",
+    "when": "inSearchEditor || searchViewletVisible"
+  },
+  // Toggle between groups (EDITOR)
+  {
+    "key": "ctrl+h",
+    "command": "workbench.action.focusLeftGroup",
+    "when": "editorTextFocus && vim.active && vim.mode != 'Insert'"
+  },
+  {
+    "key": "ctrl+l",
+    "command": "workbench.action.focusRightGroup",
+    "when": "editorTextFocus && vim.active && vim.mode != 'Insert'"
+  },
+  {
+    "key": "ctrl+k",
+    "command": "workbench.action.focusAboveGroup",
+    "when": "editorTextFocus && vim.active && vim.mode != 'Insert'"
+  },
+  {
+    "key": "ctrl+j",
+    "command": "workbench.action.focusBelowGroup",
+    "when": "editorTextFocus && vim.active && vim.mode != 'Insert'"
+  },
+  // Toggle between groups (DIFF)
+  {
+    "key": "ctrl+h",
+    "command": "workbench.action.compareEditor.focusSecondarySide",
+    "when": "isInDiffEditor && vim.active && vim.mode != 'Insert'"
+  },
+  {
+    "key": "ctrl+l",
+    "command": "workbench.action.compareEditor.focusPrimarySide",
+    "when": "isInDiffEditor && vim.active && vim.mode != 'Insert'"
+  },
+  // jump to git changes
+  {
+    "key": "ctrl+shift+alt+cmd+j",
+    "command": "workbench.action.compareEditor.nextChange",
+    "when": "textCompareEditorVisible  && isInDiffEditor"
+  },
+  // Toggle between terminal and editor focus
+  {
+    "key": "ctrl+'",
+    "command": "workbench.action.terminal.focus",
+    "when": "editorTextFocus"
+  },
+  // focus on editor from anywhere
+  {
+    "key": "ctrl+'",
+    "command": "workbench.action.focusActiveEditorGroup",
+    "when": "!editorTextFocus"
+  },
+  {
+    "key": "ctrl+shift+alt+cmd+'",
+    "command": "workbench.action.terminal.focus"
+  },
+  {
+    "key": "ctrl+shift+alt+cmd+'",
+    "command": "workbench.action.focusActiveEditorGroup",
+    "when": "terminalFocus"
+  },
+  // terminal: next tab
+  {
+    "key": "cmd+shift+]",
+    "command": "workbench.action.terminal.focusNextPane",
+    "when": "terminalFocus"
+  },
+  // terminal: prev tab
+  {
+    "key": "cmd+shift+[",
+    "command": "workbench.action.terminal.focusPreviousPane",
+    "when": "terminalFocus"
+  },
+  // terminal: next tab (vim)
+  {
+    "key": "ctrl+]",
+    "command": "workbench.action.terminal.focusNextPane",
+    "when": "terminalFocus"
+  },
+  // terminal: prev tab (vim)
+  {
+    "key": "ctrl+[",
+    "command": "workbench.action.terminal.focusPreviousPane",
+    "when": "terminalFocus"
+  },
+  // terminal: next window
+  {
+    "key": "cmd+alt+]",
+    "command": "workbench.action.terminal.focusNext",
+    "when": "terminalFocus"
+  },
+  // terminal: prev window
+  {
+    "key": "cmd+alt+[",
+    "command": "workbench.action.terminal.focusPreviousPane",
+    "when": "terminalFocus"
+  },
+  // terminal: new tab
+  {
+    "key": "cmd+n",
+    "command": "workbench.action.terminal.new",
+    "when": "terminalFocus"
+  },
+  // terminal: close tab
+  {
+    "key": "cmd+w",
+    "command": "workbench.action.terminal.kill",
+    "when": "terminalFocus"
+  },
+  // { "key": "ctrl+space", "command": "workbench.action.terminal.focus"},
+  // { "key": "ctrl+space", "command": "workbench.action.focusActiveEditorGroup", "when": "terminalFocus"},
+  // * movement replace with bettertouch tool global mac config
+  // vim up and down on quick open list selection
+  {
+    "key": "shift+cmd+j",
+    "command": "workbench.action.quickOpenSelectNext",
+    "when": "inQuickOpen"
+  },
+  {
+    "key": "shift+cmd+k",
+    "command": "workbench.action.quickOpenSelectPrevious",
+    "when": "inQuickOpen"
+  },
+  {
+    "key": "ctrl+j",
+    "command": "workbench.action.quickOpenSelectNext",
+    "when": "inQuickOpen"
+  },
+  {
+    "key": "ctrl+k",
+    "command": "workbench.action.quickOpenSelectPrevious",
+    "when": "inQuickOpen"
+  },
+  // vim up and down in editor sugestions
+  {
+    "key": "shift+cmd+j",
+    "command": "selectNextSuggestion",
+    "when": "suggestWidgetMultipleSuggestions && suggestWidgetVisible && textInputFocus"
+  },
+  {
+    "key": "shift+cmd+k",
+    "command": "selectPrevSuggestion",
+    "when": "suggestWidgetMultipleSuggestions && suggestWidgetVisible && textInputFocus"
+  },
+  // Toggle between terminal and editor focus
+  {
+    "key": "ctrl+`",
+    "command": "workbench.action.terminal.focus",
+    "when": "!terminalFocus"
+  },
+  {
+    "key": "ctrl+`",
+    "command": "workbench.action.focusActiveEditorGroup",
+    "when": "terminalFocus"
+  },
+  // vim command pallette in zen mode
+  {
+    "key": "shift+;",
+    "command": "vim.showQuickpickCmdLine",
+    "when": "inZenMode && vim.mode != 'Insert'"
+  },
+  // switching sideways between tabs (match browser tab movements)
+  {
+    "key": "shift+cmd+]",
+    "command": "workbench.action.nextEditor",
+    "when": "editorFocus"
+  },
+  {
+    "key": "shift+cmd+[",
+    "command": "workbench.action.previousEditor",
+    "when": "editorFocus"
+  },
+  // visually moving lines
+  {
+    "key": "alt+j",
+    "command": "editor.action.moveLinesDownAction",
+    "when": "editorTextFocus && !editorReadonly"
+  },
+  {
+    "key": "alt+down",
+    "command": "-editor.action.moveLinesDownAction",
+    "when": "editorTextFocus && !editorReadonly"
+  },
+  {
+    "key": "alt+k",
+    "command": "editor.action.moveLinesUpAction",
+    "when": "editorTextFocus && !editorReadonly"
+  },
+  {
+    "key": "alt+up",
+    "command": "-editor.action.moveLinesUpAction",
+    "when": "editorTextFocus && !editorReadonly"
+  },
+  {
+    "key": "ctrl+shift+alt+cmd+space",
+    "command": "editor.action.triggerSuggest",
+    "when": "editorHasCompletionItemProvider && textInputFocus && !editorReadonly"
+  },
+  {
+    "key": "ctrl+shift+alt+cmd+space",
+    "command": "toggleSuggestionDetails",
+    "when": "suggestWidgetVisible && textInputFocus"
+  },
+  {
+    "key": "shift+cmd+t",
+    "command": "-headwind.sortTailwindClasses",
+    "when": "editorFocus"
+  },
+  {
+    "key": "` backspace",
+    "command": "gitlens.key.escape",
+    "when": "editorTextFocus && gitlens:key:escape && !findWidgetVisible && !isInEmbeddedEditor && !renameInputVisible && !suggestWidgetVisible"
+  },
+  {
+    "key": "escape",
+    "command": "-gitlens.key.escape",
+    "when": "editorTextFocus && gitlens:key:escape && !findWidgetVisible && !isInEmbeddedEditor && !renameInputVisible && !suggestWidgetVisible"
+  },
+  {
+    "key": "cmd+b",
+    "command": "-markdown.extension.editing.toggleBold",
+    "when": "editorTextFocus && !editorReadonly && editorLangId == 'markdown'"
+  },
+  {
+    "key": "ctrl+shift+alt+cmd+b",
+    "command": "workbench.debug.viewlet.action.toggleBreakpointsActivatedAction"
+  },
+  {
+    "key": "ctrl+shift+alt+cmd+r",
+    "command": "workbench.action.debug.restart",
+    "when": "inDebugMode"
+  },
+  {
+    "key": "ctrl+shift+alt+cmd+o",
+    "command": "workbench.action.debug.continue",
+    "when": "debugState == 'stopped'"
+  },
+  {
+    "key": "cmd+b",
+    "command": "workbench.action.togglePanel"
+  },
+  {
+    "key": "cmd+j",
+    "command": "-workbench.action.togglePanel"
+  },
+  {
+    "key": "cmd+j",
+    "command": "workbench.action.toggleSidebarVisibility"
+  },
+  {
+    "key": "cmd+b",
+    "command": "-workbench.action.toggleSidebarVisibility"
+  },
+  {
+    "key": "ctrl+shift+alt+cmd+v",
+    "command": "zearch.vim"
+  },
+  {
+    "key": "cmd+k cmd+f",
+    "command": "-zearch.search"
+  },
+  {
+    "key": "ctrl+shift+alt+cmd+t",
+    "command": "workbench.action.tasks.runTask",
+    "args": "shell command"
+  },
+  {
+    "key": "cmd+h",
+    "command": "-testing.toggleTestingPeekHistory",
+    "when": "testing.isPeekVisible"
+  },
+  {
+    "key": "cmd+m",
+    "command": "-markdown.extension.editing.toggleMath",
+    "when": "editorTextFocus && !editorReadonly && editorLangId == 'markdown'"
+  },
+  // peek toggle view navigation
+  {
+    "key": "ctrl+j",
+    "command": "togglePeekWidgetFocus",
+    "when": "inReferenceSearchEditor || referenceSearchVisible"
+  },
+  // patch to resolve markdown from preventing cmd+h or cmd+m (hide/minimise) from working
+  // @see https://github.com/microsoft/vscode/issues/71800#issuecomment-1133492098
+  {
+    "key": "",
+    "command": "testing.toggleTestingPeekHistory"
+  },
+  // replace vim 'go back/forward' with vscode version
+  {
+    "key": "ctrl+o",
+    "command": "workbench.action.navigateBack"
+  },
+  {
+    "key": "ctrl+i",
+    "command": "workbench.action.navigateForward"
+  },
+  {
+    "key": "shift+cmd+v",
+    "command": "-quicktype.pasteJSONAsTypesAndSerialization",
+    "when": "editorTextFocus"
+  },
+  {
+    "key": "ctrl+shift+alt+cmd+j",
+    "command": "workbench.action.editor.nextChange",
+    "when": "editorTextFocus && !textCompareEditorActive"
+  },
+  {
+    "key": "shift+cmd+j",
+    "command": "copilot-labs.use-brush-picker",
+    "when": "editorTextFocus && !editorReadonly"
+  },
+  {
+    "key": "alt+enter",
+    "command": "periscope.openNativeSearch"
+  },
+  {
+    "key": "alt+enter",
+    "command": "-periscope.openNativeSearch",
+    "when": "inQuickOpen && periscopeActive"
+  },
+  {
+    "key": "ctrl+shift+alt+cmd+down",
+    "command": "editor.action.marker.next",
+    "when": "editorFocus"
+  },
+  {
+    "key": "ctrl+shift+alt+cmd+up",
+    "command": "editor.action.marker.prev",
+    "when": "editorFocus"
+  },
+  {
+    "key": "ctrl+shift+alt+cmd+down",
+    "command": "interactiveEditor.start"
+  },
+  {
+    "key": "cmd+k",
+    "command": "-phind.searchSelection"
+  },
+  // navigation during peek hover
+  {
+    "key": "ctrl+h",
+    "command": "editor.action.scrollLeftHover",
+    "when": "editorHoverFocused"
+  },
+  {
+    "key": "ctrl+j",
+    "command": "editor.action.scrollDownHover",
+    "when": "editorHoverFocused"
+  },
+  {
+    "key": "ctrl+k",
+    "command": "editor.action.scrollUpHover",
+    "when": "editorHoverFocused"
+  },
+  {
+    "key": "ctrl+l",
+    "command": "editor.action.scrollRightHover",
+    "when": "editorHoverFocused"
+  },
+  // command to close peek hover (and move cursor)
+  // @see https://code.visualstudio.com/docs/getstarted/keybindings#_running-multiple-commands
+  {
+    "key": "h",
+    "command": "runCommands",
+    "args": {
+      "commands": ["closeReferenceSearchEditor", "cursorLeft"]
+    },
+    "when": "editorHoverFocused"
+  },
+  {
+    "key": "j",
+    "command": "runCommands",
+    "args": {
+      "commands": ["closeReferenceSearchEditor", "cursorDown"]
+    },
+    "when": "editorHoverFocused"
+  },
+  {
+    "key": "k",
+    "command": "runCommands",
+    "args": {
+      "commands": ["closeReferenceSearchEditor", "cursorUp"]
+    },
+    "when": "editorHoverFocused"
+  },
+  {
+    "key": "l",
+    "command": "runCommands",
+    "args": {
+      "commands": ["closeReferenceSearchEditor", "cursorRight"]
+    },
+    "when": "editorHoverFocused"
+  },
+  // new file in explorer
+  {
+    "key": "a",
+    "command": "explorer.newFile",
+    // "when": "sideBarFocus && !inputFocus"
+    "when": "explorerViewletVisible && filesExplorerFocus && !inputFocus"
+  },
+  // remove file in explorer
+  {
+    "key": "d",
+    "command": "deleteFile",
+    // "when": "filesExplorerFocus && foldersViewVisible && !explorerResourceReadonly && !inputFocus"
+    "when": "explorerViewletVisible && filesExplorerFocus && !inputFocus"
+  },
+  // copy file in explorer
+  {
+    "key": "c",
+    "command": "filesExplorer.copy",
+    "when": "explorerViewletVisible && filesExplorerFocus && !inputFocus"
+  },
+  // paste file in explorer
+  {
+    "key": "v",
+    "command": "filesExplorer.paste",
+    "when": "explorerViewletVisible && filesExplorerFocus && !inputFocus"
+  },
+  // close sidebar
+  {
+    "key": "e",
+    "command": "workbench.action.toggleSidebarVisibility",
+    "when": "sideBarFocus && !inputFocus"
+    // "when": "explorerViewletVisible && filesExplorerFocus && !inputFocus"
+  },
+  {
+    "key": "cmd+k",
+    "command": "inlineChat.start",
+    "when": "inlineChatHasProvider && !editorReadonly"
+  },
+  {
+    "key": "ctrl+h",
+    "command": "workbench.action.terminal.focusPreviousPane",
+    "when": "(terminalFocus && terminalHasBeenCreated || terminalFocus && terminalProcessSupported) && terminalSplitTerminal"
+  },
+  {
+    "key": "ctrl+l",
+    "command": "workbench.action.terminal.focusNextPane",
+    "when": "(terminalFocus && terminalHasBeenCreated || terminalFocus && terminalProcessSupported) && terminalSplitTerminal"
+  },
+  {
+    "key": "shift+cmd+l",
+    "command": "-phind.searchTerminalOutput"
+  },
+  // go to file explorer (vim)
+  {
+    "key": "ctrl+h",
+    "command": "workbench.action.focusLastEditorGroup",
+    "when": "sideBarFocus"
+  },
+  // increase/decrease view size
+  {
+    "key": "cmd+shift+=",
+    "command": "workbench.action.increaseViewSize"
+  },
+  {
+    "key": "cmd+shift+-",
+    "command": "workbench.action.decreaseViewSize"
+  },
+  {
+    "key": "cmd+shift+=",
+    "command": "workbench.action.terminal.resizePaneRight",
+    "when": "terminalFocus && terminalHasBeenCreated || terminalFocus && terminalProcessSupported"
+  },
+  {
+    "key": "cmd+shift+-",
+    "command": "workbench.action.terminal.resizePaneLeft",
+    "when": "terminalFocus && terminalHasBeenCreated || terminalFocus && terminalProcessSupported"
+  },
+  {
+    "key": "ctrl+\\",
+    "command": "periscope.openInHorizontalSplit",
+    "when": "periscopeActive"
+  },
+  {
+    "key": "ctrl+/",
+    "command": "-workbench.action.terminal.sendSequence",
+    "when": "terminalFocus"
+  },
+  {
+    "key": "cmd+i",
+    "command": "workbench.panel.chat",
+    "when": "workbench.panel.chat.view.copilot.active"
+  },
+  // align cursor and vscode with the same leader
+  { "key": "cmd+r", "command": "workbench.action.keychord.leader" },
+  { "key": "cmd+k", "command": "-workbench.action.keychord.leader" },
+  {
+    "key": "shift+enter",
+    "command": "workbench.action.terminal.sendSequence",
+    "args": {
+      "text": "\\\r\n"
+    },
+    "when": "terminalFocus"
+  }
+]
