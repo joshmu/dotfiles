@@ -80,6 +80,7 @@ brew "luarocks"
 brew "mactop"
 brew "media-control"
 brew "neovim"
+brew "tree-sitter-cli" # CLI required by nvim-treesitter main branch
 brew "neovim-remote"
 brew "nghttp2"
 brew "openblas"
