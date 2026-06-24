@@ -112,3 +112,35 @@ vim.keymap.set('n', 'gh', function() vim.lsp.buf.hover() end, { desc = 'Hover sy
 vim.keymap.set('n', '<leader><Esc>', function()
   require('notify').dismiss { silent = true, pending = true }
 end, { desc = 'Dismiss notifications' })
+
+-- Scroll the LSP hover / signature popup (noice) with Shift-j / Shift-k.
+-- noice.lsp.scroll returns false when no scrollable popup is open, so we fall
+-- back to the default J (join lines) / K (keywordprg) in that case.
+vim.keymap.set('n', 'J', function()
+  if not require('noice.lsp').scroll(4) then
+    return 'J'
+  end
+end, { silent = true, expr = true, desc = 'Scroll hover down (else join)' })
+vim.keymap.set('n', 'K', function()
+  if not require('noice.lsp').scroll(-4) then
+    return 'K'
+  end
+end, { silent = true, expr = true, desc = 'Scroll hover up (else keywordprg)' })
+
+-- Esc dismisses the noice LSP hover / signature popup when one is open;
+-- otherwise it clears the search highlight (the previous <Esc> behaviour).
+vim.keymap.set('n', '<Esc>', function()
+  local ok, docs = pcall(require, 'noice.lsp.docs')
+  local closed = false
+  if ok then
+    for _, message in pairs(docs._messages or {}) do
+      if message:win() then
+        docs.hide(message)
+        closed = true
+      end
+    end
+  end
+  if not closed then
+    vim.cmd 'nohlsearch'
+  end
+end, { silent = true, desc = 'Dismiss hover popup or clear search highlight' })
