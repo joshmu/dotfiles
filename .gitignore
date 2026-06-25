@@ -30,3 +30,6 @@ bun.lock
 
 # per-machine shell env override (e.g. AGENT_OBSERVABILITY_PATH)
 .zshenv.local
+
+# macOS
+.DS_Store
