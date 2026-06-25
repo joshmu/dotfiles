@@ -223,8 +223,8 @@ export PATH="$HOME/bin:$PATH"
 # The original version is saved in .zprofile.pysave
 #export PATH="/Library/Frameworks/Python.framework/Versions/3.11/bin:${PATH}"
 
-# Obsidian local path
-export OBSIDIAN_PATH="$HOME/vault"
+# Obsidian local path — follows PERSONAL_VAULT (exported in .zshenv, single source of truth)
+export OBSIDIAN_PATH="$PERSONAL_VAULT"
 
 # terraform completion (bashcompinit loaded in consolidated compinit below)
 
