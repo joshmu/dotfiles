@@ -112,8 +112,9 @@ function ai-img() { gen-img "$@"; }
 alias img="chafa"
 alias kimi="ccr code"
 export PATH="$HOME/Desktop/code/ag-cli/bin:$PATH"
-# authoritative export lives in ~/.zshenv; this mirror is for discoverability
+# authoritative exports live in ~/.zshenv; these mirrors are for discoverability
 : "${PERSONAL_VAULT:=$HOME/vault}"
+: "${BRG_WORKSPACE:=$HOME/work/brg}"
 function ai-local() {
   output=$(ollama run codellama "$@")
   echo "$output" | glow

@@ -13,20 +13,22 @@ export GOOGLE_WORKSPACE_CLI_KEYRING_BACKEND=file
 export EDITOR="nvim"
 export VISUAL="nvim"
 
-export PERSONAL_VAULT="$HOME/vault"
-
-# agent-observability hook path — the ~/.claude settings.json hooks reference it as
-# ${AGENT_OBSERVABILITY_PATH}/hooks/*.ts, so if this is empty those hooks resolve to
-# /hooks/*.ts and fail. Resolution order:
-#   1. ~/.zshenv.local — optional per-machine override. Gitignored and NOT in this
-#      repo, so it never syncs; each machine writes its own. Needed only when the repo
-#      sits off the default path, e.g.:
-#        export AGENT_OBSERVABILITY_PATH="$HOME/code/agent-observability"
-#   2. the :- default below ($HOME/Desktop/code/agent-observability).
+# Per-machine-overridable paths. Each resolves in two steps:
+#   1. ~/.zshenv.local — optional per-machine override. Gitignored and NOT in this repo,
+#      so it never syncs; each machine writes its own (see .zshenv.local.example). Set a
+#      var there only when its target lives off the default path on the matching export.
+#   2. the :- default on the export below.
+# Sourced HERE (before the exports) so a value set in ~/.zshenv.local wins over the default.
 # Resolved at SHELL LAUNCH — a long-lived process (e.g. Claude's shared cc-daemon that
 # spawns agents-view background agents) started before this was wired keeps a stale or
 # empty value and only picks up the correct one after a full relaunch.
+# NOTE: AGENT_OBSERVABILITY_PATH is also referenced by the ~/.claude settings.json hooks
+# as ${AGENT_OBSERVABILITY_PATH}/hooks/*.ts (empty → resolves to /hooks/*.ts and fails).
+# Claude/launchd processes that source no zsh read these from ~/.claude/settings.local.json
+# "env" instead — keep the two channels in sync per machine.
 [ -f "$HOME/.zshenv.local" ] && source "$HOME/.zshenv.local"
+export PERSONAL_VAULT="${PERSONAL_VAULT:-$HOME/vault}"
+export BRG_WORKSPACE="${BRG_WORKSPACE:-$HOME/work/brg}"
 export AGENT_OBSERVABILITY_PATH="${AGENT_OBSERVABILITY_PATH:-$HOME/Desktop/code/agent-observability}"
 
 # oh-my-posh: pin the theme directly so the prompt never depends on the session->config cache

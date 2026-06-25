@@ -15,6 +15,3 @@ export GPG_TTY=$(tty)
 # AICHAT
 # https://github.com/sigoden/aichat/wiki/Environment-Variables#client-related-envs
 AICHAT_PLATFORM=openai
-
-# Added by Obsidian
-export PATH="$PATH:/Applications/Obsidian.app/Contents/MacOS"

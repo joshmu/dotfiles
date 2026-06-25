@@ -1,0 +1,7 @@
+# Per-machine shell env overrides. Copy to ~/.zshenv.local (gitignored — never syncs).
+# Sourced by .zshenv BEFORE its `:-` defaults, so anything set here wins.
+# Uncomment + edit only the lines whose target lives off the default path.
+#
+# export PERSONAL_VAULT="$HOME/vault"
+# export BRG_WORKSPACE="$HOME/work/brg"
+# export AGENT_OBSERVABILITY_PATH="$HOME/code/agent-observability"
