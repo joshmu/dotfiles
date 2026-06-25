@@ -9,6 +9,8 @@
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CONFIG_FILE="$SCRIPT_DIR/config.json"
+CONFIG_EXAMPLE="$SCRIPT_DIR/config.json.example"
 KOKORO_DIR="${KOKORO_DIR:-$HOME/.cache/kokoro}"
 TOGGLES_DIR="$HOME/.claude/.toggles"
 KOKORO_TOGGLE="$TOGGLES_DIR/kokoro"
@@ -78,6 +80,20 @@ main() {
   check_uv
 
   mkdir -p "$KOKORO_DIR" "$TOGGLES_DIR"
+
+  # config.json is the orchestrator's hard dependency (tts.ts loadConfig throws
+  # without it → silent exit → speak.sh falls back to macOS `say`). It's
+  # gitignored (local-only), so create it from the tracked example if absent.
+  if [ -f "$CONFIG_FILE" ]; then
+    info "config.json already present"
+  elif [ -f "$CONFIG_EXAMPLE" ]; then
+    info "creating config.json from config.json.example"
+    cp "$CONFIG_EXAMPLE" "$CONFIG_FILE"
+  else
+    err "config.json.example missing — cannot create config.json"
+    exit 1
+  fi
+
   download "$MODEL_URL"  "$MODEL_FILE"  "$MODEL_MIN_BYTES"
   download "$VOICES_URL" "$VOICES_FILE" "$VOICES_MIN_BYTES"
 
