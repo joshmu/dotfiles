@@ -27,6 +27,10 @@ overview — architecture, install/setup, and command & script reference — see
 - **Open a file:** `cursor -g path/to/file:line[:column]`.
 - **Clipboard:** pipe to `pbcopy`.
 - **Detect git host:** `git remote -v` (GitHub / Bitbucket / GitLab).
+- **Per-machine paths:** prefer the env vars over hardcoded paths — `$PERSONAL_VAULT`,
+  `$BRG_WORKSPACE`, `$AGENT_OBSERVABILITY_PATH` (defined in `.zshenv` with a `~/.zshenv.local`
+  override; see `.zshenv.local.example` and README step 5). Shell + TS (`process.env.*`) read
+  them; JSON/YAML/launchd configs can't and keep literal absolute paths.
 
 ## Brewfile
 

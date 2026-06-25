@@ -51,12 +51,24 @@ cp gitconfig.local.example ~/.gitconfig.local
 # 4. Curated macOS defaults (key-repeat / press-and-hold, Finder, Dock, trackpad)
 bash scripts/macos-defaults.sh
 
-# 5. Per-machine agent-observability path (only if it sits off the default — NOT tracked)
-#   ~/.claude settings.json hooks resolve ${AGENT_OBSERVABILITY_PATH}/hooks/*.ts.
-#   .zshenv defaults it to ~/Desktop/code/agent-observability; on a machine where the
-#   repo lives elsewhere, create the gitignored override (see .zshenv for detail):
-echo 'export AGENT_OBSERVABILITY_PATH="$HOME/code/agent-observability"' > ~/.zshenv.local
-#   Resolved at shell launch, so relaunch any long-lived process (Claude cc-daemon) after.
+# 5. Per-machine path env vars (only if a target sits off the default — NOT tracked)
+#   .zshenv defaults these from $HOME: PERSONAL_VAULT (~/vault), BRG_WORKSPACE (~/work/brg),
+#   AGENT_OBSERVABILITY_PATH (~/Desktop/code/agent-observability). On a machine where any
+#   lives elsewhere, create the gitignored override and uncomment + edit the line(s) needed:
+cp .zshenv.local.example ~/.zshenv.local
+#   AGENT_OBSERVABILITY_PATH is also referenced by ~/.claude settings.json hooks
+#   (${AGENT_OBSERVABILITY_PATH}/hooks/*.ts). Resolved at shell launch — relaunch any
+#   long-lived process (Claude cc-daemon) after.
+#
+#   Claude-spawned tools/hooks and launchd jobs source no login shell, so they don't see
+#   the above. Mirror the same vars (ABSOLUTE paths) into ~/.claude/settings.local.json
+#   "env" — .claude is gitignored, so this is a per-machine step, e.g.:
+#     "env": { "PERSONAL_VAULT": "/Users/<you>/vault", "BRG_WORKSPACE": "/Users/<you>/work/brg" }
+#
+#   NB: JSON/YAML configs and launchd jobs hold LITERAL absolute paths (they can't read
+#   these vars). On a path move, also find + update every literal hit:
+#     /usr/bin/grep -rIl 'work/brg' ~/dotfiles ~/.claude/scripts ~/.claude/commands \
+#       --exclude-dir=node_modules --exclude-dir=.git   # repeat for the vault path
 ```
 
 > **Note:** `HOMEBREW_NO_ANALYTICS=1` is exported in `.zshenv`, so Homebrew analytics
