@@ -2,31 +2,35 @@ import { describe, test, expect } from "bun:test";
 import { buildClaudeArgs } from "./claude-cmd";
 
 describe("buildClaudeArgs", () => {
-  test("returns --allow-dangerously-skip-permissions with no args", () => {
-    expect(buildClaudeArgs()).toBe("--allow-dangerously-skip-permissions");
+  test("returns --permission-mode auto with no args", () => {
+    expect(buildClaudeArgs()).toBe("--permission-mode auto");
   });
 
-  test("returns --allow-dangerously-skip-permissions with undefined", () => {
-    expect(buildClaudeArgs(undefined)).toBe("--allow-dangerously-skip-permissions");
+  test("returns --permission-mode auto with undefined", () => {
+    expect(buildClaudeArgs(undefined)).toBe("--permission-mode auto");
   });
 
-  test("returns --allow-dangerously-skip-permissions with empty string", () => {
-    expect(buildClaudeArgs("")).toBe("--allow-dangerously-skip-permissions");
+  test("returns --permission-mode auto with empty string", () => {
+    expect(buildClaudeArgs("")).toBe("--permission-mode auto");
   });
 
-  test("returns --allow-dangerously-skip-permissions with whitespace-only string", () => {
-    expect(buildClaudeArgs("   ")).toBe("--allow-dangerously-skip-permissions");
+  test("returns --permission-mode auto with whitespace-only string", () => {
+    expect(buildClaudeArgs("   ")).toBe("--permission-mode auto");
   });
 
   test("appends extra args after base flag", () => {
     expect(buildClaudeArgs("--disallowedTools Bash")).toBe(
-      "--allow-dangerously-skip-permissions --disallowedTools Bash",
+      "--permission-mode auto --disallowedTools Bash",
     );
   });
 
   test("trims whitespace from extra args", () => {
-    expect(buildClaudeArgs("  --model opus  ")).toBe(
-      "--allow-dangerously-skip-permissions --model opus",
+    expect(buildClaudeArgs("  --model opus  ")).toBe("--permission-mode auto --model opus");
+  });
+
+  test("skips base flag when extraArgs already sets a --permission-mode", () => {
+    expect(buildClaudeArgs("--permission-mode auto --model opus")).toBe(
+      "--permission-mode auto --model opus",
     );
   });
 
