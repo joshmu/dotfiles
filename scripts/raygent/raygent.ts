@@ -15,7 +15,14 @@ import {
   type SessionConfig,
 } from "./lib/router-agent";
 import { buildClaudeArgs } from "./lib/claude-cmd";
-import { createSession, sendKeys, generateUniqueName, hasSession, createPane, killSession } from "./lib/tmux";
+import {
+  createSession,
+  sendKeys,
+  generateUniqueName,
+  hasSession,
+  createPane,
+  killSession,
+} from "./lib/tmux";
 import { writeFileSync } from "fs";
 
 async function main() {
