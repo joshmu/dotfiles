@@ -23,6 +23,12 @@ export function createSession(name: string, cwd?: string): void {
   }
 }
 
+export function killSession(name: string): void {
+  // Best-effort: kill the session and every pane (and the processes running in
+  // them) it owns. Idempotent — a missing session is not an error here.
+  Bun.spawnSync(["tmux", "kill-session", "-t", name]);
+}
+
 export function sendKeys(session: string, keys: string): void {
   if (Bun.spawnSync(["tmux", "send-keys", "-t", session, keys, "Enter"]).exitCode !== 0) {
     throw new Error(`Failed to send keys to session: ${session}`);

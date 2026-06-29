@@ -15,7 +15,7 @@ import {
   type SessionConfig,
 } from "./lib/router-agent";
 import { buildClaudeArgs } from "./lib/claude-cmd";
-import { createSession, sendKeys, generateUniqueName, hasSession, createPane } from "./lib/tmux";
+import { createSession, sendKeys, generateUniqueName, hasSession, createPane, killSession } from "./lib/tmux";
 import { writeFileSync } from "fs";
 
 async function main() {
@@ -44,9 +44,25 @@ async function main() {
 
     let target: string;
 
+    // Scheduled runs carry this marker (injected by agent-scheduler's
+    // run-task.sh). They supersede prior fires, so for a fixed session we
+    // reap the leftover session instead of stacking another pane — otherwise
+    // an interactive Claude that finished its task but idles in the TUI never
+    // frees its pane, and successive fires fill the window until `split-window`
+    // has no room left ("Failed to create pane in session: ...").
+    const isScheduled = prompt.includes("<agent-scheduler");
+
     if (sessionConfig.tmuxSession) {
       // Fixed session mode
-      if (hasSession(sessionConfig.tmuxSession)) {
+      if (isScheduled && hasSession(sessionConfig.tmuxSession)) {
+        // Reap the previous fire's session (kills its idle pane + Claude),
+        // then start fresh — one pane per run, never wedges.
+        killSession(sessionConfig.tmuxSession);
+        createSession(sessionConfig.tmuxSession, sessionConfig.cwd);
+        target = sessionConfig.tmuxSession;
+        console.log(`Reaped + restarted: ${sessionConfig.tmuxSession} @ ${sessionConfig.cwd}`);
+      } else if (hasSession(sessionConfig.tmuxSession)) {
+        // Interactive/Raycast use: keep stacking panes (useful for live work).
         target = createPane(sessionConfig.tmuxSession, sessionConfig.cwd);
         console.log(`Added pane to: ${sessionConfig.tmuxSession} @ ${sessionConfig.cwd}`);
       } else {
