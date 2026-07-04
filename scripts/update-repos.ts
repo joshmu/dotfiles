@@ -274,6 +274,35 @@ async function tryAutoResolveDivergent(
   return { resolved: false };
 }
 
+// Transient SSH/network errors GitHub throws under concurrent load. The daily
+// sweep fires many parallel git operations and GitHub occasionally drops a
+// connection ("closed by remote host", handshake reset, hung-up, timeout).
+// These are not real failures — a solo retry a moment later succeeds — so we
+// retry with jittered backoff before surfacing them as a hard failure that
+// would flip the whole scheduled run to a non-zero exit.
+export const TRANSIENT_NETWORK_ERROR =
+  /closed by remote host|Connection reset by peer|kex_exchange_identification|ssh_exchange_identification|Could not read from remote repository|The remote end hung up|Operation timed out|Connection timed out|unable to access/i;
+
+// Run a git command, retrying on transient network errors only. Non-transient
+// failures (real conflicts, auth, etc.) return on the first attempt unchanged.
+async function runGitCommandWithRetry(
+  repoPath: string,
+  args: string[],
+  attempts = 3,
+): Promise<{ success: boolean; output: string }> {
+  let result = await runGitCommand(repoPath, args);
+  for (
+    let i = 1;
+    i < attempts && !result.success && TRANSIENT_NETWORK_ERROR.test(result.output);
+    i++
+  ) {
+    // Jittered backoff so parallel retries don't re-collide on the same tick.
+    await Bun.sleep(500 * i + Math.floor(Math.random() * 400));
+    result = await runGitCommand(repoPath, args);
+  }
+  return result;
+}
+
 // Check if a directory is a git repository
 function isGitRepo(path: string): boolean {
   return existsSync(join(path, ".git"));
@@ -736,11 +765,24 @@ async function updateRepo(
   }
 
   // Pull latest changes — fast-forward only so divergent branches don't fail
-  // the whole daily auto-update.
-  const pullResult = await runGitCommand(repoPath, ["pull", "--ff-only"]);
+  // the whole daily auto-update. Retry on transient GitHub connection drops
+  // (common when the parallel sweep opens many SSH sessions at once).
+  const pullResult = await runGitCommandWithRetry(repoPath, ["pull", "--ff-only"]);
 
   if (!pullResult.success) {
     const out = pullResult.output;
+
+    // Local-only branch (no upstream): common for worktrees on feature/release
+    // branches that were never pushed. Nothing to pull — not a failure, so it
+    // must not fail the whole scheduled run.
+    const noUpstream = /no tracking information for the current branch|no upstream configured/i.test(out);
+    if (noUpstream) {
+      return {
+        status: "skipped",
+        message: `${repoName} [${branch}] (local-only branch, no upstream)`,
+      };
+    }
+
     const divergent = /divergent branches|Not possible to fast-forward|non-fast-forward/i.test(out);
     if (divergent) {
       // Try safe auto-resolution before giving up.
