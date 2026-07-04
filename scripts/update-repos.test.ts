@@ -12,7 +12,6 @@ import {
   discoverGitRepos,
   SKIP_DIRS,
   ENV_BRANCHES,
-  DEFAULT_BRANCH_PRECEDENCE,
 } from "./update-repos";
 
 describe("parseArgs", () => {
