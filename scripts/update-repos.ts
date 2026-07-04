@@ -775,7 +775,8 @@ async function updateRepo(
     // Local-only branch (no upstream): common for worktrees on feature/release
     // branches that were never pushed. Nothing to pull — not a failure, so it
     // must not fail the whole scheduled run.
-    const noUpstream = /no tracking information for the current branch|no upstream configured/i.test(out);
+    const noUpstream =
+      /no tracking information for the current branch|no upstream configured/i.test(out);
     if (noUpstream) {
       return {
         status: "skipped",
