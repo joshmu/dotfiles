@@ -119,6 +119,33 @@ split_vertical = "prefix+|"
 # type = "pane" opens a temporary pane and closes it when the command exits.
 # On Windows, command strings run through cmd.exe /d /c.
 # [[keys.command]]
+
+# vim-aware ctrl+hjkl pane navigation (vim-tmux-navigator equivalent).
+# Requires: herdr plugin install paulbkim-dev/vim-herdr-navigation
+# Non-vim panes lose ctrl+l clear-screen / ctrl+k kill-line (same tradeoff as tmux).
+[[keys.command]]
+key = "ctrl+h"
+type = "plugin_action"
+command = "vim-herdr-navigation.left"
+description = "navigate left (vim/herdr)"
+
+[[keys.command]]
+key = "ctrl+j"
+type = "plugin_action"
+command = "vim-herdr-navigation.down"
+description = "navigate down (vim/herdr)"
+
+[[keys.command]]
+key = "ctrl+k"
+type = "plugin_action"
+command = "vim-herdr-navigation.up"
+description = "navigate up (vim/herdr)"
+
+[[keys.command]]
+key = "ctrl+l"
+type = "plugin_action"
+command = "vim-herdr-navigation.right"
+description = "navigate right (vim/herdr)"
 # key = "prefix+alt+g"
 # type = "pane"
 # command = "lazygit"
