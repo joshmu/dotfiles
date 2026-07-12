@@ -99,6 +99,8 @@ name = "catppuccin"
 # last_pane = ""          # optional, unset by default; bind e.g. "prefix+tab" for global back-and-forth
 # tmux parity: | = side-by-side, - = stacked (split_horizontal default prefix+minus already matches)
 split_vertical = "prefix+|"
+# tmux parity: prefix+v enters copy mode (default prefix+[; freed by moving split to |)
+copy_mode = "prefix+v"
 # split_horizontal = "prefix+minus"
 # close_pane = "prefix+x"
 # zoom = "prefix+z"       # legacy alias: fullscreen
