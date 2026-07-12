@@ -127,6 +127,21 @@ vim.keymap.set('n', 'K', function()
   end
 end, { silent = true, expr = true, desc = 'Scroll hover up (else keywordprg)' })
 
+-- Toggle a JSON buffer between pretty-printed and compact single-line form.
+-- Multi-line buffer compacts (jq -c), single-line buffer pretty-prints (jq).
+-- jq failure leaves the buffer untouched and surfaces stderr.
+vim.api.nvim_create_user_command('JsonFormatToggle', function()
+  local buf = vim.api.nvim_get_current_buf()
+  local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+  local args = #lines > 1 and { 'jq', '-c', '.' } or { 'jq', '.' }
+  local result = vim.system(args, { stdin = table.concat(lines, '\n') }):wait()
+  if result.code ~= 0 then
+    vim.notify('jq: ' .. vim.trim(result.stderr or 'failed'), vim.log.levels.ERROR)
+    return
+  end
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, vim.split(result.stdout, '\n', { trimempty = true }))
+end, { desc = 'Toggle JSON between pretty and compact (jq)' })
+
 -- Esc dismisses the noice LSP hover / signature popup when one is open;
 -- otherwise it clears the search highlight (the previous <Esc> behaviour).
 vim.keymap.set('n', '<Esc>', function()
