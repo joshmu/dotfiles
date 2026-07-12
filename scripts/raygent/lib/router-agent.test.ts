@@ -90,7 +90,7 @@ describe("fallbackName", () => {
 });
 
 describe("expandPath", () => {
-  const HOME = process.env.HOME;
+  const HOME = process.env.HOME!;
 
   test("expands leading ~ to $HOME", () => {
     expect(expandPath("~/vault")).toBe(`${HOME}/vault`);
