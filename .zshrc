@@ -251,6 +251,9 @@ cached_eval "zoxide" "zoxide init zsh"
 cached_eval "uv-completion" "uv generate-shell-completion zsh"
 cached_eval "uvx-completion" "uvx --generate-shell-completion zsh"
 
+# herdr - agent multiplexer (cache invalidates when binary updates, incl. self-update)
+command -v herdr >/dev/null && cached_eval "herdr-completion" "herdr completion zsh"
+
 # fnm - interactive cd hook (basic env already loaded in .zshenv)
 command -v fnm >/dev/null && eval "$(fnm env --use-on-cd --version-file-strategy=recursive --log-level=quiet --shell zsh)"
 
