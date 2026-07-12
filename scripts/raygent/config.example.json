@@ -2,19 +2,19 @@
   "default": "work",
   "workspaces": {
     "work": {
-      "path": "/path/to/work/projects",
+      "path": "$WORK_DIR",
       "keywords": ["work", "project", "client"]
     },
     "personal": {
-      "path": "/path/to/personal",
+      "path": "~/code",
       "keywords": ["personal", "config", "dotfiles", "scripts"]
     },
     "side-project": {
-      "path": "/path/to/side-project",
+      "path": "~/code/side-project",
       "keywords": ["side project", "hobby", "experiment"]
     },
     "review-tasks": {
-      "path": "/path/to/work/projects",
+      "path": "$WORK_DIR/repos",
       "keywords": ["review", "pr", "code review"],
       "exactKeywords": ["review-pr", "pr-review"],
       "tmuxSession": "review-tasks"

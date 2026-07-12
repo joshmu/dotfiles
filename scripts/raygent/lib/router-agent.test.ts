@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { sanitizeName, isValidName, fallbackName } from "./router-agent";
+import { sanitizeName, isValidName, fallbackName, expandPath } from "./router-agent";
 
 describe("sanitizeName", () => {
   test("converts to lowercase kebab-case", () => {
@@ -86,5 +86,52 @@ describe("fallbackName", () => {
   test("passes isValidName check", () => {
     const name = fallbackName();
     expect(isValidName(name)).toBe(true);
+  });
+});
+
+describe("expandPath", () => {
+  const HOME = process.env.HOME;
+
+  test("expands leading ~ to $HOME", () => {
+    expect(expandPath("~/vault")).toBe(`${HOME}/vault`);
+    expect(expandPath("~")).toBe(HOME);
+  });
+
+  test("does not expand ~ mid-path", () => {
+    expect(expandPath("/opt/~/foo")).toBe("/opt/~/foo");
+  });
+
+  test("expands $VAR", () => {
+    process.env.RAYGENT_TEST_WS = "/tmp/ws";
+    expect(expandPath("$RAYGENT_TEST_WS")).toBe("/tmp/ws");
+    expect(expandPath("$RAYGENT_TEST_WS/repos")).toBe("/tmp/ws/repos");
+    delete process.env.RAYGENT_TEST_WS;
+  });
+
+  test("expands ${VAR}", () => {
+    process.env.RAYGENT_TEST_WS = "/tmp/ws";
+    expect(expandPath("${RAYGENT_TEST_WS}/repos")).toBe("/tmp/ws/repos");
+    delete process.env.RAYGENT_TEST_WS;
+  });
+
+  test("combines ~ and $VAR", () => {
+    process.env.RAYGENT_TEST_SUB = "sub";
+    expect(expandPath("~/$RAYGENT_TEST_SUB")).toBe(`${HOME}/sub`);
+    delete process.env.RAYGENT_TEST_SUB;
+  });
+
+  test("passes absolute paths through unchanged", () => {
+    expect(expandPath("/Users/x/work/brg")).toBe("/Users/x/work/brg");
+  });
+
+  test("throws loudly on an undefined env var", () => {
+    delete process.env.RAYGENT_TEST_MISSING;
+    expect(() => expandPath("$RAYGENT_TEST_MISSING/repos")).toThrow(/undefined env var/);
+  });
+
+  test("throws on an empty env var", () => {
+    process.env.RAYGENT_TEST_EMPTY = "";
+    expect(() => expandPath("$RAYGENT_TEST_EMPTY")).toThrow(/undefined env var/);
+    delete process.env.RAYGENT_TEST_EMPTY;
   });
 });

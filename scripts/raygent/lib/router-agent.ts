@@ -33,14 +33,47 @@ export interface SessionConfig {
   tmuxSession?: string;
 }
 
+/**
+ * Expand `~` and `$VAR` / `${VAR}` in a config path so workspace paths stay
+ * portable across machines instead of hardcoding absolutes. Throws loudly on an
+ * undefined variable — a silently-empty expansion would start an agent in the
+ * wrong directory, which is exactly the class of bug this guards against.
+ */
+export function expandPath(p: string): string {
+  let out = p;
+  if (out === "~" || out.startsWith("~/")) {
+    const home = process.env.HOME;
+    if (!home) throw new Error(`raygent config: cannot expand "~" — $HOME is unset`);
+    out = home + out.slice(1);
+  }
+  return out.replace(
+    /\$\{([A-Za-z_][A-Za-z0-9_]*)\}|\$([A-Za-z_][A-Za-z0-9_]*)/g,
+    (_match, braced, bare) => {
+      const name = braced || bare;
+      const val = process.env[name];
+      if (val === undefined || val === "") {
+        throw new Error(`raygent config: undefined env var $${name} referenced in path "${p}"`);
+      }
+      return val;
+    },
+  );
+}
+
 export async function loadConfig(): Promise<Config> {
+  let raw: Config;
   try {
-    return JSON.parse(await Bun.file(CONFIG_PATH).text());
+    raw = JSON.parse(await Bun.file(CONFIG_PATH).text());
   } catch {
     throw new Error(
       `Failed to load config from ${CONFIG_PATH}. Copy config.example.json to config.json`,
     );
   }
+  // Resolve ~ / $VAR in every workspace path — outside the try so an undefined
+  // env var surfaces its own error rather than the misleading "copy example" one.
+  for (const ws of Object.values(raw.workspaces)) {
+    ws.path = expandPath(ws.path);
+  }
+  return raw;
 }
 
 export function findExactMatch(

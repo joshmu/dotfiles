@@ -80,6 +80,15 @@ cp config.example.json config.json
 | `exactKeywords` | string[] | Deterministic matching (bypasses AI router)       |
 | `tmuxSession`   | string   | Fixed session name; reuses session with new panes |
 
+### Path expansion
+
+`path` supports `~`, `$VAR`, and `${VAR}` so configs stay portable across machines
+instead of hardcoding absolutes (e.g. `"$BRG_WORKSPACE"`, `"~/vault"`,
+`"$BRG_WORKSPACE/repos"`). Variables resolve from the **process environment at
+launch time** — an undefined variable throws loudly rather than silently starting a
+session in the wrong directory. Callers spawned outside an interactive shell (e.g.
+launchd) must export the referenced vars themselves before invoking raygent.
+
 ## Usage
 
 ### Via Raycast
