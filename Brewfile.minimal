@@ -1,5 +1,9 @@
 tap "atlassian/acli"
 tap "oven-sh/bun"
+# Static analysis and lint tool, for (ba)sh scripts
+brew "shellcheck"
+# Static checker for GitHub Actions workflow files
+brew "actionlint"
 # Official Amazon AWS command-line interface
 brew "awscli"
 # Clone of cat(1) with syntax highlighting and Git integration
@@ -36,10 +40,14 @@ brew "gitleaks"
 brew "glow"
 # CLI for Drive, Gmail, Calendar, Sheets, Docs, Chat, Admin, and more
 brew "googleworkspace-cli"
+# Agent multiplexer that lives in your terminal
+brew "herdr"
 # Tools and libraries to manipulate images in select formats
 brew "imagemagick"
 # Simple terminal UI for git commands
 brew "lazygit"
+# Incremental parsing library
+brew "tree-sitter"
 # Ambitious Vim-fork focused on extensibility and agility
 brew "neovim"
 # Use NeoVim as a pager to view manpages, diffs, etc.
@@ -50,12 +58,12 @@ brew "oh-my-posh"
 brew "ollama"
 # Search tool like grep and The Silver Searcher
 brew "ripgrep"
-# Static analysis and lint tool, for (ba)sh scripts
-brew "shellcheck"
 # Terminal multiplexer
 brew "tmux"
 # Display directories as trees (with optional color/HTML output)
 brew "tree"
+# Parser generator tool
+brew "tree-sitter-cli"
 # Extremely fast Python package installer and resolver, written in Rust
 brew "uv"
 # Blazing fast terminal file manager written in Rust, based on async I/O
@@ -69,4 +77,8 @@ brew "atlassian/acli/acli", trusted: true
 # Incredibly fast JavaScript runtime, bundler, transpiler and package manager - all in one.
 brew "oven-sh/bun/bun", trusted: true
 cask "font-meslo-lg-nerd-font"
+# Speech to text application
+cask "handy"
+npm "@playwright/cli"
+npm "agent-browser"
 npm "corepack"
