@@ -42,13 +42,13 @@ name = "catppuccin"
 [update]
 # Update channel used by background version checks and `herdr update`.
 # Use "stable" for normal releases or "preview" for opt-in preview builds.
-# channel = "stable"
+channel = "stable"
 
 # Check herdr.dev for new Herdr versions in the background.
-# version_check = true
+version_check = true
 
 # Check herdr.dev for remote agent-detection manifest updates in the background.
-# manifest_check = true
+manifest_check = true
 
 [keys]
 # Prefix key to enter prefix mode (default: "ctrl+b")
@@ -175,7 +175,7 @@ description = "navigate right (vim/herdr)"
 # sidebar_max_width = 36
 
 # Collapsed sidebar presentation: "compact" keeps the narrow status rail, "hidden" uses zero width.
-# sidebar_collapsed_mode = "compact"
+sidebar_collapsed_mode = "compact"
 
 # Terminal width at or below which Herdr uses the mobile single-column layout.
 # Increase this for foldables, tablets, or wide phone terminals.
@@ -242,11 +242,11 @@ show_agent_labels_on_pane_borders = true
 # delay_seconds = 1
 
 [ui.toast.herdr]
-# position = "bottom-right"
+position = "bottom-right"
 
 [ui.toast.clipboard]
-# enabled = true
-# position = "bottom-center"
+enabled = true
+position = "bottom-center"
 
 # Play sounds when agents change state in background workspaces
 [ui.sound]
