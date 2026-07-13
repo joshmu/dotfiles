@@ -69,6 +69,9 @@ macos-option-as-alt = left
 keybind = alt+left=unbind
 keybind = alt+right=unbind
 
+# Unbind cmd+shift+j (default write_screen_file:paste) so herdr gets it for agent cycling
+keybind = cmd+shift+j=unbind
+
 # Other useful key bindings
 keybind = cmd+t=new_tab
 keybind = cmd+w=close_surface
