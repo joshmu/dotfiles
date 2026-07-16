@@ -9,4 +9,4 @@ session_id=$(echo "$input" | jq -r '.session_id // empty')
 
 [[ -z "$session_id" || ! -f "$REGISTRY" ]] && exit 0
 
-jq "del(.[\"$session_id\"])" "$REGISTRY" > "$REGISTRY.tmp" && mv "$REGISTRY.tmp" "$REGISTRY"
+jq --arg sid "$session_id" 'del(.[$sid])' "$REGISTRY" > "$REGISTRY.tmp" && mv "$REGISTRY.tmp" "$REGISTRY"

@@ -14,10 +14,12 @@ cwd=$(echo "$input" | jq -r '.cwd // empty')
 tmux_session=""
 tmux_window=""
 tmux_pane_index=""
-if [[ -n "$TMUX" ]]; then
-  tmux_session=$(tmux display-message -p '#{session_name}' 2>/dev/null || true)
-  tmux_window=$(tmux display-message -p '#{window_index}' 2>/dev/null || true)
-  tmux_pane_index=$(tmux display-message -p '#{pane_index}' 2>/dev/null || true)
+# Target our own pane explicitly: bare display-message resolves against the
+# focused client's pane, which may not be the pane this hook is running in.
+if [[ -n "$TMUX" && -n "${TMUX_PANE:-}" ]]; then
+  tmux_session=$(tmux display-message -p -t "$TMUX_PANE" '#{session_name}' 2>/dev/null || true)
+  tmux_window=$(tmux display-message -p -t "$TMUX_PANE" '#{window_index}' 2>/dev/null || true)
+  tmux_pane_index=$(tmux display-message -p -t "$TMUX_PANE" '#{pane_index}' 2>/dev/null || true)
 fi
 
 # Read existing registry or create empty

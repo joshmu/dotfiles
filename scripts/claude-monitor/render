@@ -3,12 +3,32 @@ REGISTRY="$HOME/.claude/claude-monitor-sessions.json"
 PROJECTS_DIR="$HOME/.claude/projects"
 THRESHOLD_MINS=30
 
-printf "\033[1;36m  %-12s %-12s %-18s %-24s %s\033[0m\n" \
-  "SESSION" "TMUX" "PROJECT" "EVENT" "UPDATED"
-echo "──────────────────────────────────────────────────────────────────────────────────"
+printf "\033[1;36m  %-12s %-12s %-8s %-18s %-24s %s\033[0m\n" \
+  "SESSION" "TMUX" "STATE" "PROJECT" "EVENT" "UPDATED"
+echo "───────────────────────────────────────────────────────────────────────────────────────────"
 
 # Load registry - source of truth for sessions
 registry=$(cat "$REGISTRY" 2>/dev/null || echo "{}")
+
+# Live pane snapshot: pane_id \x1f pane_title \x1f @claude-state (one tmux call for all rows).
+# The pane title is the authoritative live state signal (braille spinner = working, ✳ = idle);
+# the @claude-state flag only marks waiting. Empty when tmux isn't running.
+live_panes=$(tmux list-panes -a -F $'#{pane_id}\x1f#{pane_title}\x1f#{@claude-state}' 2>/dev/null)
+
+# classify_pane_state <pane_id>: echoes working|waiting|idle|? (same precedence as the
+# footer formats and lib/tmux-data.ts classifyPaneState: braille > waiting flag > ✳)
+classify_pane_state() {
+  local row title flag
+  row=$(awk -F $'\x1f' -v p="$1" '$1 == p { print; exit }' <<<"$live_panes")
+  [[ -z "$row" ]] && { echo "?"; return; }
+  title=$(cut -d $'\x1f' -f2 <<<"$row")
+  flag=$(cut -d $'\x1f' -f3 <<<"$row")
+  if printf '%s' "$title" | grep -q '^[⠀-⣿]'; then echo "working"
+  elif [[ "$flag" == "waiting" ]]; then echo "waiting"
+  elif [[ "$title" == "✳"* ]]; then echo "idle"
+  else echo "?"
+  fi
+}
 
 # Build transcript paths from registry, prune stale entries
 echo "$registry" | jq -r 'to_entries[] | "\(.key)\t\(.value.cwd // "")"' 2>/dev/null | while IFS=$'\t' read -r sid cwd; do
@@ -58,14 +78,30 @@ done | xargs ls -t 2>/dev/null | while read transcript; do
     continue
   fi
 
-  # All registry sessions are open
-  status_indicator="●"
-
   # Get tmux info from registry
   tmux_session=$(echo "$session_data" | jq -r '.tmux_session // "-"')
   tmux_window=$(echo "$session_data" | jq -r '.tmux_window // empty')
   tmux_pane=$(echo "$session_data" | jq -r '.tmux_pane // empty')
   tmux_pane_index=$(echo "$session_data" | jq -r '.tmux_pane_index // empty')
+
+  # Prune sessions whose tmux pane is gone (crashed/killed - transcript alone can't tell).
+  # Only when tmux is up (live_panes non-empty), so a stopped server never wipes the registry.
+  if [[ -n "$tmux_pane" && "$tmux_pane" != "null" && -n "$live_panes" ]]; then
+    if ! awk -F $'\x1f' -v p="$tmux_pane" '$1 == p { found=1 } END { exit !found }' <<<"$live_panes"; then
+      echo "$session_id" >> /tmp/claude-monitor-stale-$$
+      continue
+    fi
+  fi
+
+  # Live state from the pane title + waiting flag; indicator colored by state
+  pane_state="?"
+  [[ -n "$tmux_pane" && "$tmux_pane" != "null" ]] && pane_state=$(classify_pane_state "$tmux_pane")
+  case "$pane_state" in
+    working) status_indicator=$'\033[35m●\033[0m' ;;
+    waiting) status_indicator=$'\033[33m●\033[0m' ;;
+    idle)    status_indicator=$'\033[90m●\033[0m' ;;
+    *)       status_indicator=$'\033[37m○\033[0m' ;;
+  esac
 
   tmux_info="-"
   if [[ "$tmux_session" != "-" && "$tmux_session" != "null" ]]; then
@@ -88,8 +124,9 @@ done | xargs ls -t 2>/dev/null | while read transcript; do
 
   # Output with tmux_pane as hidden field for fzf (unit separator delimiter)
   # Truncate all values to their column widths to prevent overflow
-  printf "${color}%s  %-11s %-12s %-18s %-24s %s\033[0m"$'\x1f'"%s\n" \
-    "$status_indicator" "${session_id:0:9}.." "${tmux_info:0:12}" "${project:0:18}" "${event_type:0:24}" "$updated" "$tmux_pane"
+  # (indicator carries its own state color + reset, so row color starts after it)
+  printf "%s ${color} %-11s %-12s %-8s %-18s %-24s %s\033[0m"$'\x1f'"%s\n" \
+    "$status_indicator" "${session_id:0:9}.." "${tmux_info:0:12}" "$pane_state" "${project:0:18}" "${event_type:0:24}" "$updated" "$tmux_pane"
 
   # Find subagents for this session
   subagent_dir="$project_dir/$session_id/subagents"
@@ -126,9 +163,9 @@ done | xargs ls -t 2>/dev/null | while read transcript; do
 
       ((sub_diff < 60)) && sub_color="\033[32m" || { ((sub_diff < 300)) && sub_color="\033[33m" || sub_color="\033[37m"; }
 
-      # Subagent row (indented, inherits parent tmux)
-      printf "${sub_color}  └─%-10s %-12s %-18s %-24s %s\033[0m"$'\x1f'"%s\n" \
-        "${agent_id:0:8}.." "${tmux_info:0:12}" "${sub_slug:0:18}" "${sub_event:0:24}" "$sub_updated" "$tmux_pane"
+      # Subagent row (indented, inherits parent tmux; STATE column padded for alignment)
+      printf "${sub_color}  └─%-10s %-12s %-8s %-18s %-24s %s\033[0m"$'\x1f'"%s\n" \
+        "${agent_id:0:8}.." "${tmux_info:0:12}" "-" "${sub_slug:0:18}" "${sub_event:0:24}" "$sub_updated" "$tmux_pane"
     done
   fi
 done
