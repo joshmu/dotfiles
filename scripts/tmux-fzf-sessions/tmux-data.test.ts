@@ -1,8 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import {
   buildPaneByPid,
+  classifyPaneState,
   cleanSessionName,
   computeWindowClaudeInfo,
+  FIELD_SEP,
   findClaudePaneTargets,
   findClaudePaneTargetsFromHooks,
   formatSessionLine,
@@ -69,6 +71,41 @@ describe("parsePaneData", () => {
       { session: "dev", windowIndex: 0, paneIndex: 1, pid: "5678", claudeState: "waiting" },
       { session: "dev", windowIndex: 1, paneIndex: 0, pid: "3456", claudeState: "idle" },
       { session: "work", windowIndex: 1, paneIndex: 0, pid: "9012", claudeState: undefined },
+    ]);
+  });
+
+  test("parses \\x1f-delimited 6-field format with title containing colons and spaces", () => {
+    const raw = [
+      ["dev", "0", "0", "1234", "", "⠂ fable-general"].join(FIELD_SEP),
+      ["dev", "0", "1", "5678", "waiting", "✳ task: with colon"].join(FIELD_SEP),
+      ["work", "1", "0", "9012", "", "zsh in brg"].join(FIELD_SEP),
+    ].join("\n");
+    const result = parsePaneData(raw);
+    expect(result).toEqual([
+      {
+        session: "dev",
+        windowIndex: 0,
+        paneIndex: 0,
+        pid: "1234",
+        claudeState: undefined,
+        paneTitle: "⠂ fable-general",
+      },
+      {
+        session: "dev",
+        windowIndex: 0,
+        paneIndex: 1,
+        pid: "5678",
+        claudeState: "waiting",
+        paneTitle: "✳ task: with colon",
+      },
+      {
+        session: "work",
+        windowIndex: 1,
+        paneIndex: 0,
+        pid: "9012",
+        claudeState: undefined,
+        paneTitle: "zsh in brg",
+      },
     ]);
   });
 
@@ -666,34 +703,81 @@ describe("toClaudeState", () => {
   });
 });
 
+describe("classifyPaneState", () => {
+  test("braille spinner title means working", () => {
+    expect(classifyPaneState("⠂ fable-general")).toBe("working");
+    expect(classifyPaneState("⠐ branching-strat")).toBe("working");
+    expect(classifyPaneState("⠀ start-of-range")).toBe("working");
+    expect(classifyPaneState("⣿ end-of-range")).toBe("working");
+  });
+
+  test("✳ title means idle", () => {
+    expect(classifyPaneState("✳ repo-ownership-recovery")).toBe("idle");
+    expect(classifyPaneState("✳ Review WORLD daily maintainer feedback corpus")).toBe("idle");
+  });
+
+  test("waiting flag wins over idle title", () => {
+    expect(classifyPaneState("✳ some-task", "waiting")).toBe("waiting");
+    expect(classifyPaneState("", "waiting")).toBe("waiting");
+  });
+
+  test("working title wins over waiting flag", () => {
+    expect(classifyPaneState("⠂ some-task", "waiting")).toBe("working");
+  });
+
+  test("non-claude titles are undefined", () => {
+    expect(classifyPaneState("zsh in brg")).toBeUndefined();
+    expect(classifyPaneState("nvim")).toBeUndefined();
+    expect(classifyPaneState("3 awaiting input · claude agents")).toBeUndefined();
+    expect(classifyPaneState("")).toBeUndefined();
+  });
+
+  test("stale non-waiting hook states no longer count", () => {
+    expect(classifyPaneState("zsh in brg", "working")).toBeUndefined();
+    expect(classifyPaneState("nvim", "idle")).toBeUndefined();
+  });
+
+  test("braille/✳ must be leading, not embedded", () => {
+    expect(classifyPaneState("build ⠂ thing")).toBeUndefined();
+    expect(classifyPaneState("notes about ✳ markers")).toBeUndefined();
+  });
+});
+
 describe("findClaudePaneTargetsFromHooks", () => {
   test("returns empty map for empty panes", () => {
     const result = findClaudePaneTargetsFromHooks([]);
     expect(result.size).toBe(0);
   });
 
-  test("returns empty map when no panes have claudeState", () => {
+  test("returns empty map when no panes have titles or waiting flag", () => {
     const panes: PaneInfo[] = [
-      { session: "dev", windowIndex: 0, paneIndex: 0, pid: "100" },
+      { session: "dev", windowIndex: 0, paneIndex: 0, pid: "100", paneTitle: "zsh in brg" },
       { session: "work", windowIndex: 0, paneIndex: 0, pid: "200" },
     ];
     const result = findClaudePaneTargetsFromHooks(panes);
     expect(result.size).toBe(0);
   });
 
-  test("detects single pane with working state", () => {
+  test("detects working pane from braille title", () => {
     const panes: PaneInfo[] = [
-      { session: "dev", windowIndex: 0, paneIndex: 0, pid: "100", claudeState: "working" },
+      { session: "dev", windowIndex: 0, paneIndex: 0, pid: "100", paneTitle: "⠂ my-task" },
     ];
     const result = findClaudePaneTargetsFromHooks(panes);
     expect(result.get("dev")).toEqual([{ target: "dev:0.0", state: "working" }]);
   });
 
-  test("maps all valid states correctly", () => {
+  test("maps title/flag combinations correctly", () => {
     const panes: PaneInfo[] = [
-      { session: "a", windowIndex: 0, paneIndex: 0, pid: "1", claudeState: "working" },
-      { session: "b", windowIndex: 0, paneIndex: 0, pid: "2", claudeState: "waiting" },
-      { session: "c", windowIndex: 0, paneIndex: 0, pid: "3", claudeState: "idle" },
+      { session: "a", windowIndex: 0, paneIndex: 0, pid: "1", paneTitle: "⠐ busy" },
+      {
+        session: "b",
+        windowIndex: 0,
+        paneIndex: 0,
+        pid: "2",
+        paneTitle: "✳ blocked",
+        claudeState: "waiting",
+      },
+      { session: "c", windowIndex: 0, paneIndex: 0, pid: "3", paneTitle: "✳ at-prompt" },
     ];
     const result = findClaudePaneTargetsFromHooks(panes);
     expect(result.get("a")![0].state).toBe("working");
@@ -703,8 +787,8 @@ describe("findClaudePaneTargetsFromHooks", () => {
 
   test("groups multiple panes in same session", () => {
     const panes: PaneInfo[] = [
-      { session: "dev", windowIndex: 0, paneIndex: 0, pid: "100", claudeState: "working" },
-      { session: "dev", windowIndex: 1, paneIndex: 0, pid: "200", claudeState: "idle" },
+      { session: "dev", windowIndex: 0, paneIndex: 0, pid: "100", paneTitle: "⠂ task-a" },
+      { session: "dev", windowIndex: 1, paneIndex: 0, pid: "200", paneTitle: "✳ task-b" },
     ];
     const result = findClaudePaneTargetsFromHooks(panes);
     expect(result.get("dev")).toEqual([
@@ -713,55 +797,23 @@ describe("findClaudePaneTargetsFromHooks", () => {
     ]);
   });
 
-  test("handles multiple sessions", () => {
+  test("detects pane missed by hooks via title (drift self-correction)", () => {
+    // Pane launched before hook install: no claudeState, but a live title
+    const panes: PaneInfo[] = [
+      { session: "dev", windowIndex: 0, paneIndex: 0, pid: "100", paneTitle: "⠂ fable-general" },
+      { session: "dev", windowIndex: 1, paneIndex: 0, pid: "200", paneTitle: "zsh in dotfiles" },
+    ];
+    const result = findClaudePaneTargetsFromHooks(panes);
+    expect(result.get("dev")).toEqual([{ target: "dev:0.0", state: "working" }]);
+  });
+
+  test("stale working/idle hook flags without title signal are ignored", () => {
     const panes: PaneInfo[] = [
       { session: "dev", windowIndex: 0, paneIndex: 0, pid: "100", claudeState: "working" },
-      { session: "work", windowIndex: 0, paneIndex: 0, pid: "200", claudeState: "waiting" },
+      { session: "dev", windowIndex: 1, paneIndex: 0, pid: "200", claudeState: "idle" },
     ];
     const result = findClaudePaneTargetsFromHooks(panes);
-    expect(result.has("dev")).toBe(true);
-    expect(result.has("work")).toBe(true);
-    expect(result.get("dev")![0].state).toBe("working");
-    expect(result.get("work")![0].state).toBe("waiting");
-  });
-
-  test("skips panes without claudeState in mixed input", () => {
-    const panes: PaneInfo[] = [
-      { session: "dev", windowIndex: 0, paneIndex: 0, pid: "100" },
-      { session: "dev", windowIndex: 1, paneIndex: 0, pid: "200", claudeState: "working" },
-      { session: "dev", windowIndex: 2, paneIndex: 0, pid: "300" },
-    ];
-    const result = findClaudePaneTargetsFromHooks(panes);
-    expect(result.get("dev")).toEqual([{ target: "dev:1.0", state: "working" }]);
-  });
-
-  test("treats unrecognized claudeState as unknown", () => {
-    const panes: PaneInfo[] = [
-      { session: "dev", windowIndex: 0, paneIndex: 0, pid: "100", claudeState: "something" },
-    ];
-    const result = findClaudePaneTargetsFromHooks(panes);
-    expect(result.get("dev")![0].state).toBe("unknown");
-  });
-
-  test("produces same results as findClaudePaneTargets hook fallback", () => {
-    // Simulate the scenario: no PIDs found by pgrep, hooks provide all data
-    const panes: PaneInfo[] = [
-      { session: "dev", windowIndex: 0, paneIndex: 0, pid: "100" },
-      { session: "dev", windowIndex: 1, paneIndex: 0, pid: "200", claudeState: "working" },
-      { session: "work", windowIndex: 0, paneIndex: 0, pid: "300", claudeState: "idle" },
-    ];
-    const byPid = buildPaneByPid(panes);
-    const pidToParent = new Map<string, string>();
-
-    const pidResult = findClaudePaneTargets([], byPid, pidToParent, panes);
-    const hookResult = findClaudePaneTargetsFromHooks(panes);
-
-    // Both should find the same sessions
-    expect([...hookResult.keys()].sort()).toEqual([...pidResult.keys()].sort());
-    // Both should find the same targets with same states
-    for (const [session, hookPanes] of hookResult) {
-      expect(hookPanes).toEqual(pidResult.get(session));
-    }
+    expect(result.size).toBe(0);
   });
 });
 

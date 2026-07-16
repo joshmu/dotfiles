@@ -24,6 +24,7 @@
 import { $ } from "bun";
 import {
   cleanSessionName,
+  FIELD_SEP,
   findClaudePaneTargetsFromHooks,
   formatSessionLine,
   parsePaneData,
@@ -35,6 +36,23 @@ import {
   stripAnsi,
   type ClaudeState,
 } from "./lib/tmux-data";
+
+// \x1f-separated: titles/window names may contain ":" and spaces (see parsePaneData)
+const PANE_FORMAT = [
+  "#{session_name}",
+  "#{window_index}",
+  "#{pane_index}",
+  "#{pane_pid}",
+  "#{@claude-state}",
+  "#{pane_title}",
+].join(FIELD_SEP);
+
+const WINDOW_FORMAT = [
+  "#{session_name}",
+  "#{window_index}",
+  "#{window_name}",
+  "#{window_panes}",
+].join(FIELD_SEP);
 
 const SCRIPT_PATH = new URL(import.meta.url).pathname;
 
@@ -61,13 +79,7 @@ const currentSession = async () => {
 
 async function generateSessionList(): Promise<string> {
   const [paneData, sessionsData, current] = await Promise.all([
-    run([
-      "tmux",
-      "list-panes",
-      "-a",
-      "-F",
-      "#{session_name}:#{window_index}:#{pane_index}:#{pane_pid}:#{@claude-state}",
-    ]),
+    run(["tmux", "list-panes", "-a", "-F", PANE_FORMAT]),
     run(["tmux", "list-sessions", "-F", "#{session_activity}:#{session_name}"]),
     currentSession(),
   ]);
@@ -122,24 +134,11 @@ if (process.argv[2] === "--preview" && process.argv[3]) {
   const rawArg = process.argv[3];
   const sessionName = cleanSessionName(stripAnsi(rawArg));
 
-  // Fetch data scoped to this session (use full format for parsePaneData/parseWindowData reuse)
+  // Fetch data scoped to this session (use full format for parsePaneData/parseWindowData reuse).
+  // NOTE: list-panes -t <session> only lists the session's CURRENT window; -s lists all windows.
   const [paneData, windowData] = await Promise.all([
-    run([
-      "tmux",
-      "list-panes",
-      "-t",
-      sessionName,
-      "-F",
-      "#{session_name}:#{window_index}:#{pane_index}:#{pane_pid}:#{@claude-state}",
-    ]),
-    run([
-      "tmux",
-      "list-windows",
-      "-t",
-      sessionName,
-      "-F",
-      "#{session_name}:#{window_index}:#{window_name}:#{window_panes}",
-    ]),
+    run(["tmux", "list-panes", "-s", "-t", sessionName, "-F", PANE_FORMAT]),
+    run(["tmux", "list-windows", "-t", sessionName, "-F", WINDOW_FORMAT]),
   ]);
 
   const panes = parsePaneData(paneData);

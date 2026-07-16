@@ -6,7 +6,11 @@ export interface PaneInfo {
   paneIndex: number;
   pid: string;
   claudeState?: string;
+  paneTitle?: string;
 }
+
+/** Field separator for tmux -F format strings. Titles/window names may contain ":". */
+export const FIELD_SEP = "\x1f";
 
 export type ClaudeState = "working" | "waiting" | "idle" | "unknown";
 
@@ -59,6 +63,23 @@ export function computeWindowClaudeInfo(
   return { state, icons };
 }
 
+/**
+ * Classify a pane's Claude state from its OSC title + the hook-written waiting flag.
+ * Claude Code emits titles: leading braille spinner (U+2800-U+28FF) while working,
+ * leading "✳ " when idle at the prompt. The title is always current (self-correcting),
+ * so it wins over hook state for working; the hook is the only signal for waiting.
+ * Precedence: working (title) > waiting (flag) > idle (title) > undefined (not claude).
+ */
+export function classifyPaneState(
+  paneTitle: string,
+  claudeState?: string,
+): "working" | "waiting" | "idle" | undefined {
+  if (/^[⠀-⣿]/.test(paneTitle)) return "working";
+  if (claudeState === "waiting") return "waiting";
+  if (/^✳/.test(paneTitle)) return "idle";
+  return undefined;
+}
+
 export type SessionGroup = "waiting" | "working" | "idle" | "none";
 
 export function getSessionGroup(claudePanes: ClaudePaneInfo[]): SessionGroup {
@@ -74,15 +95,16 @@ export const stripAnsi = (str: string) => str.replace(/\x1b\[[0-9;]*m/g, "");
 export const cleanSessionName = (name: string) => name.replace(/ 󰚩( 󰚩)*$/, "");
 
 /**
- * Parse `tmux list-panes -a -F "#{session_name}:#{window_index}:#{pane_index}:#{pane_pid}:#{@claude-state}"`
- * Also supports legacy 4-field format without state.
+ * Parse `tmux list-panes -a -F "#{session_name}\x1f#{window_index}\x1f#{pane_index}\x1f#{pane_pid}\x1f#{@claude-state}\x1f#{pane_title}"`
+ * Fields are \x1f-separated (titles may contain ":" and spaces).
+ * Also supports the legacy ":"-separated 4/5-field format without title.
  */
 export function parsePaneData(raw: string): PaneInfo[] {
   return raw
     .split("\n")
     .filter(Boolean)
-    .map((line) => {
-      const parts = line.split(":");
+    .map((line): PaneInfo | null => {
+      const parts = line.includes(FIELD_SEP) ? line.split(FIELD_SEP) : line.split(":");
       if (parts.length < 4) return null;
       return {
         session: parts[0],
@@ -90,20 +112,22 @@ export function parsePaneData(raw: string): PaneInfo[] {
         paneIndex: parseInt(parts[2]),
         pid: parts[3],
         claudeState: parts[4] || undefined,
+        paneTitle: parts[5] || undefined,
       };
     })
     .filter((p): p is PaneInfo => p !== null);
 }
 
 /**
- * Parse `tmux list-windows -a -F "#{session_name}:#{window_index}:#{window_name}:#{window_panes}"`
+ * Parse `tmux list-windows -a -F "#{session_name}\x1f#{window_index}\x1f#{window_name}\x1f#{window_panes}"`
+ * Fields are \x1f-separated (window names may contain ":"). Legacy ":" format also supported.
  */
 export function parseWindowData(raw: string): WindowInfo[] {
   return raw
     .split("\n")
     .filter(Boolean)
     .map((line) => {
-      const parts = line.split(":");
+      const parts = line.includes(FIELD_SEP) ? line.split(FIELD_SEP) : line.split(":");
       if (parts.length < 4) return null;
       return {
         session: parts[0],
@@ -156,16 +180,18 @@ export function toClaudeState(raw?: string): ClaudeState {
 }
 
 /**
- * Build Claude pane targets from @claude-state hook data only (no PID walking).
- * Faster alternative to findClaudePaneTargets when hook data is reliable.
+ * Build Claude pane targets from pane titles + the @claude-state waiting flag
+ * (no PID walking). Title-first via classifyPaneState, so panes the hook never
+ * saw (launched pre-hook, background jobs) and crashed sessions self-correct.
  */
 export function findClaudePaneTargetsFromHooks(panes: PaneInfo[]): Map<string, ClaudePaneInfo[]> {
   const targets = new Map<string, ClaudePaneInfo[]>();
   for (const pane of panes) {
-    if (!pane.claudeState) continue;
+    const state = classifyPaneState(pane.paneTitle ?? "", pane.claudeState);
+    if (!state) continue;
     const target = `${pane.session}:${pane.windowIndex}.${pane.paneIndex}`;
     const arr = targets.get(pane.session) || [];
-    arr.push({ target, state: toClaudeState(pane.claudeState) });
+    arr.push({ target, state });
     targets.set(pane.session, arr);
   }
   return targets;
