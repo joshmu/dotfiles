@@ -19,18 +19,18 @@ event="$(printf '%s' "$input" | jq -r '.hook_event_name // empty' 2>/dev/null)" 
 
 case "$event" in
   PermissionRequest | Elicitation)
-    action=set
+    action="set"
     ;;
   Notification)
     type="$(printf '%s' "$input" | jq -r '.notification_type // empty' 2>/dev/null)" || exit 0
     case "$type" in
-      permission_prompt | elicitation_dialog) action=set ;;
-      idle_prompt) action=unset ;;
+      permission_prompt | elicitation_dialog) action="set" ;;
+      idle_prompt) action="unset" ;;
       *) exit 0 ;;
     esac
     ;;
   Stop | SessionEnd)
-    action=unset
+    action="unset"
     ;;
   *)
     exit 0
