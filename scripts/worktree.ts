@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 
 import { spawn } from "bun";
-import { existsSync, readFileSync } from "fs";
+import { existsSync, readFileSync, statSync, symlinkSync } from "fs";
 import { cp, mkdir } from "fs/promises";
 import { basename, dirname, join, resolve } from "path";
 import { homedir } from "os";
@@ -30,6 +30,10 @@ const log = {
 
 // Default patterns for file sync (when no .worktreeinclude exists)
 const DEFAULT_PATTERNS = ["**/.env", "**/.env.*"];
+
+// Untracked dev-env directories symlinked (not copied) from the source repo into
+// new worktrees — venvs embed absolute paths, so a copy would be broken anyway
+const DEFAULT_LINK_DIRS = [".venv", ".venv-live"];
 
 // Determine worktree base directory based on repo location
 // Default: <repo>/../worktrees/ (preserves CLAUDE.md inheritance)
@@ -375,6 +379,25 @@ async function syncFiles(
   return result;
 }
 
+// Symlink well-known untracked dev-env directories (e.g. python venvs) from the
+// source repo root into the worktree so relative tool paths keep working
+function linkDevDirs(sourcePath: string, destPath: string): string[] {
+  const linked: string[] = [];
+
+  for (const name of DEFAULT_LINK_DIRS) {
+    const src = join(sourcePath, name);
+    const dest = join(destPath, name);
+
+    if (!existsSync(src) || !statSync(src).isDirectory()) continue;
+    if (existsSync(dest)) continue;
+
+    symlinkSync(src, dest);
+    linked.push(name);
+  }
+
+  return linked;
+}
+
 // Print sync summary
 function printSyncSummary(result: SyncResult, dryRun: boolean = false): void {
   const prefix = dryRun ? "[DRY RUN] Would copy" : "Copied";
@@ -491,7 +514,7 @@ ${colors.cyan}Create Options:${colors.reset}
   --branch <name>      Specify branch name (overrides auto-derivation rules below)
   --base <branch>      Specify base branch (default: auto-detect main/master from remote)
   --existing-branch    Use existing branch instead of creating new
-  --no-env             Skip local file sync
+  --no-env             Skip local file sync and dev-dir symlinks
 
 ${colors.cyan}Branch naming (how <purpose> maps to a branch):${colors.reset}
   If <purpose> starts with one of these prefixes, it is used as-is:
@@ -528,6 +551,7 @@ ${colors.cyan}Examples:${colors.reset}
 ${colors.cyan}File Patterns:${colors.reset}
   Uses .worktreeinclude in repo root if present.
   Default: **/.env, **/.env.* (all .env files at any depth)
+  Dev-env directories (.venv, .venv-live) are symlinked from the source repo root
 
 ${colors.cyan}Location:${colors.reset}
   - Default: <repo>/../worktrees/<repo_name>/<purpose> (preserves CLAUDE.md inheritance)
@@ -620,7 +644,15 @@ async function main(): Promise<void> {
         if (syncResult.skipped.length > 0) {
           log.info(`Skipped ${syncResult.skipped.length} existing file(s)`);
         }
-        if (syncResult.copied.length === 0 && syncResult.skipped.length === 0) {
+        const linked = linkDevDirs(repoPath, worktreePath);
+        if (linked.length > 0) {
+          log.success(`Linked ${linked.length} dir(s): ${linked.join(", ")}`);
+        }
+        if (
+          syncResult.copied.length === 0 &&
+          syncResult.skipped.length === 0 &&
+          linked.length === 0
+        ) {
           log.info("No local files found to sync");
         }
       }
