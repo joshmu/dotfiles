@@ -784,6 +784,17 @@ async function updateRepo(
       };
     }
 
+    // Detached HEAD: worktrees left on a bare commit after the branch they held
+    // was merged and deleted. No branch means nothing to track and nothing to
+    // pull — same "not a failure" case as no-upstream above.
+    const detachedHead = /You are not currently on a branch/i.test(out);
+    if (detachedHead) {
+      return {
+        status: "skipped",
+        message: `${repoName} (detached HEAD — nothing to pull)`,
+      };
+    }
+
     const divergent = /divergent branches|Not possible to fast-forward|non-fast-forward/i.test(out);
     if (divergent) {
       // Try safe auto-resolution before giving up.
