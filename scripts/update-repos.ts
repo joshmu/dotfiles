@@ -795,6 +795,19 @@ async function updateRepo(
       };
     }
 
+    // Upstream deleted on the remote: the branch was pushed, merged, and the
+    // remote branch removed, but the local branch still carries its tracking
+    // config. Recurs every time a PR merges with delete-on-merge, so treat it
+    // as the same "nothing to pull" case rather than failing the whole run.
+    const deletedUpstream =
+      /configuration specifies to merge with the ref .* but no such ref was fetched/is.test(out);
+    if (deletedUpstream) {
+      return {
+        status: "skipped",
+        message: `${repoName} [${branch}] (upstream deleted on remote — nothing to pull)`,
+      };
+    }
+
     const divergent = /divergent branches|Not possible to fast-forward|non-fast-forward/i.test(out);
     if (divergent) {
       // Try safe auto-resolution before giving up.
