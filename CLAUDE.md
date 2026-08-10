@@ -42,14 +42,15 @@ overview — architecture, install/setup, and command & script reference — see
 
 ## Gotchas
 
-- **oh-my-posh prompt cache:** the prompt loads via `cached_eval`
-  (`zsh/eval-cache.zsh`), which caches `oh-my-posh init` with a fixed
-  `POSH_SESSION_ID`; the theme resolves from the per-session config cache, **not**
-  `POSH_THEME` at render time. Editing `oh-my-mu.json` does nothing until the
-  cached init regenerates. The cached_eval watch-file (`~/.oh-my-mu.json`) makes
-  theme edits auto-apply on the next shell. Don't run `oh-my-posh cache clear`
-  alone — it drops the config and the prompt falls back to the default theme.
-  Full reset: `trash ~/.cache/zsh/oh-my-posh.zsh && oh-my-posh cache clear && exec zsh`.
+- **oh-my-posh init must run fresh every shell:** `.zshrc` runs the
+  upstream-documented `eval "$(oh-my-posh init zsh --config ~/.oh-my-mu.json)"`
+  (~70ms). Each `init` writes the config path into a per-shell session cache
+  (`POSH_SESSION_ID`); `print primary` resolves the theme from there — **not**
+  from `POSH_THEME`, which is informational only. Never wrap this init in
+  `cached_eval`: a cached init freezes one session id across all shells and
+  skips the config-priming side effect, so a dropped cache entry makes every
+  prompt silently fall back to the default theme permanently (this happened;
+  fixed Aug 2026). Theme edits to `oh-my-mu.json` apply on the next shell.
 - **nvim-treesitter is on the `main` branch** (the Neovim 0.12+ rewrite), not
   `master`, and needs `tree-sitter-cli` (brew). Parsers are declared in
   `nvim/lua/core/plugins/treesitter.lua` via `install{}`; highlighting and indent

@@ -11,13 +11,13 @@ if type brew &>/dev/null; then
 fi
 
 # OH MY POSH
-#eval "$(oh-my-posh init zsh)"
-# `--print` emits the init BODY to stdout instead of writing a temp init file and
-# printing a `source '<hashfile>'` pointer (which dangles when the version/config hash
-# changes -> "no such file" at shell start). Robust across oh-my-posh versions, whose
-# non-print output format differs (v26 `source '...'` vs v29 `export ...;source $'...'`).
-# cached_eval caches the body and regenerates when the oh-my-posh binary is upgraded.
-cached_eval "oh-my-posh" "oh-my-posh init zsh --config ~/.oh-my-mu.json --print" ~/.oh-my-mu.json
+# Must run fresh every shell (upstream-documented flow, ~70ms): `init` generates a
+# per-shell POSH_SESSION_ID AND writes the config path into that session's cache —
+# `print primary` resolves the theme from there, not from POSH_THEME. Caching the
+# init output (the old cached_eval approach) froze one session ID for all shells;
+# when that session's CONFIG cache entry was dropped, every prompt silently fell
+# back to the built-in default theme with nothing left to re-prime it.
+eval "$(oh-my-posh init zsh --config ~/.oh-my-mu.json)"
 
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
 # Initialization code that may require console input (password prompts, [y/n]
