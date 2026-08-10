@@ -7,7 +7,7 @@
       "alignment": "left",
       "segments": [
         {
-          "leading_diamond": "\u256d\u2500\ue0b6",
+          "leading_diamond": "<#45475a,transparent>\u256d\u2500</>\ue0b6",
           "template": " {{ .UserName }} ",
           "foreground": "#cdd6f4",
           "background": "#45475a",
