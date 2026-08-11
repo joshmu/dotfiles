@@ -22,8 +22,19 @@ if [[ -n "$TMUX" && -n "${TMUX_PANE:-}" ]]; then
   tmux_pane_index=$(tmux display-message -p -t "$TMUX_PANE" '#{pane_index}' 2>/dev/null || true)
 fi
 
-# Read existing registry or create empty
-[[ -f "$REGISTRY" ]] && registry=$(cat "$REGISTRY") || registry="{}"
+# Serialise all registry writers on a portable mkdir lock (no flock on macOS);
+# atomic write via tmp+mv. Best-effort: proceed after ~5s so hooks never hang.
+LOCK="$REGISTRY.lock"
+for _ in $(seq 1 50); do
+  mkdir "$LOCK" 2>/dev/null && { trap 'rmdir "$LOCK" 2>/dev/null' EXIT; break; }
+  # Reap a stale lock left by a crashed writer (older than 30s).
+  [[ -n "$(find "$LOCK" -maxdepth 0 -mmin +0.5 2>/dev/null)" ]] && rmdir "$LOCK" 2>/dev/null
+  sleep 0.1
+done
+
+# Read existing registry; reset to empty if missing or corrupt.
+registry="{}"
+[[ -f "$REGISTRY" ]] && registry=$(jq -e . "$REGISTRY" 2>/dev/null) || registry="{}"
 
 # Add/update session entry
 registry=$(echo "$registry" | jq \
@@ -36,4 +47,4 @@ registry=$(echo "$registry" | jq \
   --arg started "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   '.[$sid] = {tmux_session: $ts, tmux_window: $tw, tmux_pane: $tp, tmux_pane_index: $tpi, cwd: $cwd, started: $started}')
 
-echo "$registry" > "$REGISTRY"
+printf '%s\n' "$registry" > "$REGISTRY.tmp" && mv "$REGISTRY.tmp" "$REGISTRY"

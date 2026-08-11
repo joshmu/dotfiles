@@ -9,4 +9,14 @@ session_id=$(echo "$input" | jq -r '.session_id // empty')
 
 [[ -z "$session_id" || ! -f "$REGISTRY" ]] && exit 0
 
+# Serialise with the same mkdir lock session-start uses; best-effort ~5s.
+LOCK="$REGISTRY.lock"
+for _ in $(seq 1 50); do
+  mkdir "$LOCK" 2>/dev/null && { trap 'rmdir "$LOCK" 2>/dev/null' EXIT; break; }
+  [[ -n "$(find "$LOCK" -maxdepth 0 -mmin +0.5 2>/dev/null)" ]] && rmdir "$LOCK" 2>/dev/null
+  sleep 0.1
+done
+
+# Tolerate a corrupt registry: skip the delete rather than abort the hook.
+jq -e . "$REGISTRY" >/dev/null 2>&1 || exit 0
 jq --arg sid "$session_id" 'del(.[$sid])' "$REGISTRY" > "$REGISTRY.tmp" && mv "$REGISTRY.tmp" "$REGISTRY"
