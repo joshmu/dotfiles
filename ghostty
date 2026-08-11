@@ -39,10 +39,37 @@ theme = "Ghostty Default Style Dark"
 
 # Font configuration
 
-# MesloLGS — current/baseline
-font-family = "MesloLGS Nerd Font Mono"
+# MonoLisa — current (variable TTF). Reads grey on this dark theme unless
+# font-thicken is on; keep the two in step when swapping.
+font-family = "MonoLisa"
+
+# Alternatives. To swap, comment out the block above and uncomment one
+# below — the "" reset is required because a repeated font-family APPENDS
+# a fallback rather than replacing.
+#
+# Operator Mono Lig — wants font-thicken OFF; renders best as drawn. Only
+# Book/Light ship in that build/ dir, so there is no real Bold and Ghostty
+# synthesizes it by outlining.
+# font-family = ""
+# font-family = "Operator Mono Lig"
+# font-style = "Book"
+# font-style-italic = "Book Italic"
+#
+# MesloLGS — original baseline.
+# font-family = ""
+# font-family = "MesloLGS Nerd Font Mono"
 
 font-size = 14
+
+# macOS renders stems thinner than the glyph outlines imply, so light-on-dark
+# text can read grey rather than white. font-thicken is the macOS-only
+# remedy. MonoLisa needs it; Operator Mono does not — comment it out when
+# switching to Operator.
+font-thicken = true
+
+# Weight dial for MonoLisa (variable, wght axis 100-1000, default 400).
+# Uncomment to run the regular face heavier than 400.
+# font-variation = wght=450
 
 # Window settings
 window-padding-x = 8
