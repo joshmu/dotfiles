@@ -456,6 +456,20 @@
                                 "conditions": [{ "type": "frontmost_application_if", "bundle_identifiers": ["^com\\.google\\.Chrome$"] }]
                             }
                         ]
+                    },
+                    {
+                        "description": "Right Ctrl -> Left Option + Space (tap), Ctrl when held",
+                        "manipulators": [
+                            {
+                                "from": {
+                                    "key_code": "right_control",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [{ "key_code": "right_control" }],
+                                "to_if_alone": [{ "key_code": "spacebar", "modifiers": ["left_option"] }],
+                                "type": "basic"
+                            }
+                        ]
                     }
                 ]
             },
