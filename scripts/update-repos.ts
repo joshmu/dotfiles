@@ -283,6 +283,38 @@ async function tryAutoResolveDivergent(
 export const TRANSIENT_NETWORK_ERROR =
   /closed by remote host|Connection reset by peer|kex_exchange_identification|ssh_exchange_identification|Could not read from remote repository|The remote end hung up|Operation timed out|Connection timed out|unable to access/i;
 
+// Connect-level failures: the SSH client never reached GitHub at all. Distinct
+// from TRANSIENT_NETWORK_ERROR, where GitHub answered and then dropped us —
+// retrying these is pointless because nothing is listening on this side.
+export const OFFLINE_ERROR =
+  /ssh: connect to host|Could not resolve host|Network is unreachable|No route to host|Temporary failure in name resolution/i;
+
+// Probe GitHub once before the sweep. launchd fires the scheduled run at 06:00,
+// which on macOS can land in a dark wake where the CPU is up but Wi-Fi is not
+// associated. Every repo then fails identically on "ssh: connect to host
+// github.com port 22" and the run exits 1 — surfacing as scheduler rot rather
+// than "the machine was offline". Any SSH-level response proves the network is
+// up, including an auth refusal, so only connect-level errors mean offline.
+// Fails open: if the probe itself cannot run, proceed as before.
+export async function isGitHubReachable(): Promise<boolean> {
+  try {
+    const proc = spawn({
+      cmd: ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=8", "-T", "git@github.com"],
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+
+    const output =
+      (await new Response(proc.stdout).text()) + (await new Response(proc.stderr).text());
+
+    await proc.exited;
+
+    return !OFFLINE_ERROR.test(output);
+  } catch {
+    return true;
+  }
+}
+
 // Run a git command, retrying on transient network errors only. Non-transient
 // failures (real conflicts, auth, etc.) return on the first attempt unchanged.
 async function runGitCommandWithRetry(
@@ -905,6 +937,11 @@ async function main() {
   }
 
   log.info(`Found ${repos.length} git repositories`);
+
+  if (!(await isGitHubReachable())) {
+    log.warn("GitHub unreachable — machine appears offline; skipping this run");
+    process.exit(0);
+  }
 
   if (options.repairRemoteHead) {
     await runRepairRemoteHead(repos);

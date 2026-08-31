@@ -12,6 +12,8 @@ import {
   discoverGitRepos,
   SKIP_DIRS,
   ENV_BRANCHES,
+  OFFLINE_ERROR,
+  TRANSIENT_NETWORK_ERROR,
 } from "./update-repos";
 
 describe("parseArgs", () => {
@@ -364,5 +366,35 @@ describe("discoverGitRepos", () => {
   test("SKIP_DIRS covers the repo-boundary marker and node_modules", () => {
     expect(SKIP_DIRS.has(".git")).toBe(true);
     expect(SKIP_DIRS.has("node_modules")).toBe(true);
+  });
+});
+
+describe("OFFLINE_ERROR", () => {
+  test("matches the dark-wake connect failure that fails every repo at once", () => {
+    expect(OFFLINE_ERROR.test("ssh: connect to host github.com port 22: Undefined error: 0")).toBe(
+      true,
+    );
+  });
+
+  test("matches DNS and routing failures", () => {
+    expect(OFFLINE_ERROR.test("ssh: Could not resolve hostname github.com")).toBe(true);
+    expect(OFFLINE_ERROR.test("Could not resolve host: github.com")).toBe(true);
+    expect(OFFLINE_ERROR.test("connect: Network is unreachable")).toBe(true);
+    expect(OFFLINE_ERROR.test("connect: No route to host")).toBe(true);
+  });
+
+  test("does not match an SSH-level response, which proves the network is up", () => {
+    expect(
+      OFFLINE_ERROR.test(
+        "Hi joshmu! You've successfully authenticated, but GitHub does not provide shell access.",
+      ),
+    ).toBe(false);
+    expect(OFFLINE_ERROR.test("git@github.com: Permission denied (publickey).")).toBe(false);
+  });
+
+  test("stays disjoint from the transient class, which is worth retrying", () => {
+    const transient = "Connection to github.com closed by remote host";
+    expect(TRANSIENT_NETWORK_ERROR.test(transient)).toBe(true);
+    expect(OFFLINE_ERROR.test(transient)).toBe(false);
   });
 });
