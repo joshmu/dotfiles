@@ -14,6 +14,8 @@ import {
   ENV_BRANCHES,
   OFFLINE_ERROR,
   TRANSIENT_NETWORK_ERROR,
+  DEFAULT_GIT_SSH_COMMAND,
+  resolveGitSshCommand,
 } from "./update-repos";
 
 describe("parseArgs", () => {
@@ -396,5 +398,21 @@ describe("OFFLINE_ERROR", () => {
     const transient = "Connection to github.com closed by remote host";
     expect(TRANSIENT_NETWORK_ERROR.test(transient)).toBe(true);
     expect(OFFLINE_ERROR.test(transient)).toBe(false);
+  });
+});
+
+describe("resolveGitSshCommand", () => {
+  test("bounds the connect so a dead network errors instead of hanging forever", () => {
+    expect(DEFAULT_GIT_SSH_COMMAND).toContain("ConnectTimeout=");
+    expect(DEFAULT_GIT_SSH_COMMAND).toContain("ServerAliveInterval=");
+  });
+
+  test("defaults when the environment says nothing", () => {
+    expect(resolveGitSshCommand({})).toBe(DEFAULT_GIT_SSH_COMMAND);
+    expect(resolveGitSshCommand({ GIT_SSH_COMMAND: "" })).toBe(DEFAULT_GIT_SSH_COMMAND);
+  });
+
+  test("an explicit GIT_SSH_COMMAND wins", () => {
+    expect(resolveGitSshCommand({ GIT_SSH_COMMAND: "ssh -i /key" })).toBe("ssh -i /key");
   });
 });

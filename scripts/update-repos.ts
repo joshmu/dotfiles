@@ -157,6 +157,23 @@ ${colors.bright}Default behavior:${colors.reset}
 `);
 }
 
+// Git's SSH transport has no connect timeout by default, so on a half-dead
+// network — a macOS dark wake, a VPN dropping mid-sweep — `ls-remote` or `pull`
+// can block forever with no socket ever open. That wedges the whole run and
+// leaves the scheduler's lockfile in place, so every later run logs SKIP and
+// the daily update quietly stops happening. Bound the connect and notice a
+// connection that dies mid-transfer.
+export const DEFAULT_GIT_SSH_COMMAND =
+  "ssh -o ConnectTimeout=10 -o ServerAliveInterval=15 -o ServerAliveCountMax=3";
+
+// An explicit GIT_SSH_COMMAND from the environment wins — the caller has said
+// how to reach their remotes and we should not second-guess it.
+export function resolveGitSshCommand(
+  env: Record<string, string | undefined> = process.env,
+): string {
+  return env.GIT_SSH_COMMAND || DEFAULT_GIT_SSH_COMMAND;
+}
+
 // Execute git command and return result
 async function runGitCommand(
   repoPath: string,
@@ -168,6 +185,7 @@ async function runGitCommand(
       cwd: repoPath,
       stdout: "pipe",
       stderr: "pipe",
+      env: { ...process.env, GIT_SSH_COMMAND: resolveGitSshCommand() },
     });
 
     const output = await new Response(proc.stdout).text();
