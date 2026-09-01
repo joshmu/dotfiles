@@ -26,9 +26,16 @@ fi
 # atomic write via tmp+mv. Best-effort: proceed after ~5s so hooks never hang.
 LOCK="$REGISTRY.lock"
 for _ in $(seq 1 50); do
-  mkdir "$LOCK" 2>/dev/null && { trap 'rmdir "$LOCK" 2>/dev/null' EXIT; break; }
-  # Reap a stale lock left by a crashed writer (older than 30s).
-  [[ -n "$(find "$LOCK" -maxdepth 0 -mmin +0.5 2>/dev/null)" ]] && rmdir "$LOCK" 2>/dev/null
+  if mkdir "$LOCK" 2>/dev/null; then
+    trap 'rmdir "$LOCK" 2>/dev/null || true' EXIT
+    break
+  fi
+  # Reap a stale lock left by a crashed writer (older than 30s). BSD find
+  # rejects a fractional -mmin, so compare the mtime in seconds instead.
+  lock_mtime=$(stat -f %m "$LOCK" 2>/dev/null || stat -c %Y "$LOCK" 2>/dev/null || echo "")
+  if [[ -n "$lock_mtime" ]] && (( $(date +%s) - lock_mtime > 30 )); then
+    rmdir "$LOCK" 2>/dev/null || true
+  fi
   sleep 0.1
 done
 
