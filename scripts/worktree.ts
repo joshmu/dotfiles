@@ -467,11 +467,31 @@ async function listWorktrees(): Promise<void> {
 }
 
 // Remove worktree
+// Resolve the branch a worktree has checked out, by asking git rather than
+// re-deriving it from the purpose string. Prefix inference (see BRANCH_PREFIXES
+// in createWorktree) and the `/` -> `-` directory flattening are both lossy, so
+// guessing here would mis-target the branch for anything non-trivial.
+async function branchForWorktree(repoPath: string, worktreePath: string): Promise<string | null> {
+  const { success, output } = await execQuiet("git worktree list --porcelain", repoPath);
+  if (!success) return null;
+
+  // Porcelain emits a blank-line-separated block per worktree:
+  //   worktree <path>\nHEAD <sha>\nbranch refs/heads/<name>
+  // A detached worktree has no `branch` line.
+  for (const block of output.split("\n\n")) {
+    const path = block.match(/^worktree (.+)$/m)?.[1];
+    if (!path || resolve(path) !== resolve(worktreePath)) continue;
+    return block.match(/^branch refs\/heads\/(.+)$/m)?.[1] ?? null;
+  }
+  return null;
+}
+
 async function removeWorktree(
   repoPath: string,
   repoName: string,
   purpose: string,
   force: boolean = false,
+  deleteBranch: boolean = false,
 ): Promise<boolean> {
   const worktreesBaseDir = getWorktreesBaseDir(repoPath);
   const worktreeDirName = purpose.replace(/\//g, "-");
@@ -482,17 +502,45 @@ async function removeWorktree(
     return false;
   }
 
+  // Must be read before removal — afterwards the worktree is gone from git's list.
+  const branchName = deleteBranch ? await branchForWorktree(repoPath, worktreePath) : null;
+
   log.step(`Removing worktree: ${worktreePath}`);
   const forceFlag = force ? " --force" : "";
   const { success } = await exec(`git worktree remove${forceFlag} ${worktreePath}`, repoPath);
 
-  if (success) {
-    log.success("Worktree removed successfully");
-  } else {
+  if (!success) {
     log.error("Failed to remove worktree");
+    return false;
+  }
+  log.success("Worktree removed successfully");
+
+  if (!deleteBranch) return true;
+
+  if (!branchName) {
+    log.warn("Could not resolve a branch for that worktree (detached HEAD?) — nothing to delete");
+    return true;
   }
 
-  return success;
+  // `-d` refuses to drop a branch holding unmerged commits, which is the whole
+  // safety net here. `-D` is opt-in via --force, so a bare --delete-branch can
+  // never silently discard work.
+  const deleteFlag = force ? "-D" : "-d";
+  log.step(`Deleting branch: ${branchName}`);
+  const { success: deleted, error } = await execQuiet(
+    `git branch ${deleteFlag} ${branchName}`,
+    repoPath,
+  );
+
+  if (deleted) {
+    log.success(`Branch deleted: ${branchName}`);
+  } else {
+    log.warn(`Kept branch ${branchName} — ${error || "delete failed"}`);
+    log.warn(`Delete it anyway with: git -C ${repoPath} branch -D ${branchName}`);
+  }
+
+  // Branch retention is not a worktree-removal failure; the worktree is gone either way.
+  return true;
 }
 
 // Show help
@@ -508,6 +556,9 @@ ${colors.cyan}Commands:${colors.reset}
   ${colors.green}sync${colors.reset} [options]                     Sync local files to current worktree
   ${colors.green}list${colors.reset}                              List all worktrees
   ${colors.green}remove${colors.reset} <purpose>                   Remove a worktree
+    --delete-branch, -D                 Also delete the branch it had checked out.
+                                        Refuses if the branch holds unmerged commits;
+                                        add --force to delete it regardless.
   ${colors.green}help${colors.reset}                              Show this help
 
 ${colors.cyan}Create Options:${colors.reset}
@@ -547,6 +598,7 @@ ${colors.cyan}Examples:${colors.reset}
   gw sync --dry-run
   gw list
   gw remove dark-mode
+  gw remove dark-mode --delete-branch
 
 ${colors.cyan}File Patterns:${colors.reset}
   Uses .worktreeinclude in repo root if present.
@@ -670,9 +722,11 @@ async function main(): Promise<void> {
     }
 
     case "remove": {
-      // Parse --force/-f flag
+      // Parse --force/-f and --delete-branch/-D flags
       const force = args.includes("--force") || args.includes("-f");
-      const filteredArgs = args.filter((a) => a !== "--force" && a !== "-f");
+      const deleteBranch = args.includes("--delete-branch") || args.includes("-D");
+      const REMOVE_FLAGS = ["--force", "-f", "--delete-branch", "-D"];
+      const filteredArgs = args.filter((a) => !REMOVE_FLAGS.includes(a));
 
       if (filteredArgs.length < 2) {
         log.error("Missing required argument: <purpose>");
@@ -697,7 +751,7 @@ async function main(): Promise<void> {
       }
 
       const repoName = basename(repoPath);
-      const removed = await removeWorktree(repoPath, repoName, purpose, force);
+      const removed = await removeWorktree(repoPath, repoName, purpose, force, deleteBranch);
       if (!removed) process.exit(1);
       break;
     }
