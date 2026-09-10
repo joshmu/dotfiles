@@ -9,7 +9,7 @@
  * Run from any directory containing git repositories
  */
 
-import { spawn } from "bun";
+import { spawn, spawnSync } from "bun";
 import { existsSync, readdirSync } from "fs";
 import { join, basename } from "path";
 
@@ -892,13 +892,33 @@ async function updateRepo(
   };
 }
 
-// Utility function to chunk array into batches
-export function chunk<T>(array: T[], size: number): T[][] {
-  const chunks: T[][] = [];
-  for (let i = 0; i < array.length; i += size) {
-    chunks.push(array.slice(i, i + size));
+// Split into batches of at most `size`, never placing two items with the same
+// key in one batch. Worktrees of a repo share one ref store, so fetching two of
+// them concurrently races on the same remote-tracking ref locks ("cannot lock
+// ref ... is at X but expected Y"). Keyed by git common dir, sibling worktrees
+// still update, just never side by side.
+export function batchApart<T>(items: T[], keyOf: (item: T) => string, size: number): T[][] {
+  const batches: { items: T[]; keys: Set<string> }[] = [];
+  for (const item of items) {
+    const key = keyOf(item);
+    let batch = batches.find((b) => b.items.length < size && !b.keys.has(key));
+    if (!batch) {
+      batch = { items: [], keys: new Set() };
+      batches.push(batch);
+    }
+    batch.items.push(item);
+    batch.keys.add(key);
   }
-  return chunks;
+  return batches.map((b) => b.items);
+}
+
+// Absolute git common dir, shared by a repo and all of its worktrees. Falls
+// back to the repo path, so an unresolvable repo is never grouped with others.
+export function gitCommonDir(repoPath: string): string {
+  const proc = spawnSync(["git", "rev-parse", "--path-format=absolute", "--git-common-dir"], {
+    cwd: repoPath,
+  });
+  return proc.success ? proc.stdout.toString().trim() : repoPath;
 }
 
 // Sweep all repos and refresh stale origin/HEAD symrefs.
@@ -985,7 +1005,7 @@ async function main() {
   };
 
   // Process repositories in parallel batches
-  const batches = chunk(repos, options.parallel);
+  const batches = batchApart(repos, gitCommonDir, options.parallel);
 
   for (const batch of batches) {
     // Process all repos in this batch in parallel

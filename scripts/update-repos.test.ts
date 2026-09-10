@@ -1,10 +1,12 @@
 import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import { spawnSync } from "bun";
 import { mkdtempSync, mkdirSync, rmSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import {
   parseArgs,
-  chunk,
+  batchApart,
+  gitCommonDir,
   parseBranchOutput,
   resolveDefaultBranch,
   resolveMostActiveEnvBranch,
@@ -84,28 +86,74 @@ describe("parseArgs", () => {
   });
 });
 
-describe("chunk", () => {
-  test("splits array into equal chunks", () => {
-    expect(chunk([1, 2, 3, 4], 2)).toEqual([
-      [1, 2],
-      [3, 4],
-    ]);
+describe("batchApart", () => {
+  const byKey = (s: string) => s.split("/")[0];
+
+  test("chunks in order when every key is distinct", () => {
+    expect(batchApart([1, 2, 3, 4, 5], String, 2)).toEqual([[1, 2], [3, 4], [5]]);
   });
 
-  test("handles remainder in last chunk", () => {
-    expect(chunk([1, 2, 3, 4, 5], 2)).toEqual([[1, 2], [3, 4], [5]]);
-  });
-
-  test("returns single chunk when size >= array length", () => {
-    expect(chunk([1, 2, 3], 10)).toEqual([[1, 2, 3]]);
+  test("returns single batch when size >= item count", () => {
+    expect(batchApart([1, 2, 3], String, 10)).toEqual([[1, 2, 3]]);
   });
 
   test("returns empty array for empty input", () => {
-    expect(chunk([], 5)).toEqual([]);
+    expect(batchApart([], String, 5)).toEqual([]);
   });
 
-  test("handles chunk size of 1", () => {
-    expect(chunk([1, 2, 3], 1)).toEqual([[1], [2], [3]]);
+  test("handles batch size of 1", () => {
+    expect(batchApart([1, 2, 3], String, 1)).toEqual([[1], [2], [3]]);
+  });
+
+  test("never puts two items sharing a key in one batch", () => {
+    const items = ["a/main", "a/wt1", "a/wt2", "b/main", "c/main"];
+    const batches = batchApart(items, byKey, 3);
+    for (const batch of batches) {
+      const keys = batch.map(byKey);
+      expect(new Set(keys).size).toBe(keys.length);
+    }
+    expect(batches.flat().sort()).toEqual([...items].sort());
+  });
+
+  test("fills earlier batches with other keys before opening new ones", () => {
+    expect(batchApart(["a/1", "a/2", "a/3", "b/1", "c/1"], byKey, 2)).toEqual([
+      ["a/1", "b/1"],
+      ["a/2", "c/1"],
+      ["a/3"],
+    ]);
+  });
+});
+
+describe("gitCommonDir", () => {
+  let base: string;
+  const git = (cwd: string, ...args: string[]) =>
+    spawnSync(["git", "-c", "user.name=t", "-c", "user.email=t@t", ...args], { cwd });
+
+  beforeAll(() => {
+    base = mkdtempSync(join(tmpdir(), "update-repos-common-"));
+    for (const name of ["main", "other"]) {
+      mkdirSync(join(base, name));
+      git(join(base, name), "init", "-q");
+      git(join(base, name), "commit", "-q", "--allow-empty", "-m", "init");
+    }
+    git(join(base, "main"), "worktree", "add", "-q", join(base, "wt"));
+    mkdirSync(join(base, "plain"));
+  });
+
+  afterAll(() => {
+    rmSync(base, { recursive: true, force: true });
+  });
+
+  test("resolves a worktree to its main repo's git dir", () => {
+    expect(gitCommonDir(join(base, "wt"))).toBe(gitCommonDir(join(base, "main")));
+  });
+
+  test("keeps separate repos apart", () => {
+    expect(gitCommonDir(join(base, "other"))).not.toBe(gitCommonDir(join(base, "main")));
+  });
+
+  test("falls back to the path itself outside a repo", () => {
+    expect(gitCommonDir(join(base, "plain"))).toBe(join(base, "plain"));
   });
 });
 
