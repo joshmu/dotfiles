@@ -126,8 +126,13 @@ describe("batchApart", () => {
 
 describe("gitCommonDir", () => {
   let base: string;
+  // Drop the GIT_* vars a pre-commit hook exports (GIT_INDEX_FILE=.git/index is
+  // relative), which would otherwise make `worktree add` fail inside the fixture.
+  const env = Object.fromEntries(
+    Object.entries(process.env).filter(([key]) => !key.startsWith("GIT_")),
+  );
   const git = (cwd: string, ...args: string[]) =>
-    spawnSync(["git", "-c", "user.name=t", "-c", "user.email=t@t", ...args], { cwd });
+    spawnSync(["git", "-c", "user.name=t", "-c", "user.email=t@t", ...args], { cwd, env });
 
   beforeAll(() => {
     base = mkdtempSync(join(tmpdir(), "update-repos-common-"));
