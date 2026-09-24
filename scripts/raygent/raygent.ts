@@ -22,8 +22,10 @@ import {
   hasSession,
   createPane,
   killSession,
+  setSessionOption,
 } from "./lib/tmux";
 import { writeFileSync } from "fs";
+import { randomUUID } from "crypto";
 
 async function main() {
   const prompt = process.argv[2];
@@ -85,7 +87,19 @@ async function main() {
       console.log(`Started: ${sessionName} @ ${sessionConfig.cwd}`);
     }
 
-    const args = buildClaudeArgs(process.env.CLAUDE_EXTRA_ARGS);
+    let args = buildClaudeArgs(process.env.CLAUDE_EXTRA_ARGS);
+
+    // Scheduled runs get a pre-provisioned Claude session id and are tagged on
+    // the tmux session, so agent-scheduler's reaper can find the transcript and
+    // tell a scheduled launch apart from the user's own sessions.
+    if (isScheduled) {
+      const claudeSessionId = randomUUID();
+      args += ` --session-id ${claudeSessionId}`;
+      const taskId = prompt.match(/<agent-scheduler task-id="([^"]*)"/)?.[1] ?? "scheduled";
+      setSessionOption(target, "sched_task", taskId);
+      setSessionOption(target, "sched_claude_session", claudeSessionId);
+      setSessionOption(target, "sched_launched", String(Math.floor(Date.now() / 1000)));
+    }
     const promptFile = `/tmp/raygent-prompt-${Date.now()}.txt`;
     writeFileSync(promptFile, prompt);
     sendKeys(target, `claude ${args} -- "$(cat ${promptFile})" && rm ${promptFile}`);

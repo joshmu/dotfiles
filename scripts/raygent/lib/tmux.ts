@@ -42,3 +42,9 @@ export function generateUniqueName(baseName: string): string {
   while (hasSession(`${baseName}-${counter}`)) counter++;
   return `${baseName}-${counter}`;
 }
+
+// Tags a session with a tmux user option (`@key`) so other tools can identify
+// it later — e.g. the agent-scheduler reaper only touches sessions tagged here.
+export function setSessionOption(session: string, key: string, value: string): void {
+  Bun.spawnSync(["tmux", "set-option", "-t", session, `@${key}`, value]);
+}
