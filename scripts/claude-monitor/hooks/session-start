@@ -43,6 +43,10 @@ done
 registry="{}"
 [[ -f "$REGISTRY" ]] && registry=$(jq -e . "$REGISTRY" 2>/dev/null) || registry="{}"
 
+# Drop stale entries first (SessionEnd can be cancelled at shutdown and leak them).
+registry=$("$(dirname "$0")/../prune-registry" "$session_id" "${TMUX_PANE:-}" <<<"$registry") || true
+[[ -n "$registry" ]] || registry="{}"
+
 # Add/update session entry
 registry=$(echo "$registry" | jq \
   --arg sid "$session_id" \

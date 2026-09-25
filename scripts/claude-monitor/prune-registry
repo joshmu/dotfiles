@@ -1,0 +1,43 @@
+#!/bin/bash
+# Filter: reads the registry JSON on stdin, writes it back without stale entries.
+# The caller owns the registry lock. SessionEnd is best-effort (the harness can
+# cancel it at shutdown), so this is the backstop that stops entries leaking.
+#
+# Usage: prune-registry [current_sid] [current_pane]
+# Drops an entry when:
+#   - it claims current_pane under another sid (one claude per pane: superseded)
+#   - its tmux pane no longer exists (only checked when tmux is reachable)
+#   - it has no pane (headless run) and its transcript is missing or idle > 24h
+set -e
+
+PROJECTS_DIR="$HOME/.claude/projects"
+HEADLESS_MAX_IDLE_SECS=$((24 * 3600))
+current_sid="${1:-}"
+current_pane="${2:-}"
+
+registry=$(jq -e . 2>/dev/null) || registry="{}"
+
+live_panes=$(tmux list-panes -a -F '#{pane_id}' 2>/dev/null || true)
+now=$(date +%s)
+
+stale=()
+# \x1f separator: tab is IFS whitespace, so empty fields would collapse.
+while IFS=$'\x1f' read -r sid pane cwd; do
+  [[ -z "$sid" || "$sid" == "$current_sid" ]] && continue
+  if [[ -n "$pane" ]]; then
+    if [[ "$pane" == "$current_pane" ]] ||
+       { [[ -n "$live_panes" ]] && ! grep -qxF -- "$pane" <<<"$live_panes"; }; then
+      stale+=("$sid")
+    fi
+  else
+    transcript="$PROJECTS_DIR/$(tr '/.' '-' <<<"$cwd")/$sid.jsonl"
+    mtime=$(stat -f %m "$transcript" 2>/dev/null || stat -c %Y "$transcript" 2>/dev/null || echo 0)
+    (( now - mtime > HEADLESS_MAX_IDLE_SECS )) && stale+=("$sid")
+  fi
+done < <(jq -r 'to_entries[] | [.key, (.value.tmux_pane // ""), (.value.cwd // "")] | join("\u001f")' <<<"$registry")
+
+if ((${#stale[@]})); then
+  jq --args 'delpaths([$ARGS.positional[] | [.]])' "${stale[@]}" <<<"$registry"
+else
+  printf '%s\n' "$registry"
+fi

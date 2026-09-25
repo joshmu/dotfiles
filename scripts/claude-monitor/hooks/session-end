@@ -9,9 +9,12 @@ session_id=$(echo "$input" | jq -r '.session_id // empty')
 
 [[ -z "$session_id" || ! -f "$REGISTRY" ]] && exit 0
 
+# Detach the registry write and return at once: SessionEnd runs inside the
+# shutdown window and the harness aborts any hook still running when the CLI
+# exits ("Hook cancelled"), e.g. a failed --resume that quits immediately.
+# session-start's prune is the backstop if this is still lost.
+(
 # Serialise with the same mkdir lock session-start uses; best-effort ~2s.
-# Kept short: SessionEnd runs inside the shutdown window and a longer spin
-# gets aborted by the harness ("Hook cancelled").
 LOCK="$REGISTRY.lock"
 for _ in $(seq 1 20); do
   if mkdir "$LOCK" 2>/dev/null; then
@@ -30,3 +33,6 @@ done
 # Tolerate a corrupt registry: skip the delete rather than abort the hook.
 jq -e . "$REGISTRY" >/dev/null 2>&1 || exit 0
 jq --arg sid "$session_id" 'del(.[$sid])' "$REGISTRY" > "$REGISTRY.tmp" && mv "$REGISTRY.tmp" "$REGISTRY"
+) </dev/null >/dev/null 2>&1 &
+disown
+exit 0
