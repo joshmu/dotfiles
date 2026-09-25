@@ -4,7 +4,7 @@ import { dirname, join } from "path";
 
 /**
  * Herdr backend for scheduled runs: one shared workspace (default label
- * "agent-scheduler"), one tab per run. Talks to the server over its socket via
+ * "schedules"), one tab per run. Talks to the server over its socket via
  * the `herdr` CLI, so it works from launchd outside any Herdr pane.
  *
  * Every launch is recorded in a registry file because Herdr pane metadata does
@@ -12,7 +12,7 @@ import { dirname, join } from "path";
  * reaper reads the same file — keep the record shape in sync with it.
  */
 
-export const HERDR_WORKSPACE_LABEL = process.env.RAYGENT_HERDR_WORKSPACE || "agent-scheduler";
+export const HERDR_WORKSPACE_LABEL = process.env.RAYGENT_HERDR_WORKSPACE || "schedules";
 
 export interface HerdrRun {
   tabId: string;

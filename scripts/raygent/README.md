@@ -117,7 +117,7 @@ tmux attach -t <session-name>
 
 Prompts containing agent-scheduler's `<agent-scheduler task-id="…" />` marker are scheduled runs. They launch claude with a pre-provisioned `--session-id` and are recorded for agent-scheduler's stale-session reaper: tmux sessions get `@sched_task` / `@sched_claude_session` / `@sched_launched` options; Herdr runs go in `~/.local/state/raygent/herdr-runs.json` (Herdr pane metadata doesn't survive a server restart; tab ids and labels do).
 
-With `AGENT_SCHEDULER_MUX=herdr` a scheduled run opens as a tab (`{task} MM-DD HH:mm`) in the `agent-scheduler` workspace of the default Herdr session, starting a headless server if none is running; it falls back to tmux when `herdr` is missing or fails. Overrides: `RAYGENT_HERDR_SESSION` (named session), `RAYGENT_HERDR_WORKSPACE` (workspace label), `RAYGENT_STATE_DIR` (registry dir).
+With `AGENT_SCHEDULER_MUX=herdr` a scheduled run opens as a tab (`{task} MM-DD HH:mm`) in the `schedules` workspace of the default Herdr session, starting a headless server if none is running; it falls back to tmux when `herdr` is missing or fails. Overrides: `RAYGENT_HERDR_SESSION` (named session), `RAYGENT_HERDR_WORKSPACE` (workspace label), `RAYGENT_STATE_DIR` (registry dir).
 
 ## Files
 
