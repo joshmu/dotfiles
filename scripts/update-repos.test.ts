@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeAll, afterAll } from "bun:test";
 import { spawnSync } from "bun";
-import { mkdtempSync, mkdirSync, rmSync } from "fs";
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import {
@@ -370,6 +370,7 @@ describe("discoverGitRepos", () => {
   //   base/node_modules/pkg/.git   → NOT discovered (skip dir)
   //   base/plain/                  → no repo, nothing discovered
   //   base/singleRepo/.git         → discovered when passed as a root directly
+  //   base/worktrees/wt/.git (file) → NOT discovered (linked worktree)
   beforeAll(() => {
     base = mkdtempSync(join(tmpdir(), "update-repos-test-"));
     const mkrepo = (p: string) => mkdirSync(join(p, ".git"), { recursive: true });
@@ -379,6 +380,8 @@ describe("discoverGitRepos", () => {
     mkrepo(join(base, "node_modules", "pkg"));
     mkdirSync(join(base, "plain", "sub"), { recursive: true });
     mkrepo(join(base, "singleRepo"));
+    mkdirSync(join(base, "worktrees", "wt"), { recursive: true });
+    writeFileSync(join(base, "worktrees", "wt", ".git"), "gitdir: /elsewhere\n");
   });
 
   afterAll(() => {
@@ -390,6 +393,10 @@ describe("discoverGitRepos", () => {
     expect(repos).toEqual([join(base, "container", "repoB")]);
     // nested repo inside repoB must NOT appear
     expect(repos).not.toContain(join(base, "container", "repoB", "nested"));
+  });
+
+  test("skips linked worktrees", () => {
+    expect(discoverGitRepos([base])).not.toContain(join(base, "worktrees", "wt"));
   });
 
   test("walks nested containers and skips heavy/vendored dirs", () => {

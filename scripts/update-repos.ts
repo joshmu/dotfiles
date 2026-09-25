@@ -10,7 +10,7 @@
  */
 
 import { spawn, spawnSync } from "bun";
-import { existsSync, readdirSync } from "fs";
+import { existsSync, readdirSync, statSync } from "fs";
 import { join, basename } from "path";
 
 // ANSI color codes
@@ -384,7 +384,7 @@ export const SKIP_DIRS = new Set([
 // Walk semantics: each directory is checked first — if it is itself a repo
 // (contains .git) it is recorded and we STOP descending (prune at the repo
 // boundary). This means nested worktrees, submodules, and vendored repos
-// inside a discovered repo are never touched. Non-repo containers are walked
+// inside a discovered repo are never touched. Linked worktrees are skipped. Non-repo containers are walked
 // further, so a container-of-containers (e.g. code/ → open-source/ → repo)
 // resolves to its leaf repos. A root that is itself a single repo (dotfiles,
 // .claude) resolves to just that repo.
@@ -398,9 +398,11 @@ export function discoverGitRepos(roots: string[], maxDepth = 5): string[] {
   const walk = (dir: string, depth: number) => {
     if (depth > maxDepth) return;
 
-    // Repo boundary: record and do not descend.
+    // Repo boundary: record and do not descend. Linked worktrees (`.git` is a
+    // file, not a dir) hold personal branches nobody else pushes to, so they
+    // are pruned without being recorded.
     if (isGitRepo(dir)) {
-      found.add(dir);
+      if (statSync(join(dir, ".git")).isDirectory()) found.add(dir);
       return;
     }
 
