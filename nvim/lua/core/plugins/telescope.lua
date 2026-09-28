@@ -106,22 +106,32 @@ return {
       -- See `:help telescope.builtin`
       local builtin = require 'telescope.builtin'
 
-      local function grep_with_args()
-        local mode = vim.fn.mode()
-        if mode == 'v' or mode == 'V' or mode == '^V' then
-          require('telescope-live-grep-args.shortcuts').grep_visual_selection({
-            postfix = ' --hidden ',
-          })
-        else
-          require('telescope').extensions.live_grep_args.live_grep_args()
+      -- extra_args: rg flags appended to the default vimgrep_arguments
+      local function grep_with_args(extra_args)
+        local opts = {}
+        if extra_args then
+          opts.vimgrep_arguments = vim.list_extend(vim.deepcopy(require('telescope.config').values.vimgrep_arguments), extra_args)
         end
+        local mode = vim.fn.mode()
+        if mode == 'v' or mode == 'V' or mode == '\22' then
+          opts.postfix = ' --hidden '
+          require('telescope-live-grep-args.shortcuts').grep_visual_selection(opts)
+        else
+          require('telescope').extensions.live_grep_args.live_grep_args(opts)
+        end
+      end
+
+      -- Everything: dot-dirs and gitignored files too (still skips .git/)
+      local function grep_everything()
+        grep_with_args { '--hidden', '--no-ignore', '--glob', '!.git/' }
       end
 
       vim.keymap.set('n', '<leader>fh', builtin.help_tags, { desc = 'Find [H]elp' })
       vim.keymap.set('n', '<leader>fk', builtin.keymaps, { desc = 'Find [K]eymaps' })
       vim.keymap.set('n', '<leader>fb', builtin.builtin, { desc = 'Find Telescope [B]uiltins' })
-      vim.keymap.set({ 'n', 'v' }, '<leader>fg', grep_with_args, { desc = 'Find [G]rep' })
-      vim.keymap.set({ 'n', 'v' }, '<leader>fw', grep_with_args, { desc = 'Find [W]ord (grep)' })
+      vim.keymap.set({ 'n', 'v' }, '<leader>fg', function() grep_with_args() end, { desc = 'Find [G]rep' })
+      vim.keymap.set({ 'n', 'v' }, '<leader>fw', function() grep_with_args() end, { desc = 'Find [W]ord (grep)' })
+      vim.keymap.set({ 'n', 'v' }, '<leader>fW', grep_everything, { desc = 'Find [W]ord everywhere (hidden + ignored)' })
       vim.keymap.set('n', '<leader>fs', builtin.git_status, { desc = 'Find Git [S]tatus' })
       vim.keymap.set('n', '<leader>fd', builtin.diagnostics, { desc = 'Find [D]iagnostics' })
       vim.keymap.set('n', '<leader>fr', builtin.resume, { desc = 'Find [R]esume' })
