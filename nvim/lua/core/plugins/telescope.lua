@@ -130,6 +130,7 @@ return {
       vim.keymap.set('n', '<leader>fk', builtin.keymaps, { desc = 'Find [K]eymaps' })
       vim.keymap.set('n', '<leader>fb', builtin.builtin, { desc = 'Find Telescope [B]uiltins' })
       vim.keymap.set({ 'n', 'v' }, '<leader>fg', function() grep_with_args() end, { desc = 'Find [G]rep' })
+      vim.keymap.set({ 'n', 'v' }, '<leader>fG', grep_everything, { desc = 'Find [G]rep everywhere (hidden + ignored)' })
       vim.keymap.set({ 'n', 'v' }, '<leader>fw', function() grep_with_args() end, { desc = 'Find [W]ord (grep)' })
       vim.keymap.set({ 'n', 'v' }, '<leader>fW', grep_everything, { desc = 'Find [W]ord everywhere (hidden + ignored)' })
       vim.keymap.set('n', '<leader>fs', builtin.git_status, { desc = 'Find Git [S]tatus' })
