@@ -1,6 +1,6 @@
 # Raygent
 
-Raycast → Claude Code via tmux. Launch headless Claude Code sessions with AI-powered workspace routing.
+Raycast → Claude Code in Herdr (or tmux). Launch Claude Code sessions with AI-powered naming and workspace routing, and keep one session per Slack conversation.
 
 ## Architecture
 
@@ -80,11 +80,38 @@ cp config.example.json config.json
 | `exactKeywords` | string[] | Deterministic matching (bypasses AI router)       |
 | `tmuxSession`   | string   | Fixed session name; reuses session with new panes |
 
+### Launch and Slack options (per machine)
+
+```json
+{
+  "launch": { "mux": "herdr", "fixedCwd": "~/work", "focusOnLaunch": false },
+  "slack": {
+    "workspaces": {
+      "acme.slack.com": {
+        "mcpServer": "slack-acme",
+        "teamId": "T0123ABCD",
+        "authCommand": "cat ~/.config/raygent/acme-slack-headers.json"
+      }
+    }
+  }
+}
+```
+
+| Option                  | Description                                                                      |
+| ----------------------- | -------------------------------------------------------------------------------- |
+| `launch.mux`            | `herdr` or `tmux` (default) for Raycast prompts                                  |
+| `launch.fixedCwd`       | Always start Raycast prompts here; skips routing (scheduled runs still route)    |
+| `launch.focusOnLaunch`  | Focus the agent and bring Ghostty forward                                        |
+| `slack.workspaces.*`    | Keyed by workspace host                                                          |
+| `mcpServer`             | Slack MCP server the session should read the conversation with                  |
+| `teamId`                | Matches `app.slack.com` / `slack://` links, which carry no host                  |
+| `authCommand`           | Prints a JSON object of HTTP headers for Slack Web API calls, e.g. `{"Authorization": "Bearer …"}` (optional) |
+
 ### Path expansion
 
 `path` supports `~`, `$VAR`, and `${VAR}` so configs stay portable across machines
-instead of hardcoding absolutes (e.g. `"$BRG_WORKSPACE"`, `"~/vault"`,
-`"$BRG_WORKSPACE/repos"`). Variables resolve from the **process environment at
+instead of hardcoding absolutes (e.g. `"$WORK_DIR"`, `"~/vault"`,
+`"$WORK_DIR/repos"`). Variables resolve from the **process environment at
 launch time** — an undefined variable throws loudly rather than silently starting a
 session in the wrong directory. Callers spawned outside an interactive shell (e.g.
 launchd) must export the referenced vars themselves before invoking raygent.
@@ -113,6 +140,31 @@ bun ~/dotfiles/scripts/raygent/lib/router-agent.ts "your prompt"
 tmux attach -t <session-name>
 ```
 
+### Herdr launches
+
+With `launch.mux: "herdr"` a Raycast prompt starts Claude as a **named Herdr agent** in its own tab of the `raygent` workspace (created on first use), then submits the prompt with `herdr agent prompt`. The agent name doubles as the Claude session name (`claude -n`). A macOS notification says where the prompt went. If Herdr is unavailable the launch falls back to tmux.
+
+```mermaid
+flowchart LR
+    P[Raycast prompt] --> S{Slack link?<br/>prompt, else fresh clipboard}
+    S -->|yes| L[conversation label]
+    S -->|no| H[Haiku names it]
+    L --> M{live agent for<br/>this conversation?}
+    M -->|yes| R[agent prompt<br/>re-inject]
+    M -->|no| N[new tab + agent start]
+    H --> N
+```
+
+### Slack conversations
+
+A Slack message link in the prompt, or a link copied since the last launch (the clipboard must hold exactly the link), binds the launch to that conversation:
+
+- **Key**: workspace host + channel id, so any message link from the same channel reaches the same session.
+- **Re-inject**: if a live agent is bound to the key (pane token `slack_key`), the prompt goes to it instead of a new session. If it is waiting on a permission prompt, raygent waits up to 10 minutes, then delivers; otherwise the prompt is saved under `$RAYGENT_STATE_DIR/pending/`.
+- **Name**: the channel name (`dm-…` / `gdm-…` for direct messages), looked up with the workspace's `authCommand` and cached for a week; without one the session is named `slack-{channelid}`.
+- **Context**: the prompt is prefixed with the link and the Slack MCP server to read it with.
+- `!noclip` at the start of a prompt skips the clipboard. Scheduled runs never read it.
+
 ### Scheduled runs
 
 Prompts containing agent-scheduler's `<agent-scheduler task-id="…" />` marker are scheduled runs. They launch claude with a pre-provisioned `--session-id` and are recorded for agent-scheduler's stale-session reaper: tmux sessions get `@sched_task` / `@sched_claude_session` / `@sched_launched` options; Herdr runs go in `~/.local/state/raygent/herdr-runs.json` (Herdr pane metadata doesn't survive a server restart; tab ids and labels do).
@@ -126,7 +178,11 @@ With `AGENT_SCHEDULER_MUX=herdr` a scheduled run opens as a tab (`{task} MM-DD H
 | `raygent.ts`          | Main orchestrator             |
 | `lib/router-agent.ts` | AI routing via Claude Haiku   |
 | `lib/tmux.ts`         | tmux session management       |
-| `lib/herdr.ts`        | Herdr tabs for scheduled runs |
+| `lib/herdr.ts`        | Herdr CLI, tabs, run registry |
+| `lib/herdr-agent.ts`  | Named agents, re-inject       |
+| `lib/slack-link.ts`   | Slack link parsing, clipboard pick |
+| `lib/slack.ts`        | Conversation labels           |
+| `lib/launch.ts`       | Per-machine launch settings   |
 | `raycast-raygent.sh`  | Raycast script command        |
 | `config.json`         | Workspace config (gitignored) |
 
@@ -134,4 +190,5 @@ With `AGENT_SCHEDULER_MUX=herdr` a scheduled run opens as a tab (`{task} MM-DD H
 
 - [Bun](https://bun.sh) runtime
 - [Claude CLI](https://github.com/anthropics/claude-code) (`~/.local/bin/claude`)
+- [Herdr](https://herdr.dev) 0.9+ (optional; tmux otherwise)
 - tmux

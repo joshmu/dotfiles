@@ -3,21 +3,55 @@
   "workspaces": {
     "work": {
       "path": "$WORK_DIR",
-      "keywords": ["work", "project", "client"]
+      "keywords": [
+        "work",
+        "project",
+        "client"
+      ]
     },
     "personal": {
       "path": "~/code",
-      "keywords": ["personal", "config", "dotfiles", "scripts"]
+      "keywords": [
+        "personal",
+        "config",
+        "dotfiles",
+        "scripts"
+      ]
     },
     "side-project": {
       "path": "~/code/side-project",
-      "keywords": ["side project", "hobby", "experiment"]
+      "keywords": [
+        "side project",
+        "hobby",
+        "experiment"
+      ]
     },
     "review-tasks": {
       "path": "$WORK_DIR/repos",
-      "keywords": ["review", "pr", "code review"],
-      "exactKeywords": ["review-pr", "pr-review"],
+      "keywords": [
+        "review",
+        "pr",
+        "code review"
+      ],
+      "exactKeywords": [
+        "review-pr",
+        "pr-review"
+      ],
       "tmuxSession": "review-tasks"
+    }
+  },
+  "launch": {
+    "mux": "herdr",
+    "fixedCwd": "$WORK_DIR",
+    "focusOnLaunch": false
+  },
+  "slack": {
+    "workspaces": {
+      "acme.slack.com": {
+        "mcpServer": "slack-acme",
+        "teamId": "T0123ABCD",
+        "authCommand": "cat ~/.config/raygent/acme-slack-headers.json"
+      }
     }
   }
 }

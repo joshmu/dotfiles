@@ -7,7 +7,7 @@
 
 # Optional parameters:
 # @raycast.icon 🤖
-# @raycast.description Start Claude Code in new tmux session
+# @raycast.description Start Claude Code in Herdr or tmux; Slack links reuse the conversation's session
 # @raycast.argument1 { "type": "text", "placeholder": "Prompt" }
 
 # Documentation:

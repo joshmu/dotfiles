@@ -121,7 +121,7 @@ describe("expandPath", () => {
   });
 
   test("passes absolute paths through unchanged", () => {
-    expect(expandPath("/Users/x/work/brg")).toBe("/Users/x/work/brg");
+    expect(expandPath("/Users/x/work/project")).toBe("/Users/x/work/project");
   });
 
   test("throws loudly on an undefined env var", () => {
