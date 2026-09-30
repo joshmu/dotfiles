@@ -13,12 +13,29 @@ import {
   generateSessionConfig,
   loadConfig,
   findExactMatch,
+  type Config,
   type SessionConfig,
 } from "./lib/router-agent";
 import { buildClaudeArgs, buildClaudeArgv } from "./lib/claude-cmd";
 import { resolveLaunch } from "./lib/launch";
 import { toAgentName, uniqueAgentName } from "./lib/agent-name";
-import { focusAgent, liveAgents, promptAgent, spawnAgent } from "./lib/herdr-agent";
+import {
+  SLACK_TOKEN,
+  findSlackAgent,
+  focusAgent,
+  liveAgents,
+  promptAgent,
+  reinject,
+  spawnAgent,
+} from "./lib/herdr-agent";
+import { pickSlackRef, slackKey, withSlackContext } from "./lib/slack-link";
+import { resolveLabel, workspaceFor } from "./lib/slack";
+import {
+  clipboardChangeCount,
+  clipboardChangedSinceLastLaunch,
+  readClipboard,
+  recordClipboardSeen,
+} from "./lib/clipboard";
 import { notify } from "./lib/notify";
 import {
   createSession,
@@ -43,19 +60,64 @@ import {
   runLabel,
 } from "./lib/herdr";
 
-async function main() {
-  const prompt = process.argv[2];
+interface SlackTarget {
+  key: string;
+  label: string;
+}
 
-  if (!prompt) {
+/** Slack link from the prompt or a freshly copied clipboard; names the session and adds context. */
+async function resolveSlack(
+  rawPrompt: string,
+  cfg: Config,
+  isScheduled: boolean,
+): Promise<{ prompt: string; routingPrompt: string; slack?: SlackTarget }> {
+  if (isScheduled) return { prompt: rawPrompt, routingPrompt: rawPrompt };
+  const count = clipboardChangeCount();
+  const picked = pickSlackRef({
+    prompt: rawPrompt,
+    clipboard: readClipboard(),
+    clipboardChanged: clipboardChangedSinceLastLaunch(count),
+    isScheduled,
+  });
+  recordClipboardSeen(count);
+  if (!picked.ref) return { prompt: picked.prompt, routingPrompt: picked.prompt };
+  const key = slackKey(picked.ref);
+  const label =
+    (await resolveLabel(key, picked.ref, cfg.slack)) ??
+    `slack-${picked.ref.channelId.toLowerCase()}`;
+  console.log(`slack: ${key} -> ${label}${picked.fromClipboard ? " (clipboard)" : ""}`);
+  return {
+    prompt: withSlackContext(
+      picked.prompt,
+      picked.ref,
+      workspaceFor(picked.ref, cfg.slack)?.mcpServer,
+    ),
+    routingPrompt: picked.prompt,
+    slack: { key, label },
+  };
+}
+
+async function main() {
+  const rawPrompt = process.argv[2];
+
+  if (!rawPrompt) {
     console.error('Usage: raygent.ts "your prompt"');
     process.exit(1);
   }
 
   try {
-    // Check for exact keyword match first (skip router)
     const cfg = await loadConfig();
-    const exactMatch = findExactMatch(prompt, cfg);
+    // Scheduled runs carry this marker (injected by agent-scheduler's
+    // run-task.sh). They get a pre-provisioned Claude session id and are tagged
+    // (tmux session options / herdr run registry) so agent-scheduler's reaper can
+    // find the transcript and tell a scheduled launch apart from the user's own.
+    const isScheduled = rawPrompt.includes("<agent-scheduler");
+    const taskId = rawPrompt.match(/<agent-scheduler task-id="([^"]*)"/)?.[1] ?? "scheduled";
+    const launch = resolveLaunch(cfg, isScheduled);
+    const { prompt, routingPrompt, slack } = await resolveSlack(rawPrompt, cfg, isScheduled);
 
+    // Exact keyword match first; a Slack name with a pinned cwd needs no router at all.
+    const exactMatch = findExactMatch(routingPrompt, cfg);
     let sessionConfig: SessionConfig;
     if (exactMatch) {
       sessionConfig = {
@@ -63,22 +125,17 @@ async function main() {
         cwd: exactMatch.config.path,
         tmuxSession: exactMatch.config.tmuxSession,
       };
+    } else if (slack && launch.fixedCwd) {
+      sessionConfig = { name: slack.label, cwd: launch.fixedCwd };
     } else {
-      sessionConfig = await generateSessionConfig(prompt);
+      sessionConfig = await generateSessionConfig(routingPrompt);
     }
-
-    // Scheduled runs carry this marker (injected by agent-scheduler's
-    // run-task.sh). They get a pre-provisioned Claude session id and are tagged
-    // (tmux session options / herdr run registry) so agent-scheduler's reaper can
-    // find the transcript and tell a scheduled launch apart from the user's own.
-    const isScheduled = prompt.includes("<agent-scheduler");
-    const taskId = prompt.match(/<agent-scheduler task-id="([^"]*)"/)?.[1] ?? "scheduled";
-    const claudeSessionId = randomUUID();
-    const launch = resolveLaunch(cfg, isScheduled);
+    if (slack) sessionConfig.name = slack.label;
     if (launch.fixedCwd) sessionConfig.cwd = launch.fixedCwd;
 
+    const claudeSessionId = randomUUID();
     if (launch.mux === "herdr" && herdrAvailable()) {
-      if (launchInHerdr(prompt, sessionConfig, claudeSessionId, launch.focus)) return;
+      if (launchInHerdr(prompt, sessionConfig, claudeSessionId, launch.focus, slack)) return;
     }
 
     let args = buildClaudeArgs(process.env.CLAUDE_EXTRA_ARGS);
@@ -173,11 +230,22 @@ function launchInHerdr(
   sessionConfig: SessionConfig,
   claudeSessionId: string,
   focus: boolean,
+  slack?: SlackTarget,
 ): boolean {
   let name: string;
   try {
     ensureServer();
-    const taken = liveAgents().flatMap((a) => (a.name ? [a.name] : []));
+    const agents = liveAgents();
+    const existing = slack && findSlackAgent(agents, slack.key, toAgentName(slack.label));
+    if (existing) {
+      const target = existing.name ?? existing.paneId;
+      const outcome = reinject(target, prompt);
+      console.log(`re-inject ${target}: ${outcome}`);
+      notify(`${target} ← ${outcome === "delivered" ? "re-injected" : outcome}`);
+      if (focus) focusAgent(target);
+      return true;
+    }
+    const taken = agents.flatMap((a) => (a.name ? [a.name] : []));
     name = uniqueAgentName(toAgentName(sessionConfig.name), taken);
     const argv = [
       ...buildClaudeArgv(process.env.CLAUDE_EXTRA_ARGS),
@@ -186,7 +254,12 @@ function launchInHerdr(
       "-n",
       name,
     ];
-    const { tabId, paneId } = spawnAgent({ name, cwd: sessionConfig.cwd, claudeArgv: argv });
+    const { tabId, paneId } = spawnAgent({
+      name,
+      cwd: sessionConfig.cwd,
+      claudeArgv: argv,
+      tokens: slack ? { [SLACK_TOKEN]: slack.key } : undefined,
+    });
     appendRegistry({
       tabId,
       paneId,

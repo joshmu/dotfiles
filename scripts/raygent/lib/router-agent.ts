@@ -1,5 +1,6 @@
 import { join, dirname } from "path";
 import { appendFileSync } from "fs";
+import type { SlackConfig } from "./slack";
 
 const TIMEOUT_MS = 60000;
 const CONFIG_PATH = process.env.RAYGENT_CONFIG || join(dirname(import.meta.dir), "config.json");
@@ -33,6 +34,7 @@ export interface Config {
   default: string;
   workspaces: Record<string, WorkspaceConfig>;
   launch?: LaunchConfig;
+  slack?: SlackConfig;
 }
 
 export interface SessionConfig {

@@ -1,6 +1,9 @@
-import { mkdirSync, rmdirSync } from "fs";
-import { join } from "path";
-import { herdr, herdrRegistryPath, openRunTab, RAYGENT_WORKSPACE_LABEL } from "./herdr";
+import { mkdirSync, rmdirSync, writeFileSync } from "fs";
+import { dirname, join } from "path";
+import { HerdrError, herdr, herdrRegistryPath, openRunTab, RAYGENT_WORKSPACE_LABEL } from "./herdr";
+
+/** Pane token holding the Slack conversation key a session is bound to. */
+export const SLACK_TOKEN = "slack_key";
 
 export interface LiveAgent {
   name?: string;
@@ -104,4 +107,57 @@ export function promptAgent(target: string, text: string): void {
 export function focusAgent(target: string): void {
   herdr(["agent", "focus", target]);
   Bun.spawnSync(["open", "-a", "Ghostty"]);
+}
+
+/**
+ * The live agent bound to a Slack conversation: by pane token, else by name
+ * for an untagged agent (tokens don't survive a Herdr server restart).
+ */
+export function findSlackAgent(
+  agents: LiveAgent[],
+  key: string,
+  name: string,
+): LiveAgent | undefined {
+  return (
+    agents.find((a) => a.tokens[SLACK_TOKEN] === key) ??
+    agents.find((a) => a.name === name && !a.tokens[SLACK_TOKEN])
+  );
+}
+
+const BLOCKED_WAIT_MS = 10 * 60 * 1000;
+
+/**
+ * Sends a follow-up to an existing agent. A pending permission prompt makes Herdr
+ * reject the prompt, so wait (bounded) for it to clear, then deliver once. Never
+ * retry after a timeout or stall: the text may already have been delivered.
+ */
+export function reinject(target: string, text: string): "delivered" | "pending" {
+  try {
+    promptAgent(target, text);
+    return "delivered";
+  } catch (e) {
+    if (!(e instanceof HerdrError && e.code === "agent_blocked")) throw e;
+  }
+  try {
+    herdr([
+      "agent",
+      "wait",
+      target,
+      "--until",
+      "idle",
+      "--until",
+      "working",
+      "--until",
+      "done",
+      "--timeout",
+      String(BLOCKED_WAIT_MS),
+    ]);
+    promptAgent(target, text);
+    return "delivered";
+  } catch {
+    const p = join(dirname(herdrRegistryPath()), "pending", `${target}-${Date.now()}.txt`);
+    mkdirSync(dirname(p), { recursive: true });
+    writeFileSync(p, text);
+    return "pending";
+  }
 }
