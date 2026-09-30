@@ -89,6 +89,10 @@ focus_agent = "prefix+alt+1..9"
 # rename_tab = "prefix+shift+t"
 # previous_tab = "prefix+p"
 # next_tab = "prefix+n"
+# Reorder tabs (direct chord; left option = alt in Ghostty). Pairs with
+# Ghostty's cmd+shift+h/l tab navigation.
+move_tab_previous = "alt+shift+h"
+move_tab_next = "alt+shift+l"
 # switch_tab = "prefix+1..9"
 # switch_workspace = ""   # optional indexed binding, e.g. "prefix+shift+1..9"
 # close_tab = "prefix+shift+x"
