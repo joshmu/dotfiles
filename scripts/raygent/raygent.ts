@@ -33,9 +33,10 @@ import { pickSlackRef, slackKey, withSlackContext } from "./lib/slack-link";
 import { resolveLabel, workspaceFor } from "./lib/slack";
 import {
   clipboardChangeCount,
-  clipboardChangedSinceLastLaunch,
+  lastLaunchCount,
   readClipboard,
-  recordClipboardSeen,
+  readWatchedClips,
+  recordLaunchCount,
 } from "./lib/clipboard";
 import { notify } from "./lib/notify";
 import {
@@ -73,13 +74,16 @@ async function resolveSlack(
 ): Promise<{ prompt: string; routingPrompt: string; slack?: SlackTarget }> {
   if (isScheduled) return { prompt: rawPrompt, routingPrompt: rawPrompt };
   const count = clipboardChangeCount();
+  const now = Date.now();
   const picked = pickSlackRef({
     prompt: rawPrompt,
-    clipboard: readClipboard(),
-    clipboardChanged: clipboardChangedSinceLastLaunch(count),
+    clips: [...readWatchedClips(), { text: readClipboard(), changeCount: count, at: now }],
+    lastLaunchCount: lastLaunchCount(),
+    currentCount: count,
+    now,
     isScheduled,
   });
-  recordClipboardSeen(count);
+  recordLaunchCount(count);
   if (!picked.ref) return { prompt: picked.prompt, routingPrompt: picked.prompt };
   const key = slackKey(picked.ref);
   const label =

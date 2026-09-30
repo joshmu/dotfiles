@@ -157,13 +157,24 @@ flowchart LR
 
 ### Slack conversations
 
-A Slack message link in the prompt, or a link copied since the last launch (the clipboard must hold exactly the link), binds the launch to that conversation:
+A Slack message link in the prompt, or a link copied since the last launch and within the last 10 minutes (the copy must be exactly the link), binds the launch to that conversation. The newest such link wins, so later copies (e.g. dictation that writes the prompt to the clipboard) don't hide it; this needs the clip-watch agent below, otherwise only the current clipboard is checked.
 
 - **Key**: workspace host + channel id, so any message link from the same channel reaches the same session.
 - **Re-inject**: if a live agent is bound to the key (pane token `slack_key`), the prompt goes to it instead of a new session. If it is waiting on a permission prompt, raygent waits up to 10 minutes, then delivers; otherwise the prompt is saved under `$RAYGENT_STATE_DIR/pending/`.
 - **Name**: the channel name (`dm-…` / `gdm-…` for direct messages), looked up with the workspace's `authCommand` and cached for a week; without one the session is named `slack-{channelid}`.
 - **Context**: the prompt is prefixed with the link and the Slack MCP server to read it with.
 - `!noclip` at the start of a prompt skips the clipboard. Scheduled runs never read it.
+
+### clip-watch (optional, per machine)
+
+macOS keeps one clipboard item and has no change event, so `clip-watch/clip-watch.swift` polls the pasteboard's change counter twice a second (an in-process read, negligible CPU) and, only when it changes, records the copy if it is a Slack conversation link. Nothing else is stored. It writes the last 5 links, dropping any older than 10 minutes, to `$RAYGENT_STATE_DIR/slack-clips.json`.
+
+```bash
+scripts/raygent/clip-watch/install-clip-watch.sh              # build + run as a login LaunchAgent
+scripts/raygent/clip-watch/install-clip-watch.sh --uninstall  # stop and remove
+```
+
+Re-run the installer after changing the Swift source. Logs (start-up and errors only): `/tmp/raygent-clip-watch.log`.
 
 ### Scheduled runs
 
@@ -183,6 +194,8 @@ With `AGENT_SCHEDULER_MUX=herdr` a scheduled run opens as a tab (`{task} MM-DD H
 | `lib/slack-link.ts`   | Slack link parsing, clipboard pick |
 | `lib/slack.ts`        | Conversation labels           |
 | `lib/launch.ts`       | Per-machine launch settings   |
+| `lib/clipboard.ts`    | Live clipboard + clip-watch record |
+| `clip-watch/`         | Slack link clipboard watcher  |
 | `raycast-raygent.sh`  | Raycast script command        |
 | `config.json`         | Workspace config (gitignored) |
 

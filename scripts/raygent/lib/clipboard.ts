@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { dirname, join } from "path";
 import { herdrRegistryPath } from "./herdr";
+import type { ClipCandidate } from "./slack-link";
 
 export function readClipboard(): string {
   return Bun.spawnSync(["pbpaste"]).stdout.toString();
@@ -19,25 +20,43 @@ export function clipboardChangeCount(): number {
   return Number.isFinite(n) ? n : -1;
 }
 
-function statePath(): string {
-  return join(dirname(herdrRegistryPath()), "clipboard.json");
+function stateDir(): string {
+  return dirname(herdrRegistryPath());
 }
 
-/** True when something was copied since the last Raycast launch (or on first run). */
-export function clipboardChangedSinceLastLaunch(current: number): boolean {
-  if (current < 0) return false;
-  const p = statePath();
-  if (!existsSync(p)) return true;
+/** Slack links recorded by clip-watch (empty when it isn't installed). */
+export function readWatchedClips(): ClipCandidate[] {
+  const p = join(stateDir(), "slack-clips.json");
+  if (!existsSync(p)) return [];
   try {
-    return JSON.parse(readFileSync(p, "utf8")).changeCount !== current;
+    const clips = JSON.parse(readFileSync(p, "utf8"));
+    return Array.isArray(clips)
+      ? clips.map((c: any) => ({ text: String(c.url), changeCount: c.changeCount, at: c.at }))
+      : [];
   } catch {
-    return true;
+    return [];
   }
 }
 
-/** Recorded on every Raycast launch, used or not, so a copy is only ever considered once. */
-export function recordClipboardSeen(current: number): void {
-  const p = statePath();
+function launchStatePath(): string {
+  return join(stateDir(), "clipboard.json");
+}
+
+/** Change count at the previous Raycast launch, or null on first run. */
+export function lastLaunchCount(): number | null {
+  const p = launchStatePath();
+  if (!existsSync(p)) return null;
+  try {
+    const n = JSON.parse(readFileSync(p, "utf8")).changeCount;
+    return typeof n === "number" ? n : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Recorded on every Raycast launch, used or not, so each copy is only ever considered once. */
+export function recordLaunchCount(current: number): void {
+  const p = launchStatePath();
   mkdirSync(dirname(p), { recursive: true });
   writeFileSync(p, JSON.stringify({ changeCount: current }));
 }

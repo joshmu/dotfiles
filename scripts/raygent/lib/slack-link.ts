@@ -51,10 +51,21 @@ export function slackKey(ref: SlackRef): string {
 
 export const NO_CLIPBOARD_PREFIX = "!noclip";
 
+/** A clipboard entry: the live clipboard, or a Slack link recorded by clip-watch. */
+export interface ClipCandidate {
+  text: string;
+  changeCount: number; // NSPasteboard change count when it was copied
+  at: number; // epoch ms
+}
+
+export const CLIP_MAX_AGE_MS = 10 * 60 * 1000;
+
 export interface PickInput {
   prompt: string;
-  clipboard: string;
-  clipboardChanged: boolean;
+  clips: ClipCandidate[];
+  lastLaunchCount: number | null; // change count at the previous Raycast launch
+  currentCount: number;
+  now: number;
   isScheduled: boolean;
 }
 
@@ -65,26 +76,37 @@ export interface Picked {
 }
 
 /**
- * A link in the prompt wins. The clipboard is used only when it holds exactly one
- * Slack link that was copied since the last launch, so an old copy can't hijack
- * an unrelated prompt.
+ * A link in the prompt wins. Otherwise the newest clipboard entry that is exactly
+ * one Slack link, copied since the last launch and within the last 10 minutes, so
+ * later copies (e.g. dictation) don't hide it and an old copy can't hijack an
+ * unrelated prompt.
  */
 export function pickSlackRef(input: PickInput): Picked {
   const trimmed = input.prompt.trimStart();
   const optOut = trimmed.toLowerCase().startsWith(NO_CLIPBOARD_PREFIX);
   const prompt = optOut ? trimmed.slice(NO_CLIPBOARD_PREFIX.length).trim() : input.prompt;
-  if (input.isScheduled) return { ref: null, fromClipboard: false, prompt };
+  const none = { ref: null, fromClipboard: false, prompt };
+  if (input.isScheduled) return none;
 
   const inPrompt = parseSlackUrl(prompt);
   if (inPrompt) return { ref: inPrompt, fromClipboard: false, prompt };
+  if (optOut) return none;
 
-  const clip = input.clipboard.trim();
-  if (optOut || !input.clipboardChanged || /\s/.test(clip))
-    return { ref: null, fromClipboard: false, prompt };
-  const ref = parseSlackUrl(clip);
-  return ref && ref.url === clip
-    ? { ref, fromClipboard: true, prompt }
-    : { ref: null, fromClipboard: false, prompt };
+  // The counter restarts at boot; a lower current count means the last launch predates it.
+  const since =
+    input.lastLaunchCount === null || input.currentCount < input.lastLaunchCount
+      ? -1
+      : input.lastLaunchCount;
+  const eligible = input.clips
+    .filter((c) => c.changeCount > since && input.now - c.at <= CLIP_MAX_AGE_MS)
+    .sort((a, b) => b.changeCount - a.changeCount);
+  for (const c of eligible) {
+    const text = c.text.trim();
+    if (/\s/.test(text)) continue;
+    const ref = parseSlackUrl(text);
+    if (ref && ref.url === text) return { ref, fromClipboard: true, prompt };
+  }
+  return none;
 }
 
 /** Prefixes the prompt so the session reads the conversation through the right Slack MCP server. */

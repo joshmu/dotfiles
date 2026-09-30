@@ -88,36 +88,73 @@ describe("slackKey", () => {
 });
 
 describe("pickSlackRef", () => {
+  const NOW = 1_000_000_000;
+  const MIN = 60_000;
+  const OTHER = "https://acme.slack.com/archives/C999/p1790663425161349";
+  const clip = (text: string, changeCount: number, agoMs = 0) => ({
+    text,
+    changeCount,
+    at: NOW - agoMs,
+  });
   const base = {
     prompt: "do the thing",
-    clipboard: "",
-    clipboardChanged: true,
+    clips: [] as ReturnType<typeof clip>[],
+    lastLaunchCount: 100,
+    currentCount: 110,
+    now: NOW,
     isScheduled: false,
   };
-  const OTHER = "https://acme.slack.com/archives/C999/p1790663425161349";
 
   test("prompt link beats clipboard link", () => {
-    const r = pickSlackRef({ ...base, prompt: `x ${EXAMPLE}`, clipboard: OTHER });
+    const r = pickSlackRef({ ...base, prompt: `x ${EXAMPLE}`, clips: [clip(OTHER, 110)] });
     expect(r.ref?.channelId).toBe("C0123ABCDEF");
     expect(r.fromClipboard).toBe(false);
   });
 
-  test("freshly copied link is used when the prompt has none", () => {
-    const r = pickSlackRef({ ...base, clipboard: `  ${EXAMPLE}\n` });
+  test("freshly copied link on the live clipboard is used", () => {
+    const r = pickSlackRef({ ...base, clips: [clip(`  ${EXAMPLE}\n`, 110)] });
     expect(r.ref?.channelId).toBe("C0123ABCDEF");
     expect(r.fromClipboard).toBe(true);
   });
 
-  test("unchanged clipboard is ignored", () => {
-    expect(pickSlackRef({ ...base, clipboard: EXAMPLE, clipboardChanged: false }).ref).toBeNull();
+  test("a recorded link survives later copies such as dictation", () => {
+    const clips = [clip(EXAMPLE, 105, 20_000), clip("do the thing", 110)];
+    expect(pickSlackRef({ ...base, clips }).ref?.channelId).toBe("C0123ABCDEF");
+  });
+
+  test("newest eligible link wins", () => {
+    const clips = [clip(OTHER, 103, 2 * MIN), clip(EXAMPLE, 107, MIN), clip("text", 110)];
+    expect(pickSlackRef({ ...base, clips }).ref?.channelId).toBe("C0123ABCDEF");
+  });
+
+  test("links copied before the last launch are ignored", () => {
+    expect(pickSlackRef({ ...base, clips: [clip(EXAMPLE, 100)] }).ref).toBeNull();
+  });
+
+  test("links older than 10 minutes are ignored", () => {
+    expect(pickSlackRef({ ...base, clips: [clip(EXAMPLE, 105, 11 * MIN)] }).ref).toBeNull();
+  });
+
+  test("first run and a counter reset after reboot both allow fresh links", () => {
+    expect(
+      pickSlackRef({ ...base, lastLaunchCount: null, clips: [clip(EXAMPLE, 5)] }).ref,
+    ).not.toBeNull();
+    expect(
+      pickSlackRef({ ...base, lastLaunchCount: 900, currentCount: 12, clips: [clip(EXAMPLE, 10)] })
+        .ref,
+    ).not.toBeNull();
   });
 
   test("prose that merely contains a link is ignored", () => {
-    expect(pickSlackRef({ ...base, clipboard: `look at ${EXAMPLE}` }).ref).toBeNull();
+    expect(pickSlackRef({ ...base, clips: [clip(`look at ${EXAMPLE}`, 110)] }).ref).toBeNull();
   });
 
   test("!noclip skips the clipboard and is stripped", () => {
-    const r = pickSlackRef({ ...base, prompt: "!noclip do the thing", clipboard: EXAMPLE });
+    const r = pickSlackRef({
+      ...base,
+      prompt: "!noclip do the thing",
+      clips: [clip(EXAMPLE, 110)],
+    });
     expect(r.ref).toBeNull();
     expect(r.prompt).toBe("do the thing");
   });
