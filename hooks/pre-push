@@ -1,0 +1,48 @@
+#!/bin/bash
+# Blocks a push when the outgoing commits contain secrets (gitleaks) or any
+# private term (employer names, work paths). The term list is kept outside this
+# public repo; one extended regex per line, matched case-insensitively.
+set -euo pipefail
+
+TERMS_FILE="${DOTFILES_PRIVATE_TERMS:-${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/private-terms.txt}"
+ZERO="0000000000000000000000000000000000000000"
+failed=0
+
+if [[ ! -f "$TERMS_FILE" ]]; then
+  echo "pre-push: no private terms list at $TERMS_FILE (set DOTFILES_PRIVATE_TERMS)" >&2
+  exit 1
+fi
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "pre-push: gitleaks not installed (brew install gitleaks)" >&2
+  exit 1
+fi
+
+while read -r _local_ref local_sha _remote_ref remote_sha; do
+  [[ "$local_sha" == "$ZERO" ]] && continue # branch deletion
+  if [[ "$remote_sha" == "$ZERO" ]]; then
+    range="$local_sha --not --remotes"
+  else
+    range="$remote_sha..$local_sha"
+  fi
+
+  # shellcheck disable=SC2086 # range is intentionally word-split into rev-list args
+  if ! gitleaks git --no-banner --redact --log-opts="$range" >/dev/null 2>&1; then
+    echo "pre-push: gitleaks found secrets in outgoing commits:" >&2
+    gitleaks git --no-banner --redact --log-opts="$range" >&2 || true
+    failed=1
+  fi
+
+  # Added lines and commit messages only; removing a private term must stay possible.
+  # shellcheck disable=SC2086
+  hits=$(git log -p --format='%H%n%B' $range | grep -E '^\+[^+]|^[^-+ @d]' | grep -n -i -E -f "$TERMS_FILE" || true)
+  if [[ -n "$hits" ]]; then
+    echo "pre-push: private terms in outgoing commits:" >&2
+    echo "$hits" | cut -c1-200 >&2
+    failed=1
+  fi
+done
+
+if [[ "$failed" -ne 0 ]]; then
+  echo "pre-push: blocked. Fix the commits (they are not public yet), then push again." >&2
+  exit 1
+fi
