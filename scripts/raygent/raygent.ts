@@ -216,7 +216,9 @@ async function main() {
     }
     sendKeys(target, claudeCmd);
   } catch (error) {
-    console.error("Error:", error instanceof Error ? error.message : error);
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error("Error:", msg);
+    notify(`Launch failed: ${msg.slice(0, 150)}`);
     process.exit(1);
   }
 }
