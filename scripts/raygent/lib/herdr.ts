@@ -13,6 +13,7 @@ import { dirname, join } from "path";
  */
 
 export const HERDR_WORKSPACE_LABEL = process.env.RAYGENT_HERDR_WORKSPACE || "schedules";
+export const RAYGENT_WORKSPACE_LABEL = "raygent";
 
 export interface HerdrRun {
   tabId: string;
@@ -54,21 +55,44 @@ export function herdrAvailable(): boolean {
   return Bun.which("herdr") !== null;
 }
 
-export function herdr(args: string[]): any {
-  const s = sessionName();
-  const r = Bun.spawnSync(["herdr", ...(s ? ["--session", s] : []), ...args]);
-  const out = r.stdout.toString().trim();
+export class HerdrError extends Error {
+  constructor(
+    message: string,
+    readonly code: string,
+  ) {
+    super(message);
+  }
+}
+
+/** Herdr prints `{result}` on stdout, or `{error:{code,message}}` on stderr with exit 1. */
+export function parseHerdrOutput(
+  args: string[],
+  stdout: string,
+  stderr: string,
+  exitCode: number,
+): any {
+  const out = stdout.trim() || stderr.trim();
   // Some commands (e.g. `pane run`) print nothing on success.
-  if (!out && r.exitCode === 0) return null;
+  if (!out && exitCode === 0) return null;
   let json: any;
   try {
     json = JSON.parse(out);
   } catch {
-    throw new Error(`herdr ${args.join(" ")} failed: ${out || r.stderr.toString().trim()}`);
+    throw new HerdrError(`herdr ${args.join(" ")} failed: ${out}`, "unparseable");
   }
   if (json.error)
-    throw new Error(`herdr ${args.join(" ")}: ${json.error.code} ${json.error.message}`);
+    throw new HerdrError(
+      `herdr ${args.join(" ")}: ${json.error.code} ${json.error.message}`,
+      json.error.code,
+    );
+  if (exitCode !== 0) throw new HerdrError(`herdr ${args.join(" ")} exited ${exitCode}`, "exit");
   return json.result;
+}
+
+export function herdr(args: string[]): any {
+  const s = sessionName();
+  const r = Bun.spawnSync(["herdr", ...(s ? ["--session", s] : []), ...args]);
+  return parseHerdrOutput(args, r.stdout.toString(), r.stderr.toString(), r.exitCode);
 }
 
 /** Starts a headless server when none is running (e.g. under launchd before the user opens Herdr). */
@@ -77,7 +101,7 @@ export function ensureServer(timeoutMs = 10_000): void {
     herdr(["workspace", "list"]);
     return;
   } catch (e) {
-    if (!String(e).includes("server_not_running")) throw e;
+    if (!(e instanceof HerdrError && e.code === "server_not_running")) throw e;
   }
   const s = sessionName();
   const sessionArg = s ? `--session '${s}' ` : "";
@@ -93,21 +117,17 @@ export function ensureServer(timeoutMs = 10_000): void {
   throw new Error("herdr server did not start");
 }
 
-/** Opens a new tab for a run in the scheduler workspace, creating the workspace on first use. */
-export function openRunTab(cwd: string, label: string): { tabId: string; paneId: string } {
+/** Opens a new tab for a run in the given workspace, creating the workspace on first use. */
+export function openRunTab(
+  cwd: string,
+  label: string,
+  workspaceLabel = HERDR_WORKSPACE_LABEL,
+): { tabId: string; paneId: string } {
   const workspaces: any[] = herdr(["workspace", "list"]).workspaces;
-  const ws = workspaces.find((w) => w.label === HERDR_WORKSPACE_LABEL);
+  const ws = workspaces.find((w) => w.label === workspaceLabel);
   if (!ws) {
     // A new workspace comes with a root tab — use it for this run.
-    const r = herdr([
-      "workspace",
-      "create",
-      "--label",
-      HERDR_WORKSPACE_LABEL,
-      "--cwd",
-      cwd,
-      "--no-focus",
-    ]);
+    const r = herdr(["workspace", "create", "--label", workspaceLabel, "--cwd", cwd, "--no-focus"]);
     herdr(["tab", "rename", r.tab.tab_id, label]);
     return { tabId: r.tab.tab_id, paneId: r.root_pane.pane_id };
   }

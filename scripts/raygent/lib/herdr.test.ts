@@ -2,7 +2,14 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
-import { appendRegistry, herdrRegistryPath, readRegistry, runLabel } from "./herdr";
+import {
+  HerdrError,
+  appendRegistry,
+  herdrRegistryPath,
+  parseHerdrOutput,
+  readRegistry,
+  runLabel,
+} from "./herdr";
 
 describe("runLabel", () => {
   test("formats task plus zero-padded local month-day and time", () => {
@@ -39,5 +46,31 @@ describe("run registry", () => {
     appendRegistry(run);
     appendRegistry({ ...run, tabId: "w2:t2" });
     expect(readRegistry().map((r) => r.tabId)).toEqual(["w2:t1", "w2:t2"]);
+  });
+});
+
+describe("parseHerdrOutput", () => {
+  test("returns result from stdout", () => {
+    expect(parseHerdrOutput(["x"], '{"id":"a","result":{"ok":1}}', "", 0)).toEqual({ ok: 1 });
+  });
+
+  test("empty output with exit 0 is null", () => {
+    expect(parseHerdrOutput(["pane", "run"], "", "", 0)).toBeNull();
+  });
+
+  test("error JSON on stderr throws HerdrError with its code", () => {
+    const stderr = '{"error":{"code":"protocol_mismatch","message":"restart"},"id":"cli:x"}';
+    let err: any;
+    try {
+      parseHerdrOutput(["agent", "list"], "", stderr, 1);
+    } catch (e) {
+      err = e;
+    }
+    expect(err).toBeInstanceOf(HerdrError);
+    expect(err.code).toBe("protocol_mismatch");
+  });
+
+  test("non-JSON failure is unparseable", () => {
+    expect(() => parseHerdrOutput(["x"], "", "boom", 1)).toThrow(/boom/);
   });
 });
