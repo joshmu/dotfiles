@@ -1,6 +1,6 @@
 import { mkdirSync, rmdirSync, writeFileSync } from "fs";
 import { dirname, join } from "path";
-import { HerdrError, herdr, herdrRegistryPath, openRunTab, RAYGENT_WORKSPACE_LABEL } from "./herdr";
+import { HerdrError, herdr, herdrRegistryPath, openRunTab } from "./herdr";
 
 /** Pane token holding the Slack conversation key a session is bound to. */
 export const SLACK_TOKEN = "slack_key";
@@ -56,6 +56,7 @@ function withLock<T>(fn: () => T, timeoutMs = 10_000): T {
 
 export interface SpawnSpec {
   name: string;
+  workspaceLabel: string;
   cwd: string;
   claudeArgv: string[];
   tokens?: Record<string, string>;
@@ -80,11 +81,9 @@ export function retryWhile<T>(
   }
 }
 
-/** New tab in the raygent workspace, running claude as a named Herdr agent. */
+/** New tab in the given workspace, running claude as a named Herdr agent. */
 export function spawnAgent(spec: SpawnSpec): { tabId: string; paneId: string; sessionId: string } {
-  const { tabId, paneId } = withLock(() =>
-    openRunTab(spec.cwd, spec.name, RAYGENT_WORKSPACE_LABEL),
-  );
+  const { tabId, paneId } = withLock(() => openRunTab(spec.cwd, spec.name, spec.workspaceLabel));
   let started: any;
   try {
     // A fresh pane is busy until its login shell reaches the prompt.

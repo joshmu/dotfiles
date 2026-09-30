@@ -4,7 +4,8 @@
  *
  * Flow:
  * 1. Name the session (and pick a cwd unless the machine pins one) via the Haiku router
- * 2. Raycast prompts: named Herdr agent in the "raygent" workspace when config.launch.mux
+ * 2. Raycast prompts: named Herdr agent in the "slack" (Slack context) or "raycast"
+ *    workspace when config.launch.mux
  *    is "herdr", else tmux. Scheduled prompts: tmux, or Herdr "schedules" when opted in.
  * 3. Deliver the prompt
  */
@@ -17,7 +18,7 @@ import {
   type SessionConfig,
 } from "./lib/router-agent";
 import { buildClaudeArgs, buildClaudeArgv } from "./lib/claude-cmd";
-import { resolveLaunch } from "./lib/launch";
+import { launchWorkspace, resolveLaunch } from "./lib/launch";
 import { toAgentName, uniqueAgentName } from "./lib/agent-name";
 import {
   SLACK_TOKEN,
@@ -50,7 +51,6 @@ import { writeFileSync } from "fs";
 import { randomUUID } from "crypto";
 import {
   HERDR_WORKSPACE_LABEL,
-  RAYGENT_WORKSPACE_LABEL,
   appendRegistry,
   currentHerdrSession,
   ensureServer,
@@ -256,8 +256,10 @@ function launchInHerdr(
       "-n",
       name,
     ];
+    const workspaceLabel = launchWorkspace(Boolean(slack));
     const { tabId, paneId } = spawnAgent({
       name,
+      workspaceLabel,
       cwd: sessionConfig.cwd,
       claudeArgv: argv,
       tokens: slack ? { [SLACK_TOKEN]: slack.key } : undefined,
@@ -271,7 +273,7 @@ function launchInHerdr(
       launched: Math.floor(Date.now() / 1000),
       herdrSession: currentHerdrSession(),
       kind: "raygent",
-      workspaceLabel: RAYGENT_WORKSPACE_LABEL,
+      workspaceLabel,
       agentName: name,
     });
   } catch (e) {
@@ -282,7 +284,9 @@ function launchInHerdr(
   }
   try {
     promptAgent(name, prompt);
-    console.log(`Started herdr agent: ${RAYGENT_WORKSPACE_LABEL}/${name} @ ${sessionConfig.cwd}`);
+    console.log(
+      `Started herdr agent: ${launchWorkspace(Boolean(slack))}/${name} @ ${sessionConfig.cwd}`,
+    );
     notify(`${name} ← new`);
     if (focus) focusAgent(name);
   } catch (e) {

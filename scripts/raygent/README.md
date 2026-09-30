@@ -142,7 +142,7 @@ tmux attach -t <session-name>
 
 ### Herdr launches
 
-With `launch.mux: "herdr"` a Raycast prompt starts Claude as a **named Herdr agent** in its own tab of the `raygent` workspace (created on first use), then submits the prompt with `herdr agent prompt`. The agent name doubles as the Claude session name (`claude -n`). A macOS notification says where the prompt went. If Herdr is unavailable the launch falls back to tmux.
+With `launch.mux: "herdr"` a Raycast prompt starts Claude as a **named Herdr agent** in its own tab of a Herdr workspace (created on first use): `slack` when the prompt has Slack context, `raycast` otherwise, then submits the prompt with `herdr agent prompt`. The agent name doubles as the Claude session name (`claude -n`). A macOS notification says where the prompt went. If Herdr is unavailable the launch falls back to tmux.
 
 ```mermaid
 flowchart LR

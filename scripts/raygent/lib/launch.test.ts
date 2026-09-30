@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { resolveLaunch } from "./launch";
+import { launchWorkspace, resolveLaunch } from "./launch";
 
 const base = { default: "work", workspaces: {} } as any;
 const work = { ...base, launch: { mux: "herdr", fixedCwd: "/w/project", focusOnLaunch: true } };
@@ -19,5 +19,12 @@ describe("resolveLaunch", () => {
 
   test("scheduled prompts ignore it", () => {
     expect(resolveLaunch(work, true)).toEqual({ mux: "tmux", focus: false });
+  });
+});
+
+describe("launchWorkspace", () => {
+  test("slack context goes to the slack workspace, everything else to raycast", () => {
+    expect(launchWorkspace(true)).toBe("slack");
+    expect(launchWorkspace(false)).toBe("raycast");
   });
 });

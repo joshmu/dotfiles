@@ -13,7 +13,9 @@ import { dirname, join } from "path";
  */
 
 export const HERDR_WORKSPACE_LABEL = process.env.RAYGENT_HERDR_WORKSPACE || "schedules";
-export const RAYGENT_WORKSPACE_LABEL = "raygent";
+/** Raycast launches: Slack-bound sessions and everything else get separate workspaces. */
+export const SLACK_WORKSPACE_LABEL = "slack";
+export const RAYCAST_WORKSPACE_LABEL = "raycast";
 
 export interface HerdrRun {
   tabId: string;
