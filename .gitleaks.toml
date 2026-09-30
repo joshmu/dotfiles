@@ -1,5 +1,10 @@
+# Keep gitleaks' built-in rules; without this the allowlist below replaces them
+# and nothing is detected.
+[extend]
+useDefault = true
+
 [allowlist]
-description = "Dotfiles config files containing legitimate API keys/tokens"
+description = "Local-only config files (untracked) and known false positives"
 paths = [
   '''claude_desktop_config\.json''',
   '''cursor/mcp\.json''',
@@ -7,4 +12,9 @@ paths = [
   '''scripts/bitbucket/config\.json''',
   '''scripts/elevenlabs/config\.json''',
   '''scripts/gen-img/config\.json''',
+]
+regexTarget = "line"
+regexes = [
+  '''"key":\s*"[a-z0-9+\-\[\]]+",?$''', # editor keybindings
+  '''^\s*PROBE_KEYS=""''',
 ]
