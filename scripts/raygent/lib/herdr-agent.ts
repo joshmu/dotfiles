@@ -1,4 +1,4 @@
-import { mkdirSync, rmdirSync, writeFileSync } from "fs";
+import { mkdirSync, readdirSync, rmdirSync, statSync, unlinkSync, writeFileSync } from "fs";
 import { dirname, join } from "path";
 import { HerdrError, herdr, herdrRegistryPath, openRunTab } from "./herdr";
 
@@ -157,6 +157,17 @@ export function findSlackAgent(
 }
 
 const BLOCKED_WAIT_MS = 10 * 60 * 1000;
+const PENDING_KEEP_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** Undelivered prompts are kept for a week, then dropped. */
+function prunePending(dir: string, now = Date.now()): void {
+  for (const f of readdirSync(dir)) {
+    const p = join(dir, f);
+    try {
+      if (now - statSync(p).mtimeMs > PENDING_KEEP_MS) unlinkSync(p);
+    } catch {}
+  }
+}
 
 /**
  * Sends a follow-up to an existing agent. A pending permission prompt makes Herdr
@@ -187,9 +198,10 @@ export function reinject(target: string, text: string): "delivered" | "pending" 
     promptAgent(target, text);
     return "delivered";
   } catch {
-    const p = join(dirname(herdrRegistryPath()), "pending", `${target}-${Date.now()}.txt`);
-    mkdirSync(dirname(p), { recursive: true });
-    writeFileSync(p, text);
+    const dir = join(dirname(herdrRegistryPath()), "pending");
+    mkdirSync(dir, { recursive: true });
+    prunePending(dir);
+    writeFileSync(join(dir, `${target}-${Date.now()}.txt`), text);
     return "pending";
   }
 }

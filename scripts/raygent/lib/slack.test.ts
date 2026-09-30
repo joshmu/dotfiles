@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { mkdtempSync, rmSync } from "fs";
+import { mkdtempSync, readFileSync, rmSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import { authHeaders, conversationLabel, resolveLabel, workspaceFor } from "./slack";
@@ -125,5 +125,27 @@ describe("resolveLabel", () => {
 
   test("no auth command configured returns null without calling Slack", async () => {
     expect(await resolveLabel("k", ref, cfg)).toBeNull();
+  });
+});
+
+describe("resolveLabel cache pruning", () => {
+  let dir: string;
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), "raygent-slack-prune-"));
+    process.env.RAYGENT_STATE_DIR = dir;
+  });
+  afterEach(() => {
+    delete process.env.RAYGENT_STATE_DIR;
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  test("expired entries are dropped when a new one is written", async () => {
+    const ref = { url: "", host: "acme.slack.com", channelId: "C1" };
+    const call = async () => ({ channel: { name: "x" } });
+    const DAY = 24 * 3600 * 1000;
+    await resolveLabel("old", ref, cfg, call, 0);
+    await resolveLabel("new", ref, cfg, call, 8 * DAY);
+    const cache = JSON.parse(readFileSync(join(dir, "slack-names.json"), "utf8"));
+    expect(Object.keys(cache)).toEqual(["new"]);
   });
 });

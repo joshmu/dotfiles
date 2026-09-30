@@ -111,7 +111,9 @@ export async function resolveLabel(
     const label = await conversationLabel(ref.channelId, api);
     const p = cachePath();
     mkdirSync(dirname(p), { recursive: true });
-    writeFileSync(p, JSON.stringify({ ...cache, [key]: { label, at: now } }, null, 2));
+    // Expired entries are dropped on every write, so the cache only holds recent conversations.
+    const live = Object.fromEntries(Object.entries(cache).filter(([, v]) => now - v.at < TTL_MS));
+    writeFileSync(p, JSON.stringify({ ...live, [key]: { label, at: now } }, null, 2));
     return label;
   } catch (e) {
     console.log(`slack name lookup failed: ${e instanceof Error ? e.message : e}`);
