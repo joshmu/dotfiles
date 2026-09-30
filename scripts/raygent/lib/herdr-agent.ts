@@ -61,24 +61,57 @@ export interface SpawnSpec {
   tokens?: Record<string, string>;
 }
 
+/** Retries `fn` while it throws a HerdrError with `code`, until the deadline. */
+export function retryWhile<T>(
+  code: string,
+  fn: () => T,
+  timeoutMs: number,
+  sleep: (ms: number) => void = Bun.sleepSync,
+  now: () => number = Date.now,
+): T {
+  const deadline = now() + timeoutMs;
+  for (;;) {
+    try {
+      return fn();
+    } catch (e) {
+      if (!(e instanceof HerdrError && e.code === code) || now() >= deadline) throw e;
+      sleep(250);
+    }
+  }
+}
+
 /** New tab in the raygent workspace, running claude as a named Herdr agent. */
 export function spawnAgent(spec: SpawnSpec): { tabId: string; paneId: string; sessionId: string } {
   const { tabId, paneId } = withLock(() =>
     openRunTab(spec.cwd, spec.name, RAYGENT_WORKSPACE_LABEL),
   );
-  const started = herdr([
-    "agent",
-    "start",
-    spec.name,
-    "--kind",
-    "claude",
-    "--pane",
-    paneId,
-    "--timeout",
-    "90000",
-    "--",
-    ...spec.claudeArgv,
-  ]);
+  let started: any;
+  try {
+    // A fresh pane is busy until its login shell reaches the prompt.
+    started = retryWhile(
+      "agent_pane_busy",
+      () =>
+        herdr([
+          "agent",
+          "start",
+          spec.name,
+          "--kind",
+          "claude",
+          "--pane",
+          paneId,
+          "--timeout",
+          "90000",
+          "--",
+          ...spec.claudeArgv,
+        ]),
+      20_000,
+    );
+  } catch (e) {
+    try {
+      herdr(["tab", "close", tabId]);
+    } catch {}
+    throw e;
+  }
   const tokenArgs = Object.entries(spec.tokens ?? {}).flatMap(([k, v]) => ["--token", `${k}=${v}`]);
   if (tokenArgs.length)
     herdr(["pane", "report-metadata", paneId, "--source", "raygent", ...tokenArgs]);

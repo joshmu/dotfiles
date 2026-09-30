@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { agentsFromSnapshot, findSlackAgent } from "./herdr-agent";
+import { HerdrError } from "./herdr";
+import { agentsFromSnapshot, findSlackAgent, retryWhile } from "./herdr-agent";
 
 describe("agentsFromSnapshot", () => {
   test("joins agents with their pane tokens", () => {
@@ -54,5 +55,57 @@ describe("findSlackAgent", () => {
   test("never steals an agent bound to another conversation", () => {
     const sameNameOtherKey = { ...other, name: "platform-team" };
     expect(findSlackAgent([sameNameOtherKey], key, "platform-team")).toBeUndefined();
+  });
+});
+
+describe("retryWhile", () => {
+  const busy = () => new HerdrError("busy", "agent_pane_busy");
+
+  test("retries the named error until it succeeds", () => {
+    let calls = 0;
+    const out = retryWhile(
+      "agent_pane_busy",
+      () => {
+        if (++calls < 3) throw busy();
+        return "ok";
+      },
+      10_000,
+      () => {},
+    );
+    expect(out).toBe("ok");
+    expect(calls).toBe(3);
+  });
+
+  test("rethrows other errors immediately", () => {
+    let calls = 0;
+    expect(() =>
+      retryWhile(
+        "agent_pane_busy",
+        () => {
+          calls++;
+          throw new HerdrError("nope", "agent_not_found");
+        },
+        10_000,
+        () => {},
+      ),
+    ).toThrow("nope");
+    expect(calls).toBe(1);
+  });
+
+  test("gives up at the deadline", () => {
+    let t = 0;
+    expect(() =>
+      retryWhile(
+        "agent_pane_busy",
+        () => {
+          throw busy();
+        },
+        1_000,
+        () => {
+          t += 250;
+        },
+        () => t,
+      ),
+    ).toThrow("busy");
   });
 });
