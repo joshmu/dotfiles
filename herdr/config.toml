@@ -165,6 +165,15 @@ key = "ctrl+l"
 type = "plugin_action"
 command = "vim-herdr-navigation.right"
 description = "navigate right (vim/herdr)"
+
+# Fuzzy agent picker; empty-query Enter jumps to the previous agent. Ghostty cmd+p sends this.
+[[keys.command]]
+key = "prefix+f"
+type = "popup"
+command = "$HOME/dotfiles/bin/herdr-agent-picker"
+description = "jump to agent"
+width = "70%"
+height = "60%"
 # key = "prefix+alt+g"
 # type = "pane"
 # command = "lazygit"

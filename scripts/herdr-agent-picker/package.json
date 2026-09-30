@@ -1,0 +1,7 @@
+{
+  "name": "herdr-agent-picker",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}

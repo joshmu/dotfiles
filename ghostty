@@ -119,6 +119,9 @@ keybind = cmd+shift+l=text:\x02n
 # Tmux session switcher (sends prefix + s)
 keybind = cmd+shift+p=text:\x02s
 
+# Herdr agent picker (sends prefix + f)
+keybind = cmd+p=text:\x02f
+
 # Mouse settings
 mouse-hide-while-typing = true
 copy-on-select = true
