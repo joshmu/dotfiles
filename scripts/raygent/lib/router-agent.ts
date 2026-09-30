@@ -2,7 +2,7 @@ import { join, dirname } from "path";
 import { appendFileSync } from "fs";
 
 const TIMEOUT_MS = 60000;
-const CONFIG_PATH = join(dirname(import.meta.dir), "config.json");
+const CONFIG_PATH = process.env.RAYGENT_CONFIG || join(dirname(import.meta.dir), "config.json");
 const DEBUG_LOG = "/tmp/raygent-debug.log";
 
 const ADJECTIVES = ["quick", "bright", "calm", "bold", "keen", "warm", "cool", "swift"];
@@ -22,9 +22,17 @@ export interface WorkspaceConfig {
   tmuxSession?: string;
 }
 
+/** Per-machine launch behaviour for Raycast (non-scheduled) prompts. */
+export interface LaunchConfig {
+  mux?: "herdr" | "tmux";
+  fixedCwd?: string; // skip workspace routing and always start here
+  focusOnLaunch?: boolean;
+}
+
 export interface Config {
   default: string;
   workspaces: Record<string, WorkspaceConfig>;
+  launch?: LaunchConfig;
 }
 
 export interface SessionConfig {
@@ -73,6 +81,7 @@ export async function loadConfig(): Promise<Config> {
   for (const ws of Object.values(raw.workspaces)) {
     ws.path = expandPath(ws.path);
   }
+  if (raw.launch?.fixedCwd) raw.launch.fixedCwd = expandPath(raw.launch.fixedCwd);
   return raw;
 }
 

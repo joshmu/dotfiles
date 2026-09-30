@@ -10,3 +10,7 @@ export function buildClaudeArgs(extraArgs?: string): string {
   }
   return `${BASE_FLAG} ${trimmed}`;
 }
+
+export function buildClaudeArgv(extraArgs?: string): string[] {
+  return buildClaudeArgs(extraArgs).split(/\s+/).filter(Boolean);
+}

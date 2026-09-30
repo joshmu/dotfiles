@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { buildClaudeArgs } from "./claude-cmd";
+import { buildClaudeArgs, buildClaudeArgv } from "./claude-cmd";
 
 describe("buildClaudeArgs", () => {
   test("returns --permission-mode auto with no args", () => {
@@ -44,5 +44,20 @@ describe("buildClaudeArgs", () => {
     expect(buildClaudeArgs("--dangerously-skip-permissions --model opus")).toBe(
       "--dangerously-skip-permissions --model opus",
     );
+  });
+});
+
+describe("buildClaudeArgv", () => {
+  test("splits the default posture into argv", () => {
+    expect(buildClaudeArgv()).toEqual(["--permission-mode", "auto"]);
+  });
+
+  test("appends extra args", () => {
+    expect(buildClaudeArgv("--model opus")).toEqual([
+      "--permission-mode",
+      "auto",
+      "--model",
+      "opus",
+    ]);
   });
 });

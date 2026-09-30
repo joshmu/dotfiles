@@ -1,11 +1,12 @@
 #!/usr/bin/env bun
 /**
- * Raygent - Launch Claude Code in tmux via Raycast (headless)
+ * Raygent - Launch Claude Code from Raycast
  *
  * Flow:
- * 1. Generate session name + determine cwd via Claude Sonnet
- * 2. Create unique tmux session in correct directory
- * 3. Send claude command with prompt
+ * 1. Name the session (and pick a cwd unless the machine pins one) via the Haiku router
+ * 2. Raycast prompts: named Herdr agent in the "raygent" workspace when config.launch.mux
+ *    is "herdr", else tmux. Scheduled prompts: tmux, or Herdr "schedules" when opted in.
+ * 3. Deliver the prompt
  */
 
 import {
@@ -14,7 +15,11 @@ import {
   findExactMatch,
   type SessionConfig,
 } from "./lib/router-agent";
-import { buildClaudeArgs } from "./lib/claude-cmd";
+import { buildClaudeArgs, buildClaudeArgv } from "./lib/claude-cmd";
+import { resolveLaunch } from "./lib/launch";
+import { toAgentName, uniqueAgentName } from "./lib/agent-name";
+import { focusAgent, liveAgents, promptAgent, spawnAgent } from "./lib/herdr-agent";
+import { notify } from "./lib/notify";
 import {
   createSession,
   sendKeys,
@@ -28,6 +33,7 @@ import { writeFileSync } from "fs";
 import { randomUUID } from "crypto";
 import {
   HERDR_WORKSPACE_LABEL,
+  RAYGENT_WORKSPACE_LABEL,
   appendRegistry,
   currentHerdrSession,
   ensureServer,
@@ -68,6 +74,13 @@ async function main() {
     const isScheduled = prompt.includes("<agent-scheduler");
     const taskId = prompt.match(/<agent-scheduler task-id="([^"]*)"/)?.[1] ?? "scheduled";
     const claudeSessionId = randomUUID();
+    const launch = resolveLaunch(cfg, isScheduled);
+    if (launch.fixedCwd) sessionConfig.cwd = launch.fixedCwd;
+
+    if (launch.mux === "herdr" && herdrAvailable()) {
+      if (launchInHerdr(prompt, sessionConfig, claudeSessionId, launch.focus)) return;
+    }
+
     let args = buildClaudeArgs(process.env.CLAUDE_EXTRA_ARGS);
     if (isScheduled) args += ` --session-id ${claudeSessionId}`;
     const promptFile = `/tmp/raygent-prompt-${Date.now()}.txt`;
@@ -93,6 +106,8 @@ async function main() {
             claudeSessionId,
             launched: Math.floor(Date.now() / 1000),
             herdrSession: currentHerdrSession(),
+            kind: "schedule",
+            workspaceLabel: HERDR_WORKSPACE_LABEL,
           });
           runInPane(paneId, claudeCmd);
           console.log(
@@ -147,6 +162,60 @@ async function main() {
     console.error("Error:", error instanceof Error ? error.message : error);
     process.exit(1);
   }
+}
+
+/**
+ * Raycast prompt as a named Herdr agent. Returns false only when nothing was
+ * launched, so the caller can fall back to tmux without duplicating the session.
+ */
+function launchInHerdr(
+  prompt: string,
+  sessionConfig: SessionConfig,
+  claudeSessionId: string,
+  focus: boolean,
+): boolean {
+  let name: string;
+  try {
+    ensureServer();
+    const taken = liveAgents().flatMap((a) => (a.name ? [a.name] : []));
+    name = uniqueAgentName(toAgentName(sessionConfig.name), taken);
+    const argv = [
+      ...buildClaudeArgv(process.env.CLAUDE_EXTRA_ARGS),
+      "--session-id",
+      claudeSessionId,
+      "-n",
+      name,
+    ];
+    const { tabId, paneId } = spawnAgent({ name, cwd: sessionConfig.cwd, claudeArgv: argv });
+    appendRegistry({
+      tabId,
+      paneId,
+      label: name,
+      task: "raygent",
+      claudeSessionId,
+      launched: Math.floor(Date.now() / 1000),
+      herdrSession: currentHerdrSession(),
+      kind: "raygent",
+      workspaceLabel: RAYGENT_WORKSPACE_LABEL,
+      agentName: name,
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.log(`herdr launch failed (${msg}); falling back to tmux`);
+    notify(`Herdr unavailable, using tmux: ${msg.slice(0, 120)}`);
+    return false;
+  }
+  try {
+    promptAgent(name, prompt);
+    console.log(`Started herdr agent: ${RAYGENT_WORKSPACE_LABEL}/${name} @ ${sessionConfig.cwd}`);
+    notify(`${name} ← new`);
+    if (focus) focusAgent(name);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.log(`prompt to ${name} failed: ${msg}`);
+    notify(`${name} started but the prompt was not delivered: ${msg.slice(0, 100)}`);
+  }
+  return true;
 }
 
 main();

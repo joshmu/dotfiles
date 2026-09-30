@@ -23,6 +23,9 @@ export interface HerdrRun {
   claudeSessionId: string;
   launched: number; // epoch seconds
   herdrSession: string; // "" = default session
+  kind?: "schedule" | "raygent"; // absent on older records = schedule
+  workspaceLabel?: string; // absent on older records = HERDR_WORKSPACE_LABEL
+  agentName?: string;
 }
 
 export function herdrRegistryPath(): string {
