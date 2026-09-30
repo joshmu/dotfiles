@@ -13,20 +13,20 @@ async function runScript(ctx: any): Promise<{ code: number; stdout: string }> {
 
 describe("canned summarizer", () => {
   test("session + window + Stop event → session - window - finished", async () => {
-    const r = await runScript({ hookEvent: "Stop", sessionName: "breville", windowName: "editor" });
+    const r = await runScript({ hookEvent: "Stop", sessionName: "acme", windowName: "editor" });
     expect(r.code).toBe(0);
-    expect(r.stdout).toBe("breville-editor - finished");
+    expect(r.stdout).toBe("acme-editor - finished");
   });
 
   test("session + window + Notification w/ message → session - window - msg", async () => {
     const r = await runScript({
       hookEvent: "Notification",
-      sessionName: "breville",
+      sessionName: "acme",
       windowName: "claude",
       message: "Claude is waiting for your input",
     });
     expect(r.code).toBe(0);
-    expect(r.stdout).toBe("breville-claude - Claude is waiting for your input");
+    expect(r.stdout).toBe("acme-claude - Claude is waiting for your input");
   });
 
   test("session without window → session - phrase (no window segment)", async () => {
@@ -75,8 +75,8 @@ describe("canned summarizer", () => {
   });
 
   test("session lowercased in output (was previously capitalised)", async () => {
-    const r = await runScript({ hookEvent: "Stop", sessionName: "BREVILLE", windowName: "main" });
+    const r = await runScript({ hookEvent: "Stop", sessionName: "ACME", windowName: "main" });
     expect(r.code).toBe(0);
-    expect(r.stdout).toBe("breville-main - finished");
+    expect(r.stdout).toBe("acme-main - finished");
   });
 });

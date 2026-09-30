@@ -101,9 +101,9 @@ The orchestrator walks the cascade, picks the first tier with its toggle ON, and
 
 Examples:
 
-- Kokoro w/ live transcript → `breville-memory - Build passed. Two snapshot tests updated.` (haiku-generated)
-- Say fallback → `breville-memory - ready` (canned phrase by event)
-- Notification w/ raw message + canned tier → `breville-memory - Claude is waiting for your input`
+- Kokoro w/ live transcript → `acme-memory - Build passed. Two snapshot tests updated.` (haiku-generated)
+- Say fallback → `acme-memory - ready` (canned phrase by event)
+- Notification w/ raw message + canned tier → `acme-memory - Claude is waiting for your input`
 
 ## Configuration
 
