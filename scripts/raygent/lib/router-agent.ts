@@ -166,7 +166,9 @@ export async function generateSessionConfig(prompt: string): Promise<SessionConf
       [
         "claude",
         "-p",
-        `${buildSystemPrompt(config)}\n\nUser prompt: "${prompt}"`,
+        `User prompt: "${prompt}"`,
+        "--system-prompt",
+        buildSystemPrompt(config),
         "--model",
         "haiku",
         "--output-format",
@@ -175,6 +177,13 @@ export async function generateSessionConfig(prompt: string): Promise<SessionConf
         buildJsonSchema(workspaceNames),
         "--tools",
         "",
+        // Naming needs none of the user's context; loading it (CLAUDE.md, MCP
+        // tools, skills) pushes Haiku to prompt_too_long.
+        "--strict-mcp-config",
+        "--disable-slash-commands",
+        "--setting-sources",
+        "",
+        "--no-session-persistence",
       ],
       { signal: controller.signal },
     );
