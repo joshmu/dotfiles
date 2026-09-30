@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { stripVTControlCharacters } from "util";
 import { FIELD_SEP, formatRow, MRU_LIMIT, orderAgents, touchMru, type Pane } from "./lib/rows";
 
 const pane = (terminal_id: string, extra: Partial<Pane> = {}): Pane =>
@@ -46,7 +47,7 @@ describe("formatRow", () => {
     );
     const [id, display] = row.split(FIELD_SEP);
     expect(id).toBe("w1:a");
-    const plain = Bun.stripANSI(display);
+    const plain = stripVTControlCharacters(display);
     expect(plain).toBe("○  api · security · work  sec-codeartifact");
   });
 });
