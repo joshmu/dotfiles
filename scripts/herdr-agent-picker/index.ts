@@ -13,6 +13,8 @@
  * Modes:
  * - (default): open the picker
  * - --watch: run the focus watcher
+ * - --match <query>: print the pane id the picker would rank first for `query` (exit 1 if none),
+ *   so other tools (e.g. raygent) target agents exactly as the picker would
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
@@ -98,8 +100,10 @@ function ensureWatcher(): void {
 
 // --- Picker ---
 
-async function pick(): Promise<void> {
-  ensureWatcher();
+const FZF_MATCHING = ["--ansi", `--delimiter=${FIELD_SEP}`, "--with-nth=2..", "--tiebreak=index"];
+
+/** Picker rows in picker order; `currentTerminalId` (the agent you are in) sorts last. */
+async function buildRows(currentTerminalId?: string): Promise<{ panes: Pane[]; rows: string[] }> {
   const [panes, tabs, workspaces] = await Promise.all([
     listPanes(),
     herdr("tab", "list").then((r) => r.tabs),
@@ -107,24 +111,34 @@ async function pick(): Promise<void> {
   ]);
   const labels = (items: any[], key: string) =>
     Object.fromEntries(items.map((i) => [i[key], i.label]));
-
-  const active = process.env.HERDR_ACTIVE_PANE_ID;
-  const current = panes.find((p) => (active ? p.pane_id === active : p.focused));
-  const rows = orderAgents(panes, readMru(), current?.terminal_id).map((p) =>
+  const rows = orderAgents(panes, readMru(), currentTerminalId).map((p) =>
     formatRow(p, labels(tabs, "tab_id"), labels(workspaces, "workspace_id")),
   );
+  return { panes, rows };
+}
+
+/** Non-interactive: the pane id fzf ranks first for `query`, as the picker would show it. */
+async function match(query: string): Promise<void> {
+  const { rows } = await buildRows();
+  const fzf = Bun.spawn(["fzf", ...FZF_MATCHING, `--filter=${query}`], {
+    stdin: new Blob([rows.join("\n")]),
+    stdout: "pipe",
+    stderr: "inherit",
+  });
+  const best = (await new Response(fzf.stdout).text()).split("\n")[0];
+  if (!best) process.exit(1);
+  console.log(best.split(FIELD_SEP)[0]);
+}
+
+async function pick(): Promise<void> {
+  ensureWatcher();
+  const active = process.env.HERDR_ACTIVE_PANE_ID;
+  const panes = await listPanes();
+  const current = panes.find((p) => (active ? p.pane_id === active : p.focused));
+  const { rows } = await buildRows(current?.terminal_id);
 
   const fzf = Bun.spawn(
-    [
-      "fzf",
-      "--ansi",
-      `--delimiter=${FIELD_SEP}`,
-      "--with-nth=2..",
-      "--layout=reverse",
-      "--tiebreak=index",
-      "--prompt=agent> ",
-      "--no-scrollbar",
-    ],
+    ["fzf", ...FZF_MATCHING, "--layout=reverse", "--prompt=agent> ", "--no-scrollbar"],
     { stdin: new Blob([rows.join("\n")]), stdout: "pipe", stderr: "inherit" },
   );
   const selected = (await new Response(fzf.stdout).text()).trim();
@@ -133,4 +147,5 @@ async function pick(): Promise<void> {
 }
 
 if (existsSync(STATE_DIR) === false) mkdirSync(STATE_DIR, { recursive: true });
-await (process.argv[2] === "--watch" ? watch() : pick());
+const mode = process.argv[2];
+await (mode === "--watch" ? watch() : mode === "--match" ? match(process.argv[3] ?? "") : pick());
