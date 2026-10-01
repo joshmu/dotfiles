@@ -138,6 +138,9 @@ async function main() {
     if (launch.fixedCwd) sessionConfig.cwd = launch.fixedCwd;
 
     const claudeSessionId = randomUUID();
+    // agent-scheduler's run-task.sh logs this id so its health monitor can read
+    // the run's transcript (~/.claude/projects/*/<id>.jsonl) and judge the outcome.
+    if (isScheduled) console.log(`claude-session: ${claudeSessionId}`);
     if (launch.mux === "herdr" && herdrAvailable()) {
       if (launchInHerdr(prompt, sessionConfig, claudeSessionId, launch.focus, slack)) return;
     }

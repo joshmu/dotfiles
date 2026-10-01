@@ -140,7 +140,7 @@ scripts/raygent/clip-watch/install-clip-watch.sh --uninstall  # stop and remove
 
 ### Scheduled runs
 
-Prompts containing agent-scheduler's `<agent-scheduler task-id="…" />` marker are scheduled runs. They launch claude with a pre-provisioned `--session-id` and are recorded for agent-scheduler's stale-session reaper: tmux sessions get `@sched_task` / `@sched_claude_session` / `@sched_launched` options; Herdr runs are recorded in `herdr-runs.json`.
+Prompts containing agent-scheduler's `<agent-scheduler task-id="…" />` marker are scheduled runs. They launch claude with a pre-provisioned `--session-id` and are recorded for agent-scheduler's stale-session reaper: tmux sessions get `@sched_task` / `@sched_claude_session` / `@sched_launched` options; Herdr runs are recorded in `herdr-runs.json`. raygent prints the id as a `claude-session: <uuid>` line, which agent-scheduler logs on `LAUNCHED` so its health monitor can read the run's transcript.
 
 With `AGENT_SCHEDULER_MUX=herdr` a scheduled run opens as a tab (`{task} MM-DD HH:mm`) in the `schedules` workspace of the default Herdr session, starting a headless server if none is running; it falls back to tmux when `herdr` is missing or fails.
 
