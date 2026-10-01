@@ -11,7 +11,9 @@ flowchart TD
     S -->|no| H[Haiku router names it<br/>workspace = raycast]
     L --> M{live session for<br/>this conversation?}
     M -->|yes| R[send prompt to it<br/>re-inject]
-    M -->|no| N[new Herdr tab<br/>start claude, send prompt]
+    M -->|no| RS{session active in<br/>the last 14 days?}
+    RS -->|yes| RE[new tab<br/>claude --resume]
+    RS -->|no, or !fresh| N[new Herdr tab<br/>start claude, send prompt]
     H --> N
     N -.->|Herdr unavailable| T[tmux session]
 ```
@@ -120,10 +122,11 @@ A launch is bound to a Slack conversation when:
 Then:
 
 - **One session per conversation.** The key is workspace host + channel id, so any message link from the same channel reaches the same session.
-- **Re-inject.** If a live agent is bound to the key (pane token `slack_key`), the prompt is sent to it instead of starting a new session. If that agent is waiting on a permission prompt, Raygent waits up to 10 minutes and then delivers; on timeout the prompt is saved under `pending/` in the state directory.
+- **Re-inject.** If a live agent is bound to the key (pane token `slack_key`), the prompt is sent to it instead of starting a new session.
+- **Resume.** If no tab is open but the conversation's last session was active (transcript written) in the last 14 days, it is resumed in a new tab (`claude --resume`, in its original directory) and the prompt is sent. Close Slack tabs whenever you like; the next prompt for that conversation brings the session back. Start the prompt with `!fresh` to begin a new session instead. If that agent is waiting on a permission prompt, Raygent waits up to 10 minutes and then delivers; on timeout the prompt is saved under `pending/` in the state directory.
 - **Name.** Channel name for channels, `dm-{name}` for direct messages, `gdm-{names}` for group DMs. Looked up with `authCommand`, cached for a week. Any failure falls back to `slack-{channelid}`; routing is unaffected.
 - **Context.** The prompt is prefixed with the link and the Slack MCP server to read it with.
-- **Opt out.** Start the prompt with `!noclip` to ignore the clipboard. Scheduled runs never read it.
+- **Flags.** Leading `!noclip` ignores the clipboard; `!fresh` skips resuming. They can be combined. Scheduled runs never read the clipboard.
 
 ### clip-watch
 
@@ -146,7 +149,7 @@ With `AGENT_SCHEDULER_MUX=herdr` a scheduled run opens as a tab (`{task} MM-DD H
 
 ### Cleanup
 
-Raycast and scheduled Herdr tabs are recorded in `herdr-runs.json` with their workspace, so the reaper can close stale ones. Raycast tabs are only closed after a long idle period, and never while the agent is working, waiting for input, or when panes were added to the tab. Tabs you open yourself are never touched.
+`raycast` and scheduled Herdr tabs are recorded in `herdr-runs.json` with their workspace, so the reaper can close stale ones. `raycast` tabs are only closed after a long idle period, and never while the agent is working, waiting for input, or when panes were added to the tab. `slack` tabs are not registered: they are resumable, so close them yourself whenever you like. Tabs you open yourself are never touched.
 
 ## State and logs
 
@@ -154,7 +157,8 @@ State lives in `~/.local/state/raygent` (override with `RAYGENT_STATE_DIR`). Eve
 
 | File                         | Contents                                              | Bound                          |
 | ---------------------------- | ----------------------------------------------------- | ------------------------------ |
-| `herdr-runs.json`            | Herdr tabs Raygent opened (for the reaper)            | Pruned when a tab is gone      |
+| `herdr-runs.json`            | `raycast`/scheduled tabs (for the reaper)             | Pruned when a tab is gone      |
+| `slack-sessions.json`        | Slack conversation → last Claude session (for resume) | Dropped after 14 days idle     |
 | `clipboard.json`             | Clipboard change count at the last launch             | Single value                   |
 | `slack-clips.json`           | Slack links seen by clip-watch                        | 5 links, 10 minutes            |
 | `slack-names.json`           | Conversation name cache                               | Entries expire after a week    |
@@ -171,6 +175,7 @@ Other overrides: `RAYGENT_CONFIG` (config path), `RAYGENT_HERDR_SESSION` (named 
 | Nothing happens after a Raycast prompt          | `tail /tmp/raygent.log`; a failure also raises a "Launch failed" notification                           |
 | `undefined env var` in the log                  | Export the variable in `~/.zshenv` (Raycast does not load the login environment)                       |
 | Session named `slack-{id}` instead of a channel | No `authCommand`, or it failed/expired: run it by hand and check it prints a JSON header object        |
+| Slack prompt started a new session instead of resuming | Last activity over 14 days ago, the transcript was deleted, or the prompt started with `!fresh` |
 | Copied Slack link not picked up                 | Copied over 10 minutes ago, already used by an earlier launch, or clip-watch not running: `launchctl print gui/$(id -u)/com.joshmu.raygent.clip-watch` |
 | Launched in tmux instead of Herdr               | Notification shows the Herdr error; `herdr status` (a client/server version mismatch needs a server restart) |
 | Random name like `quick-task-123`               | The Haiku router failed; test it with `bun lib/router-agent.ts "your prompt"`                          |
@@ -195,6 +200,7 @@ bun test scripts/raygent                                          # from the rep
 | `lib/herdr-agent.ts`  | Named agents, matching, re-inject           |
 | `lib/slack-link.ts`   | Slack link parsing, prompt/clipboard pick   |
 | `lib/slack.ts`        | Conversation names and cache                |
+| `lib/slack-sessions.ts` | Resumable Slack sessions                  |
 | `lib/clipboard.ts`    | Live clipboard and the clip-watch record    |
 | `lib/agent-name.ts`   | Valid, unique Herdr agent names             |
 | `lib/notify.ts`       | macOS notifications                         |

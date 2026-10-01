@@ -10,6 +10,7 @@ export interface LiveAgent {
   paneId: string;
   status: string;
   sessionId?: string;
+  cwd?: string;
   tokens: Record<string, string>;
 }
 
@@ -23,6 +24,7 @@ export function agentsFromSnapshot(snapshot: any): LiveAgent[] {
     paneId: a.pane_id,
     status: a.agent_status,
     sessionId: a.agent_session?.value,
+    cwd: a.cwd,
     tokens: tokensByPane.get(a.pane_id) ?? {},
   }));
 }

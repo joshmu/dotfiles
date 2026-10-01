@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { parseSlackUrl, pickSlackRef, slackKey, withSlackContext } from "./slack-link";
+import { parseFlags, parseSlackUrl, pickSlackRef, slackKey, withSlackContext } from "./slack-link";
 
 const EXAMPLE = "https://acme.slack.com/archives/C0123ABCDEF/p1790663425161349";
 
@@ -171,5 +171,18 @@ describe("withSlackContext", () => {
     expect(out).toContain("C0123ABCDEF");
     expect(out).toContain("thread_ts 1790663425.161349");
     expect(out.endsWith("fix it")).toBe(true);
+  });
+});
+
+describe("parseFlags", () => {
+  test.each([
+    ["!fresh fix it", "fix it", false, true],
+    ["!noclip fix it", "fix it", true, false],
+    ["!fresh !noclip fix it", "fix it", true, true],
+    ["  !NOCLIP   fix it", "fix it", true, false],
+    ["fix !fresh it", "fix !fresh it", false, false],
+    ["!freshness matters", "!freshness matters", false, false],
+  ])("%p", (input, prompt, noclip, fresh) => {
+    expect(parseFlags(input)).toEqual({ prompt, noclip, fresh });
   });
 });

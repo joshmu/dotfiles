@@ -50,6 +50,23 @@ export function slackKey(ref: SlackRef): string {
 }
 
 export const NO_CLIPBOARD_PREFIX = "!noclip";
+export const FRESH_PREFIX = "!fresh";
+const FLAGS = [NO_CLIPBOARD_PREFIX, FRESH_PREFIX];
+
+/** Strips leading `!noclip` / `!fresh` tokens (any order) and reports which were present. */
+export function parseFlags(prompt: string): { prompt: string; noclip: boolean; fresh: boolean } {
+  const tokens = prompt.trimStart().split(/(\s+)/);
+  const found = new Set<string>();
+  while (tokens.length && FLAGS.includes(tokens[0].toLowerCase())) {
+    found.add(tokens.shift()!.toLowerCase());
+    while (tokens.length && /^\s*$/.test(tokens[0])) tokens.shift();
+  }
+  return {
+    prompt: found.size ? tokens.join("").trim() : prompt,
+    noclip: found.has(NO_CLIPBOARD_PREFIX),
+    fresh: found.has(FRESH_PREFIX),
+  };
+}
 
 /** A clipboard entry: the live clipboard, or a Slack link recorded by clip-watch. */
 export interface ClipCandidate {
@@ -72,7 +89,8 @@ export interface PickInput {
 export interface Picked {
   ref: SlackRef | null;
   fromClipboard: boolean;
-  prompt: string; // prompt with the opt-out prefix removed
+  fresh: boolean; // `!fresh`: start a new session even if one could be resumed
+  prompt: string; // prompt with leading flags removed
 }
 
 /**
@@ -82,15 +100,13 @@ export interface Picked {
  * unrelated prompt.
  */
 export function pickSlackRef(input: PickInput): Picked {
-  const trimmed = input.prompt.trimStart();
-  const optOut = trimmed.toLowerCase().startsWith(NO_CLIPBOARD_PREFIX);
-  const prompt = optOut ? trimmed.slice(NO_CLIPBOARD_PREFIX.length).trim() : input.prompt;
-  const none = { ref: null, fromClipboard: false, prompt };
+  const { prompt, noclip, fresh } = parseFlags(input.prompt);
+  const none = { ref: null, fromClipboard: false, fresh, prompt };
   if (input.isScheduled) return none;
 
   const inPrompt = parseSlackUrl(prompt);
-  if (inPrompt) return { ref: inPrompt, fromClipboard: false, prompt };
-  if (optOut) return none;
+  if (inPrompt) return { ref: inPrompt, fromClipboard: false, fresh, prompt };
+  if (noclip) return none;
 
   // The counter restarts at boot; a lower current count means the last launch predates it.
   const since =
@@ -104,7 +120,7 @@ export function pickSlackRef(input: PickInput): Picked {
     const text = c.text.trim();
     if (/\s/.test(text)) continue;
     const ref = parseSlackUrl(text);
-    if (ref && ref.url === text) return { ref, fromClipboard: true, prompt };
+    if (ref && ref.url === text) return { ref, fromClipboard: true, fresh, prompt };
   }
   return none;
 }

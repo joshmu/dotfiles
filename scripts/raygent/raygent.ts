@@ -30,6 +30,13 @@ import {
   spawnAgent,
 } from "./lib/herdr-agent";
 import { pickSlackRef, slackKey, withSlackContext } from "./lib/slack-link";
+import {
+  adoptLiveAgents,
+  planSlackLaunch,
+  readSessions,
+  transcriptLastActive,
+  writeSessions,
+} from "./lib/slack-sessions";
 import { resolveLabel, workspaceFor } from "./lib/slack";
 import {
   clipboardChangeCount,
@@ -48,7 +55,7 @@ import {
   killSession,
   setSessionOption,
 } from "./lib/tmux";
-import { writeFileSync } from "fs";
+import { existsSync, writeFileSync } from "fs";
 import { randomUUID } from "crypto";
 import {
   HERDR_WORKSPACE_LABEL,
@@ -64,6 +71,7 @@ import {
 interface SlackTarget {
   key: string;
   label: string;
+  fresh: boolean;
 }
 
 /** Slack link from the prompt or a freshly copied clipboard; names the session and adds context. */
@@ -97,7 +105,7 @@ async function resolveSlack(
       workspaceFor(picked.ref, cfg.slack)?.mcpServer,
     ),
     routingPrompt: picked.prompt,
-    slack: { key, label },
+    slack: { key, label, fresh: picked.fresh },
   };
 }
 
@@ -242,24 +250,41 @@ function launchInHerdr(
   slack?: SlackTarget,
 ): boolean {
   let name: string;
+  let verb = "new";
+  let launchedCwd = sessionConfig.cwd;
   try {
     ensureServer();
     const agents = liveAgents();
-    const existing = slack && findSlackAgent(agents, slack.key, toAgentName(slack.label));
-    if (existing) {
-      const target = existing.name ?? existing.paneId;
+    let sessions = slack ? adoptLiveAgents(readSessions(), agents) : {};
+    const stored = slack ? sessions[slack.key] : undefined;
+    const plan = slack
+      ? planSlackLaunch({
+          live: findSlackAgent(agents, slack.key, toAgentName(slack.label)),
+          stored,
+          lastActiveMs: stored ? transcriptLastActive(stored.sessionId) : null,
+          fresh: slack.fresh,
+          now: Date.now(),
+        })
+      : ({ kind: "fresh" } as const);
+
+    if (plan.kind === "reinject") {
+      const target = plan.agent.name ?? plan.agent.paneId;
       const outcome = reinject(target, prompt);
       console.log(`re-inject ${target}: ${outcome}`);
       notify(`${target} ← ${outcome === "delivered" ? "re-injected" : outcome}`);
       if (focus) focusAgent(target);
+      if (slack) writeSessions(sessions);
       return true;
     }
+
+    const resume = plan.kind === "resume" ? plan.session : undefined;
     const taken = agents.flatMap((a) => (a.name ? [a.name] : []));
-    name = uniqueAgentName(toAgentName(sessionConfig.name), taken);
+    name = uniqueAgentName(toAgentName(resume?.name ?? sessionConfig.name), taken);
+    const sessionId = resume?.sessionId ?? claudeSessionId;
+    const cwd = resume && existsSync(resume.cwd) ? resume.cwd : sessionConfig.cwd;
     const argv = [
       ...buildClaudeArgv(process.env.CLAUDE_EXTRA_ARGS),
-      "--session-id",
-      claudeSessionId,
+      ...(resume ? ["--resume", sessionId] : ["--session-id", sessionId]),
       "-n",
       name,
     ];
@@ -267,22 +292,30 @@ function launchInHerdr(
     const { tabId, paneId } = spawnAgent({
       name,
       workspaceLabel,
-      cwd: sessionConfig.cwd,
+      cwd,
       claudeArgv: argv,
       tokens: slack ? { [SLACK_TOKEN]: slack.key } : undefined,
     });
-    appendRegistry({
-      tabId,
-      paneId,
-      label: name,
-      task: "raygent",
-      claudeSessionId,
-      launched: Math.floor(Date.now() / 1000),
-      herdrSession: currentHerdrSession(),
-      kind: "raygent",
-      workspaceLabel,
-      agentName: name,
-    });
+    if (slack) {
+      // Slack sessions are resumable, so they are never reaped; close their tabs freely.
+      sessions = { ...sessions, [slack.key]: { sessionId, name, cwd, recordedAt: Date.now() } };
+      writeSessions(sessions);
+    } else {
+      appendRegistry({
+        tabId,
+        paneId,
+        label: name,
+        task: "raygent",
+        claudeSessionId: sessionId,
+        launched: Math.floor(Date.now() / 1000),
+        herdrSession: currentHerdrSession(),
+        kind: "raygent",
+        workspaceLabel,
+        agentName: name,
+      });
+    }
+    verb = resume ? "resumed" : "new";
+    launchedCwd = cwd;
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.log(`herdr launch failed (${msg}); falling back to tmux`);
@@ -292,9 +325,9 @@ function launchInHerdr(
   try {
     promptAgent(name, prompt);
     console.log(
-      `Started herdr agent: ${launchWorkspace(Boolean(slack))}/${name} @ ${sessionConfig.cwd}`,
+      `Started herdr agent (${verb}): ${launchWorkspace(Boolean(slack))}/${name} @ ${launchedCwd}`,
     );
-    notify(`${name} ← new`);
+    notify(`${name} ← ${verb}`);
     if (focus) focusAgent(name);
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
