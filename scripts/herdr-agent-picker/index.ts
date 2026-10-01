@@ -14,7 +14,8 @@
  * - (default): open the picker
  * - --watch: run the focus watcher
  * - --match <query>: print the pane id the picker would rank first for `query` (exit 1 if none),
- *   so other tools (e.g. raygent) target agents exactly as the picker would
+ *   so other tools (e.g. raygent, /msg) target agents exactly as the picker would. Run from inside
+ *   a Herdr pane, that pane is excluded so an agent never matches itself
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
@@ -103,12 +104,16 @@ function ensureWatcher(): void {
 const FZF_MATCHING = ["--ansi", `--delimiter=${FIELD_SEP}`, "--with-nth=2..", "--tiebreak=index"];
 
 /** Picker rows in picker order; `currentTerminalId` (the agent you are in) sorts last. */
-async function buildRows(currentTerminalId?: string): Promise<{ panes: Pane[]; rows: string[] }> {
-  const [panes, tabs, workspaces] = await Promise.all([
+async function buildRows(
+  currentTerminalId?: string,
+  excludePaneId?: string,
+): Promise<{ panes: Pane[]; rows: string[] }> {
+  const [allPanes, tabs, workspaces] = await Promise.all([
     listPanes(),
     herdr("tab", "list").then((r) => r.tabs),
     herdr("workspace", "list").then((r) => r.workspaces),
   ]);
+  const panes = allPanes.filter((p) => p.pane_id !== excludePaneId);
   const labels = (items: any[], key: string) =>
     Object.fromEntries(items.map((i) => [i[key], i.label]));
   const rows = orderAgents(panes, readMru(), currentTerminalId).map((p) =>
@@ -119,7 +124,7 @@ async function buildRows(currentTerminalId?: string): Promise<{ panes: Pane[]; r
 
 /** Non-interactive: the pane id fzf ranks first for `query`, as the picker would show it. */
 async function match(query: string): Promise<void> {
-  const { rows } = await buildRows();
+  const { rows } = await buildRows(undefined, process.env.HERDR_PANE_ID);
   const fzf = Bun.spawn(["fzf", ...FZF_MATCHING, `--filter=${query}`], {
     stdin: new Blob([rows.join("\n")]),
     stdout: "pipe",
