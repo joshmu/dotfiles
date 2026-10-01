@@ -18,7 +18,9 @@ import {
   type SessionConfig,
 } from "./lib/router-agent";
 import { buildClaudeArgs, buildClaudeArgv } from "./lib/claude-cmd";
-import { launchWorkspace, resolveLaunch } from "./lib/launch";
+import { launchWorkspace, resolveLaunch, type LaunchPlan } from "./lib/launch";
+import { matchAgent } from "./lib/agent-target";
+import { pastedSince } from "./lib/pasted";
 import { toAgentName, uniqueAgentName } from "./lib/agent-name";
 import {
   SLACK_TOKEN,
@@ -28,8 +30,9 @@ import {
   promptAgent,
   reinject,
   spawnAgent,
+  unbindSlackAgent,
 } from "./lib/herdr-agent";
-import { pickSlackRef, slackKey, withSlackContext } from "./lib/slack-link";
+import { liveClipCopiedAt, pickSlackRef, slackKey, withSlackContext } from "./lib/slack-link";
 import {
   adoptLiveAgents,
   planSlackLaunch,
@@ -40,6 +43,7 @@ import {
 import { resolveLabel, workspaceFor } from "./lib/slack";
 import {
   clipboardChangeCount,
+  lastLaunchAt,
   lastLaunchCount,
   readClipboard,
   readWatchedClips,
@@ -74,25 +78,46 @@ interface SlackTarget {
   fresh: boolean;
 }
 
+interface Resolved {
+  prompt: string; // what the agent receives (Slack context prepended when bound)
+  routingPrompt: string; // the user's words, commands removed
+  slack?: SlackTarget;
+  target?: string; // `:<query>`
+  fresh: boolean;
+  clipboardCount: number | null; // to record once the launch is dispatched
+}
+
 /** Slack link from the prompt or a freshly copied clipboard; names the session and adds context. */
 async function resolveSlack(
   rawPrompt: string,
   cfg: Config,
   isScheduled: boolean,
-): Promise<{ prompt: string; routingPrompt: string; slack?: SlackTarget }> {
-  if (isScheduled) return { prompt: rawPrompt, routingPrompt: rawPrompt };
+): Promise<Resolved> {
+  if (isScheduled)
+    return { prompt: rawPrompt, routingPrompt: rawPrompt, fresh: false, clipboardCount: null };
   const count = clipboardChangeCount();
   const now = Date.now();
   const picked = pickSlackRef({
     prompt: rawPrompt,
-    clips: [...readWatchedClips(), { text: readClipboard(), changeCount: count, at: now }],
+    // clip-watch records carry the real copy time; when the live clipboard is the same
+    // copy, the record sorts first, so the estimate below is only a fallback.
+    clips: [
+      ...readWatchedClips(),
+      { text: readClipboard(), changeCount: count, at: liveClipCopiedAt(lastLaunchAt(), now) },
+    ],
     lastLaunchCount: lastLaunchCount(),
     currentCount: count,
     now,
     isScheduled,
+    alreadyPasted: pastedSince,
   });
-  recordLaunchCount(count);
-  if (!picked.ref) return { prompt: picked.prompt, routingPrompt: picked.prompt };
+  const base = {
+    routingPrompt: picked.prompt,
+    target: picked.target,
+    fresh: picked.fresh,
+    clipboardCount: count,
+  };
+  if (!picked.ref) return { ...base, prompt: picked.prompt };
   const key = slackKey(picked.ref);
   const label =
     (await resolveLabel(key, picked.ref, cfg.slack)) ??
@@ -104,9 +129,38 @@ async function resolveSlack(
       picked.ref,
       workspaceFor(picked.ref, cfg.slack)?.mcpServer,
     ),
-    routingPrompt: picked.prompt,
     slack: { key, label, fresh: picked.fresh },
+    ...base,
   };
+}
+
+/**
+ * `:<query>`: send to the existing agent the picker ranks first. On no match nothing
+ * launches and the prompt goes to the clipboard so it isn't lost. Returns whether the
+ * prompt was dispatched (a miss leaves any copied Slack link unused).
+ */
+function sendToTarget(query: string, r: Resolved, launch: LaunchPlan): boolean {
+  const miss = (why: string) => {
+    Bun.spawnSync(["pbcopy"], { stdin: new Blob([r.routingPrompt]) });
+    console.log(`:${query}: ${why}; prompt copied to the clipboard`);
+    notify(`:${query} ${why}. Prompt copied to the clipboard.`);
+    return false;
+  };
+  if (launch.mux !== "herdr" || !herdrAvailable()) return miss("needs Herdr");
+  try {
+    ensureServer();
+  } catch (e) {
+    return miss(`Herdr unavailable (${e instanceof Error ? e.message : e})`);
+  }
+  const pane = matchAgent(query);
+  if (!pane) return miss("matched no agent");
+  const agent = liveAgents().find((a) => a.paneId === pane);
+  const label = agent?.name ?? pane;
+  const outcome = reinject(agent?.name ?? pane, r.prompt);
+  console.log(`:${query} -> ${label}: ${outcome}${r.slack ? ` (slack ${r.slack.key})` : ""}`);
+  notify(`${label} ← :${query}${outcome === "delivered" ? "" : ` (${outcome})`}`);
+  if (launch.focus) focusAgent(agent?.name ?? pane);
+  return true;
 }
 
 async function main() {
@@ -126,7 +180,17 @@ async function main() {
     const isScheduled = rawPrompt.includes("<agent-scheduler");
     const taskId = rawPrompt.match(/<agent-scheduler task-id="([^"]*)"/)?.[1] ?? "scheduled";
     const launch = resolveLaunch(cfg, isScheduled);
-    const { prompt, routingPrompt, slack } = await resolveSlack(rawPrompt, cfg, isScheduled);
+    const resolved = await resolveSlack(rawPrompt, cfg, isScheduled);
+    const { prompt, routingPrompt, slack } = resolved;
+    const markLaunched = () => {
+      if (resolved.clipboardCount !== null) recordLaunchCount(resolved.clipboardCount);
+    };
+
+    if (resolved.target) {
+      if (sendToTarget(resolved.target, resolved, launch)) markLaunched();
+      return;
+    }
+    markLaunched();
 
     // Exact keyword match first; a Slack name with a pinned cwd needs no router at all.
     const exactMatch = findExactMatch(routingPrompt, cfg);
@@ -277,6 +341,9 @@ function launchInHerdr(
       return true;
     }
 
+    // `:new` while a tab is open: the old agent stays, unbound from the conversation.
+    const live = slack && findSlackAgent(agents, slack.key, toAgentName(slack.label));
+    if (live && plan.kind === "fresh") unbindSlackAgent(live.paneId);
     const resume = plan.kind === "resume" ? plan.session : undefined;
     const taken = agents.flatMap((a) => (a.name ? [a.name] : []));
     name = uniqueAgentName(toAgentName(resume?.name ?? sessionConfig.name), taken);

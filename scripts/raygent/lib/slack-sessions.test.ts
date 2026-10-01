@@ -47,7 +47,13 @@ describe("planSlackLaunch", () => {
     ).toBe("fresh");
   });
 
-  test("missing transcript or !fresh starts fresh", () => {
+  test(":new starts fresh even with a live agent", () => {
+    expect(planSlackLaunch({ live, stored, lastActiveMs: NOW, fresh: true, now: NOW }).kind).toBe(
+      "fresh",
+    );
+  });
+
+  test("missing transcript or :new starts fresh", () => {
     expect(planSlackLaunch({ stored, lastActiveMs: null, fresh: false, now: NOW }).kind).toBe(
       "fresh",
     );

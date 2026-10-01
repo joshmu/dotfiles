@@ -207,3 +207,8 @@ export function reinject(target: string, text: string): "delivered" | "pending" 
     return "pending";
   }
 }
+
+/** Removes a pane's Slack binding so the conversation can move to a new session. */
+export function unbindSlackAgent(paneId: string): void {
+  herdr(["pane", "report-metadata", paneId, "--source", "raygent", "--clear-token", SLACK_TOKEN]);
+}

@@ -44,13 +44,23 @@ function launchStatePath(): string {
 
 /** Change count at the previous Raycast launch, or null on first run. */
 export function lastLaunchCount(): number | null {
+  return readLaunchState().changeCount;
+}
+
+/** When the previous Raycast launch happened (epoch ms), or null. */
+export function lastLaunchAt(): number | null {
+  return readLaunchState().at;
+}
+
+function readLaunchState(): { changeCount: number | null; at: number | null } {
   const p = launchStatePath();
-  if (!existsSync(p)) return null;
+  if (!existsSync(p)) return { changeCount: null, at: null };
   try {
-    const n = JSON.parse(readFileSync(p, "utf8")).changeCount;
-    return typeof n === "number" ? n : null;
+    const j = JSON.parse(readFileSync(p, "utf8"));
+    const num = (v: unknown) => (typeof v === "number" ? v : null);
+    return { changeCount: num(j.changeCount), at: num(j.at) };
   } catch {
-    return null;
+    return { changeCount: null, at: null };
   }
 }
 
@@ -58,5 +68,5 @@ export function lastLaunchCount(): number | null {
 export function recordLaunchCount(current: number): void {
   const p = launchStatePath();
   mkdirSync(dirname(p), { recursive: true });
-  writeFileSync(p, JSON.stringify({ changeCount: current }));
+  writeFileSync(p, JSON.stringify({ changeCount: current, at: Date.now() }));
 }

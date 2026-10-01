@@ -1,5 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import { parseFlags, parseSlackUrl, pickSlackRef, slackKey, withSlackContext } from "./slack-link";
+import {
+  liveClipCopiedAt,
+  parseFlags,
+  parseSlackUrl,
+  pickSlackRef,
+  slackKey,
+  withSlackContext,
+} from "./slack-link";
 
 const EXAMPLE = "https://acme.slack.com/archives/C0123ABCDEF/p1790663425161349";
 
@@ -149,14 +156,26 @@ describe("pickSlackRef", () => {
     expect(pickSlackRef({ ...base, clips: [clip(`look at ${EXAMPLE}`, 110)] }).ref).toBeNull();
   });
 
-  test("!noclip skips the clipboard and is stripped", () => {
+  test("a link already pasted into an agent since it was copied is ignored", () => {
+    const clips = [clip(EXAMPLE, 105, MIN)];
+    expect(pickSlackRef({ ...base, clips, alreadyPasted: () => true }).ref).toBeNull();
+    expect(pickSlackRef({ ...base, clips, alreadyPasted: () => false }).ref).not.toBeNull();
+  });
+
+  test("an older unpasted link is used when the newest was already pasted", () => {
+    const clips = [clip(OTHER, 103, 2 * MIN), clip(EXAMPLE, 107, MIN)];
+    const pasted = (url: string) => url === EXAMPLE;
+    expect(pickSlackRef({ ...base, clips, alreadyPasted: pasted }).ref?.channelId).toBe("C999");
+  });
+
+  test("commands are stripped and a clipboard link still applies with a target", () => {
     const r = pickSlackRef({
       ...base,
-      prompt: "!noclip do the thing",
+      prompt: ":slak :new do the thing",
       clips: [clip(EXAMPLE, 110)],
     });
-    expect(r.ref).toBeNull();
-    expect(r.prompt).toBe("do the thing");
+    expect(r).toMatchObject({ prompt: "do the thing", target: "slak", fresh: true });
+    expect(r.ref?.channelId).toBe("C0123ABCDEF");
   });
 
   test("scheduled prompts never pick a Slack ref", () => {
@@ -176,13 +195,24 @@ describe("withSlackContext", () => {
 
 describe("parseFlags", () => {
   test.each([
-    ["!fresh fix it", "fix it", false, true],
-    ["!noclip fix it", "fix it", true, false],
-    ["!fresh !noclip fix it", "fix it", true, true],
-    ["  !NOCLIP   fix it", "fix it", true, false],
-    ["fix !fresh it", "fix !fresh it", false, false],
-    ["!freshness matters", "!freshness matters", false, false],
-  ])("%p", (input, prompt, noclip, fresh) => {
-    expect(parseFlags(input)).toEqual({ prompt, noclip, fresh });
+    [":new fix it", "fix it", true, undefined],
+    [":slak fix it", "fix it", false, "slak"],
+    [":new :platform-team fix it", "fix it", true, "platform-team"],
+    ["  :SLAK   fix it\nsecond line", "fix it\nsecond line", false, "slak"],
+    [":slak :other fix it", "fix it", false, "slak"],
+    ["fix :slak it", "fix :slak it", false, undefined],
+    [":) hello", ":) hello", false, undefined],
+    ["no commands", "no commands", false, undefined],
+  ])("%p", (input, prompt, fresh, target) => {
+    expect(parseFlags(input)).toEqual({ prompt, fresh, target });
+  });
+});
+
+describe("liveClipCopiedAt", () => {
+  const NOW = 1_000_000_000;
+  test("no earlier than the last launch, no older than the freshness window", () => {
+    expect(liveClipCopiedAt(NOW - 60_000, NOW)).toBe(NOW - 60_000);
+    expect(liveClipCopiedAt(NOW - 3_600_000, NOW)).toBe(NOW - 10 * 60_000);
+    expect(liveClipCopiedAt(null, NOW)).toBe(NOW - 10 * 60_000);
   });
 });

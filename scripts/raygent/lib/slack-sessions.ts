@@ -23,8 +23,8 @@ export type SlackPlan =
   | { kind: "fresh" };
 
 /**
- * Live agent first; otherwise resume the recorded session if its transcript is
- * still active (and `!fresh` wasn't given); otherwise start a new one.
+ * `:new` always starts a new session. Otherwise a live agent is re-injected, else the
+ * recorded session is resumed while its transcript is active, else a new one starts.
  */
 export function planSlackLaunch(input: {
   live?: LiveAgent;
@@ -33,9 +33,9 @@ export function planSlackLaunch(input: {
   fresh: boolean;
   now: number;
 }): SlackPlan {
+  if (input.fresh) return { kind: "fresh" };
   if (input.live) return { kind: "reinject", agent: input.live };
   if (
-    !input.fresh &&
     input.stored &&
     input.lastActiveMs !== null &&
     input.now - input.lastActiveMs < RESUME_WINDOW_MS
@@ -74,7 +74,7 @@ export function pruneSessions(
 
 // --- IO ---------------------------------------------------------------------
 
-function projectsDir(): string {
+export function projectsDir(): string {
   return process.env.RAYGENT_CLAUDE_PROJECTS || join(homedir(), ".claude", "projects");
 }
 

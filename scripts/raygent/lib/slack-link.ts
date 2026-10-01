@@ -49,23 +49,44 @@ export function slackKey(ref: SlackRef): string {
   return `${ref.host ?? ref.teamId ?? "slack"}:${ref.channelId}`;
 }
 
-export const NO_CLIPBOARD_PREFIX = "!noclip";
-export const FRESH_PREFIX = "!fresh";
-const FLAGS = [NO_CLIPBOARD_PREFIX, FRESH_PREFIX];
+const COMMAND = /^:([a-z0-9][a-z0-9_-]*)$/i;
 
-/** Strips leading `!noclip` / `!fresh` tokens (any order) and reports which were present. */
-export function parseFlags(prompt: string): { prompt: string; noclip: boolean; fresh: boolean } {
-  const tokens = prompt.trimStart().split(/(\s+)/);
-  const found = new Set<string>();
-  while (tokens.length && FLAGS.includes(tokens[0].toLowerCase())) {
-    found.add(tokens.shift()!.toLowerCase());
-    while (tokens.length && /^\s*$/.test(tokens[0])) tokens.shift();
+export interface Flags {
+  prompt: string; // prompt with the leading commands removed
+  fresh: boolean; // `:new`: start a new session even if one could be resumed
+  target?: string; // `:<query>`: send to the existing agent the picker ranks first
+}
+
+/** Leading `:word` commands, any order: `:new`, else the first other word is the agent query. */
+export function parseFlags(prompt: string): Flags {
+  const tokens = prompt.trim().split(/\s+/);
+  let fresh = false;
+  let target: string | undefined;
+  let i = 0;
+  for (; i < tokens.length; i++) {
+    const m = COMMAND.exec(tokens[i]);
+    if (!m) break;
+    const word = m[1].toLowerCase();
+    if (word === "new") fresh = true;
+    else if (!target) target = word;
   }
-  return {
-    prompt: found.size ? tokens.join("").trim() : prompt,
-    noclip: found.has(NO_CLIPBOARD_PREFIX),
-    fresh: found.has(FRESH_PREFIX),
-  };
+  if (i === 0) return { prompt, fresh, target };
+  return { prompt: stripLeading(prompt, i), fresh, target };
+}
+
+/** Removes the first `n` whitespace-separated tokens, keeping the rest of the prompt verbatim. */
+function stripLeading(prompt: string, n: number): string {
+  let rest = prompt.trimStart();
+  for (let k = 0; k < n; k++) rest = rest.replace(/^\S+\s*/, "");
+  return rest;
+}
+
+/**
+ * The live clipboard's copy time is unknown: it was copied after the previous launch
+ * and, to be eligible at all, within the freshness window.
+ */
+export function liveClipCopiedAt(lastLaunchAt: number | null, now: number): number {
+  return Math.max(lastLaunchAt ?? 0, now - CLIP_MAX_AGE_MS);
 }
 
 /** A clipboard entry: the live clipboard, or a Slack link recorded by clip-watch. */
@@ -84,13 +105,16 @@ export interface PickInput {
   currentCount: number;
   now: number;
   isScheduled: boolean;
+  /** True when the link already appears in an agent session since it was copied. */
+  alreadyPasted?: (url: string, copiedAt: number) => boolean;
 }
 
 export interface Picked {
   ref: SlackRef | null;
   fromClipboard: boolean;
-  fresh: boolean; // `!fresh`: start a new session even if one could be resumed
-  prompt: string; // prompt with leading flags removed
+  fresh: boolean;
+  target?: string;
+  prompt: string; // prompt with leading commands removed
 }
 
 /**
@@ -100,13 +124,12 @@ export interface Picked {
  * unrelated prompt.
  */
 export function pickSlackRef(input: PickInput): Picked {
-  const { prompt, noclip, fresh } = parseFlags(input.prompt);
-  const none = { ref: null, fromClipboard: false, fresh, prompt };
+  const { prompt, fresh, target } = parseFlags(input.prompt);
+  const none = { ref: null, fromClipboard: false, fresh, target, prompt };
   if (input.isScheduled) return none;
 
   const inPrompt = parseSlackUrl(prompt);
-  if (inPrompt) return { ref: inPrompt, fromClipboard: false, fresh, prompt };
-  if (noclip) return none;
+  if (inPrompt) return { ref: inPrompt, fromClipboard: false, fresh, target, prompt };
 
   // The counter restarts at boot; a lower current count means the last launch predates it.
   const since =
@@ -120,7 +143,8 @@ export function pickSlackRef(input: PickInput): Picked {
     const text = c.text.trim();
     if (/\s/.test(text)) continue;
     const ref = parseSlackUrl(text);
-    if (ref && ref.url === text) return { ref, fromClipboard: true, fresh, prompt };
+    if (ref && ref.url === text && !input.alreadyPasted?.(ref.url, c.at))
+      return { ref, fromClipboard: true, fresh, target, prompt };
   }
   return none;
 }

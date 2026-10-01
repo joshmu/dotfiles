@@ -6,22 +6,25 @@ Raycast → Claude Code. Type (or dictate) a prompt in Raycast and Raygent start
 
 ```mermaid
 flowchart TD
-    P[Raycast prompt] --> S{Slack link?<br/>in the prompt, else<br/>recently copied}
+    P[Raycast prompt] --> C{:agent command?}
+    C -->|yes| A[best picker match<br/>send prompt to it]
+    C -->|no| S{Slack link?<br/>in the prompt, else<br/>recently copied}
     S -->|yes| L[name = channel name<br/>workspace = slack]
     S -->|no| H[Haiku router names it<br/>workspace = raycast]
     L --> M{live session for<br/>this conversation?}
     M -->|yes| R[send prompt to it<br/>re-inject]
     M -->|no| RS{session active in<br/>the last 14 days?}
     RS -->|yes| RE[new tab<br/>claude --resume]
-    RS -->|no, or !fresh| N[new Herdr tab<br/>start claude, send prompt]
+    RS -->|no| N[new Herdr tab<br/>start claude, send prompt]
     H --> N
     N -.->|Herdr unavailable| T[tmux session]
 ```
 
-1. **Slack link**: taken from the prompt, otherwise from a link copied in the last 10 minutes (see [Slack conversations](#slack-conversations)).
-2. **Name and directory**: an `exactKeywords` match wins; otherwise Claude Haiku picks a short name and a workspace from `config.json`. A Slack launch is named after the channel instead. `launch.fixedCwd` pins the directory and skips workspace routing.
-3. **Launch**: with `launch.mux: "herdr"`, a named Herdr agent in its own tab; otherwise (or if Herdr fails) a tmux session.
-4. **Feedback**: a macOS notification says where the prompt went, or why the launch failed.
+1. **Commands**: a leading `:<agent>` sends the prompt to an existing agent instead (see [Commands](#commands)).
+2. **Slack link**: taken from the prompt, otherwise from a link copied in the last 10 minutes (see [Slack conversations](#slack-conversations)).
+3. **Name and directory**: an `exactKeywords` match wins; otherwise Claude Haiku picks a short name and a workspace from `config.json`. A Slack launch is named after the channel instead. `launch.fixedCwd` pins the directory and skips workspace routing.
+4. **Launch**: with `launch.mux: "herdr"`, a named Herdr agent in its own tab; otherwise (or if Herdr fails) a tmux session.
+5. **Feedback**: a macOS notification says where the prompt went, or why the launch failed.
 
 ## Setup (per machine)
 
@@ -117,16 +120,28 @@ The agent name is also the Claude session name (`claude -n`), and the prompt is 
 A launch is bound to a Slack conversation when:
 
 - the prompt contains a Slack message link, or
-- a Slack link was copied **since the last launch and within the last 10 minutes**. The copy must be exactly the link. The newest one wins, and later copies don't hide it when [clip-watch](#clip-watch) is installed; without it only the current clipboard is checked.
+- a Slack link was copied **since the last launch and within the last 10 minutes**, and it has **not already been pasted into a Claude session** since it was copied (checked against recently written transcripts; ~90 ms). The copy must be exactly the link. The newest such link wins, and later copies don't hide it when [clip-watch](#clip-watch) is installed; without it only the current clipboard is checked.
 
 Then:
 
 - **One session per conversation.** The key is workspace host + channel id, so any message link from the same channel reaches the same session.
-- **Re-inject.** If a live agent is bound to the key (pane token `slack_key`), the prompt is sent to it instead of starting a new session.
-- **Resume.** If no tab is open but the conversation's last session was active (transcript written) in the last 14 days, it is resumed in a new tab (`claude --resume`, in its original directory) and the prompt is sent. Close Slack tabs whenever you like; the next prompt for that conversation brings the session back. Start the prompt with `!fresh` to begin a new session instead. If that agent is waiting on a permission prompt, Raygent waits up to 10 minutes and then delivers; on timeout the prompt is saved under `pending/` in the state directory.
+- **Re-inject.** If a live agent is bound to the key (pane token `slack_key`), the prompt is sent to it instead of starting a new session. If that agent is waiting on a permission prompt, Raygent waits up to 10 minutes and then delivers; on timeout the prompt is saved under `pending/` in the state directory.
+- **Resume.** If no tab is open but the conversation's last session was active (transcript written) in the last 14 days, it is resumed in a new tab (`claude --resume`, in its original directory) and the prompt is sent. Close Slack tabs whenever you like; the next prompt for that conversation brings the session back.
+- **`:new`** starts a new session for the conversation even if one is open or resumable; an open tab stays, unbound.
 - **Name.** Channel name for channels, `dm-{name}` for direct messages, `gdm-{names}` for group DMs. Looked up with `authCommand`, cached for a week. Any failure falls back to `slack-{channelid}`; routing is unaffected.
 - **Context.** The prompt is prefixed with the link and the Slack MCP server to read it with.
-- **Flags.** Leading `!noclip` ignores the clipboard; `!fresh` skips resuming. They can be combined. Scheduled runs never read the clipboard.
+- Scheduled runs never read the clipboard.
+
+### Commands
+
+Leading `:word` tokens, in any order, single words (use hyphens):
+
+| Command   | Effect                                                                                          |
+| --------- | ----------------------------------------------------------------------------------------------- |
+| `:new`    | Slack prompts: start a new session instead of re-injecting or resuming                          |
+| `:<agent>`| Send the prompt to the existing agent the Herdr agent picker (⌘P) ranks first for `<agent>`: same rows (pane, tab, workspace, session title), same recency order, same fuzzy match. `:slak fix the copy` goes to the best match for "slak" |
+
+With `:<agent>`, a Slack link (typed or copied) still adds its context, but the prompt goes to that agent rather than the `slack` workspace. If nothing matches, nothing launches: a notification says so and **your prompt is copied to the clipboard** so you can retry without retyping. Matching uses `herdr-agent-picker --match <query>`.
 
 ### clip-watch
 
@@ -175,8 +190,9 @@ Other overrides: `RAYGENT_CONFIG` (config path), `RAYGENT_HERDR_SESSION` (named 
 | Nothing happens after a Raycast prompt          | `tail /tmp/raygent.log`; a failure also raises a "Launch failed" notification                           |
 | `undefined env var` in the log                  | Export the variable in `~/.zshenv` (Raycast does not load the login environment)                       |
 | Session named `slack-{id}` instead of a channel | No `authCommand`, or it failed/expired: run it by hand and check it prints a JSON header object        |
-| Slack prompt started a new session instead of resuming | Last activity over 14 days ago, the transcript was deleted, or the prompt started with `!fresh` |
-| Copied Slack link not picked up                 | Copied over 10 minutes ago, already used by an earlier launch, or clip-watch not running: `launchctl print gui/$(id -u)/com.joshmu.raygent.clip-watch` |
+| Slack prompt started a new session instead of resuming | Last activity over 14 days ago, the transcript was deleted, or the prompt started with `:new` |
+| `:<agent>` went to the wrong agent | Same ranking as ⌘P: type the same query there to see the order; use a more specific word |
+| Copied Slack link not picked up (also: already pasted into a Claude session)                 | Copied over 10 minutes ago, already used by an earlier launch, or clip-watch not running: `launchctl print gui/$(id -u)/com.joshmu.raygent.clip-watch` |
 | Launched in tmux instead of Herdr               | Notification shows the Herdr error; `herdr status` (a client/server version mismatch needs a server restart) |
 | Random name like `quick-task-123`               | The Haiku router failed; test it with `bun lib/router-agent.ts "your prompt"`                          |
 
