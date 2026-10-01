@@ -126,7 +126,8 @@ export interface Picked {
 export function pickSlackRef(input: PickInput): Picked {
   const { prompt, fresh, target } = parseFlags(input.prompt);
   const none = { ref: null, fromClipboard: false, fresh, target, prompt };
-  if (input.isScheduled) return none;
+  // `:<agent>` sends the prompt as typed: no Slack binding, typed or copied.
+  if (input.isScheduled || target) return none;
 
   const inPrompt = parseSlackUrl(prompt);
   if (inPrompt) return { ref: inPrompt, fromClipboard: false, fresh, target, prompt };

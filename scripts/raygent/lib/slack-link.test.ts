@@ -168,14 +168,14 @@ describe("pickSlackRef", () => {
     expect(pickSlackRef({ ...base, clips, alreadyPasted: pasted }).ref?.channelId).toBe("C999");
   });
 
-  test("commands are stripped and a clipboard link still applies with a target", () => {
+  test("a target sends the prompt as typed: no Slack binding from clipboard or prompt", () => {
     const r = pickSlackRef({
       ...base,
-      prompt: ":slak :new do the thing",
-      clips: [clip(EXAMPLE, 110)],
+      prompt: `:slak :new do the thing ${EXAMPLE}`,
+      clips: [clip(OTHER, 110)],
     });
-    expect(r).toMatchObject({ prompt: "do the thing", target: "slak", fresh: true });
-    expect(r.ref?.channelId).toBe("C0123ABCDEF");
+    expect(r).toMatchObject({ prompt: `do the thing ${EXAMPLE}`, target: "slak", fresh: true });
+    expect(r.ref).toBeNull();
   });
 
   test("scheduled prompts never pick a Slack ref", () => {

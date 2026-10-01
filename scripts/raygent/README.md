@@ -141,7 +141,7 @@ Leading `:word` tokens, in any order, single words (use hyphens):
 | `:new`    | Slack prompts: start a new session instead of re-injecting or resuming                          |
 | `:<agent>`| Send the prompt to the existing agent the Herdr agent picker (⌘P) ranks first for `<agent>`: same rows (pane, tab, workspace, session title), same recency order, same fuzzy match. `:slak fix the copy` goes to the best match for "slak" |
 
-With `:<agent>`, a Slack link (typed or copied) still adds its context, but the prompt goes to that agent rather than the `slack` workspace. If nothing matches, nothing launches: a notification says so and **your prompt is copied to the clipboard** so you can retry without retyping. Matching uses `herdr-agent-picker --match <query>`.
+With `:<agent>` the prompt is sent exactly as typed: the clipboard is not read and no Slack context is added (a link you type stays in the text), and a copied link stays available for your next prompt. If nothing matches, nothing launches: a notification says so and **your prompt is copied to the clipboard** so you can retry without retyping. Matching uses `herdr-agent-picker --match <query>`.
 
 ### clip-watch
 

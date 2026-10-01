@@ -187,7 +187,8 @@ async function main() {
     };
 
     if (resolved.target) {
-      if (sendToTarget(resolved.target, resolved, launch)) markLaunched();
+      // A targeted send doesn't use the clipboard, so a copied link stays available.
+      sendToTarget(resolved.target, resolved, launch);
       return;
     }
     markLaunched();
