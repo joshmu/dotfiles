@@ -31,6 +31,11 @@ export PERSONAL_VAULT="${PERSONAL_VAULT:-$HOME/vault}"
 export BRG_WORKSPACE="${BRG_WORKSPACE:-$HOME/work/brg}"
 export AGENT_OBSERVABILITY_PATH="${AGENT_OBSERVABILITY_PATH:-$HOME/Desktop/code/agent-observability}"
 
+# Claude Code mods: every folder in ~/.claude/mods loads as a plugin in each session
+_claude_mods=($HOME/.claude/mods/*(N/))
+export CLAUDE_CODE_PLUGIN_DIRS="${(j/:/)_claude_mods}"
+unset _claude_mods
+
 # oh-my-posh: pin the theme directly so the prompt never depends on the session->config cache
 # in ~/.cache/oh-my-posh (which silently falls back to the default theme if the cached init was
 # generated before the ~/.oh-my-mu.json symlink existed, or if that cache is cleared).
