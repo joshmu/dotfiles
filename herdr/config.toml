@@ -266,6 +266,11 @@ rows = [
   ["state_icon", { token = "pane", bold = true }, { token = "tab", bold = true }, { token = "workspace", bold = false, dim = true }],
 ]
 
+# Spaces rows: name only; the default branch line follows the active tab's cwd, so it appears
+# inconsistently across workspaces
+[ui.sidebar.spaces]
+rows = [["state_icon", "workspace"]]
+
 [ui.toast]
 # off = disable pop-up notifications
 # herdr = show in-app toasts
