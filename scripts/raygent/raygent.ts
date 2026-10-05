@@ -226,36 +226,39 @@ async function main() {
 
     // Scheduled runs can opt into Herdr (AGENT_SCHEDULER_MUX=herdr, set by
     // run-task.sh from schedules.json): one tab per run in a shared workspace.
-    // Falls back to tmux when herdr is missing or fails.
+    // A herdr failure fails the run (exit 1, so run-task.sh logs FAIL) rather
+    // than falling back to tmux, where an unattended run goes unnoticed.
     if (isScheduled && process.env.AGENT_SCHEDULER_MUX === "herdr") {
-      if (!herdrAvailable()) {
-        console.log("herdr not found; falling back to tmux");
-      } else {
-        try {
-          ensureServer();
-          const label = runLabel(taskId);
-          const { tabId, paneId } = openRunTab(sessionConfig.cwd, label);
-          appendRegistry({
-            tabId,
-            paneId,
-            label,
-            task: taskId,
-            claudeSessionId,
-            launched: Math.floor(Date.now() / 1000),
-            herdrSession: currentHerdrSession(),
-            kind: "schedule",
-            workspaceLabel: HERDR_WORKSPACE_LABEL,
-          });
-          runInPane(paneId, claudeCmd);
-          console.log(
-            `Started herdr tab: ${HERDR_WORKSPACE_LABEL}/${label} (${tabId}) @ ${sessionConfig.cwd}`,
-          );
-          return;
-        } catch (e) {
-          console.log(
-            `herdr launch failed (${e instanceof Error ? e.message : e}); falling back to tmux`,
-          );
-        }
+      if (!herdrAvailable()) throw new Error("herdr not found on PATH");
+      try {
+        ensureServer();
+        const label = runLabel(taskId);
+        const { tabId, paneId } = openRunTab(sessionConfig.cwd, label);
+        appendRegistry({
+          tabId,
+          paneId,
+          label,
+          task: taskId,
+          claudeSessionId,
+          launched: Math.floor(Date.now() / 1000),
+          herdrSession: currentHerdrSession(),
+          kind: "schedule",
+          workspaceLabel: HERDR_WORKSPACE_LABEL,
+        });
+        runInPane(paneId, claudeCmd);
+        console.log(
+          `Started herdr tab: ${HERDR_WORKSPACE_LABEL}/${label} (${tabId}) @ ${sessionConfig.cwd}`,
+        );
+        return;
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        // After a herdr upgrade the running server speaks an older protocol until
+        // it is restarted. Restarting it kills every live pane, so leave that to the user.
+        // The hint leads because the launch-failed notification truncates the message.
+        const hint = msg.includes("protocol_mismatch")
+          ? "herdr server is older than the client, restart it (herdr server stop && herdr): "
+          : "";
+        throw new Error(`${hint}herdr launch failed (${msg})`);
       }
     }
 

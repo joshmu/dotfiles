@@ -160,7 +160,7 @@ scripts/raygent/clip-watch/install-clip-watch.sh --uninstall  # stop and remove
 
 Prompts containing agent-scheduler's `<agent-scheduler task-id="…" />` marker are scheduled runs. They launch claude with a pre-provisioned `--session-id` and are recorded for agent-scheduler's stale-session reaper: tmux sessions get `@sched_task` / `@sched_claude_session` / `@sched_launched` options; Herdr runs are recorded in `herdr-runs.json`. raygent prints the id as a `claude-session: <uuid>` line, which agent-scheduler logs on `LAUNCHED` so its health monitor can read the run's transcript.
 
-With `AGENT_SCHEDULER_MUX=herdr` a scheduled run opens as a tab (`{task} MM-DD HH:mm`) in the `schedules` workspace of the default Herdr session, starting a headless server if none is running; it falls back to tmux when `herdr` is missing or fails.
+With `AGENT_SCHEDULER_MUX=herdr` a scheduled run opens as a tab (`{task} MM-DD HH:mm`) in the `schedules` workspace of the default Herdr session, starting a headless server if none is running. If `herdr` is missing or the launch fails, the run fails (exit 1, so agent-scheduler logs `FAIL`) instead of falling back to tmux. A `protocol_mismatch` error means the running server predates a herdr upgrade; restarting it (`herdr server stop && herdr`) is left to you because it kills every live pane.
 
 ### Cleanup
 
