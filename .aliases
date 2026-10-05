@@ -38,7 +38,9 @@ alias tre='tree --prune -P '
 alias tree='tree -F '
 # eza (modern ls replacement)
 if command -v eza &>/dev/null; then
-    alias ls='eza --color=always --icons --grid --group-directories-first'
+    # eza only on a terminal: piped/scripted ls stays plain (--grid packs names per row and breaks wc -l)
+    unalias ls 2>/dev/null
+    ls() { if [[ -t 1 ]]; then eza --color=always --icons --grid --group-directories-first "$@"; else command ls "$@"; fi; }
     alias tree='eza --tree --icons --group-directories-first'
 else
     alias ls='ls --color=auto'
