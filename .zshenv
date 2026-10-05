@@ -29,7 +29,7 @@ export VISUAL="nvim"
 [ -f "$HOME/.zshenv.local" ] && source "$HOME/.zshenv.local"
 export PERSONAL_VAULT="${PERSONAL_VAULT:-$HOME/vault}"
 export BRG_WORKSPACE="${BRG_WORKSPACE:-$HOME/work/brg}"
-export AGENT_OBSERVABILITY_PATH="${AGENT_OBSERVABILITY_PATH:-$HOME/Desktop/code/agent-observability}"
+export AGENT_OBSERVABILITY_PATH="${AGENT_OBSERVABILITY_PATH:-$HOME/code/agent-observability}"
 
 # Claude Code mods: every folder in ~/.claude/mods loads as a plugin in each session
 _claude_mods=($HOME/.claude/mods/*(N/))
