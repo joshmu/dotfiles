@@ -53,7 +53,7 @@ bash scripts/macos-defaults.sh
 
 # 5. Per-machine path env vars (only if a target sits off the default — NOT tracked)
 #   .zshenv defaults these from $HOME: PERSONAL_VAULT (~/vault), BRG_WORKSPACE (~/work/brg),
-#   AGENT_OBSERVABILITY_PATH (~/Desktop/code/agent-observability). On a machine where any
+#   AGENT_OBSERVABILITY_PATH (~/code/agent-observability). On a machine where any
 #   lives elsewhere, create the gitignored override and uncomment + edit the line(s) needed:
 cp .zshenv.local.example ~/.zshenv.local
 #   AGENT_OBSERVABILITY_PATH is also referenced by ~/.claude settings.json hooks

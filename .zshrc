@@ -208,7 +208,7 @@ command -v rbenv >/dev/null && eval "$(rbenv init - --no-rehash zsh)"
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
-alias luamake=$HOME/Desktop/code/other/lua-language-server/3rd/luamake/luamake
+alias luamake=$HOME/code/other/lua-language-server/3rd/luamake/luamake
 
 ### Added by the Heroku Toolbelt
 #export PATH="/usr/local/heroku/bin:$PATH"

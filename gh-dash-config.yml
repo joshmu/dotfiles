@@ -13,7 +13,7 @@ defaults:
 
 repoPaths:
   brevilledigital/*: ~/work/brg/repos/*
-  joshmu/*: ~/Desktop/code/*
+  joshmu/*: ~/code/*
 
 prSections:
   - title: Breville PRs

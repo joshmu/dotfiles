@@ -142,7 +142,7 @@ ${colors.bright}Options:${colors.reset}
 
 ${colors.bright}Examples:${colors.reset}
   update-repos                          # Scan current directory
-  update-repos ~/work/brg/repos ~/Desktop/code ~/.claude ~/dotfiles
+  update-repos ~/code ~/.claude ~/dotfiles
                                         # Scan multiple curated roots (missing ones skipped)
   update-repos --parallel 5             # Update 5 repos concurrently
   update-repos --skip-default-branch    # Update without switching branches
