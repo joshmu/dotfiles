@@ -1,11 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import {
-  liveClipCopiedAt,
+  latestClipboardRef,
   parseFlags,
   parseSlackUrl,
   pickSlackRef,
   slackKey,
   withSlackContext,
+  type Mod,
 } from "./slack-link";
 
 const EXAMPLE = "https://acme.slack.com/archives/C0123ABCDEF/p1790663425161349";
@@ -95,91 +96,96 @@ describe("slackKey", () => {
 });
 
 describe("pickSlackRef", () => {
-  const NOW = 1_000_000_000;
-  const MIN = 60_000;
   const OTHER = "https://acme.slack.com/archives/C999/p1790663425161349";
-  const clip = (text: string, changeCount: number, agoMs = 0) => ({
-    text,
-    changeCount,
-    at: NOW - agoMs,
-  });
-  const base = {
-    prompt: "do the thing",
-    clips: [] as ReturnType<typeof clip>[],
-    lastLaunchCount: 100,
-    currentCount: 110,
-    now: NOW,
-    isScheduled: false,
+  const watched = (text: string, at: number) => ({ text, changeCount: 0, at });
+  const pick = (prompt: string, live = "", clips: ReturnType<typeof watched>[] = []) => {
+    let reads = 0;
+    const r = pickSlackRef({
+      prompt,
+      clipboard: () => {
+        reads++;
+        return { live, watched: clips };
+      },
+      isScheduled: false,
+    });
+    return { ...r, reads };
   };
 
-  test("prompt link beats clipboard link", () => {
-    const r = pickSlackRef({ ...base, prompt: `x ${EXAMPLE}`, clips: [clip(OTHER, 110)] });
-    expect(r.ref?.channelId).toBe("C0123ABCDEF");
-    expect(r.fromClipboard).toBe(false);
+  test("without s the clipboard is never read, even with a Slack link on it", () => {
+    const r = pick("can you go look at xyz", EXAMPLE, [watched(OTHER, 1)]);
+    expect(r).toMatchObject({ ref: null, mods: [], prompt: "can you go look at xyz", reads: 0 });
   });
 
-  test("freshly copied link on the live clipboard is used", () => {
-    const r = pickSlackRef({ ...base, clips: [clip(`  ${EXAMPLE}\n`, 110)] });
-    expect(r.ref?.channelId).toBe("C0123ABCDEF");
-    expect(r.fromClipboard).toBe(true);
-  });
-
-  test("a recorded link survives later copies such as dictation", () => {
-    const clips = [clip(EXAMPLE, 105, 20_000), clip("do the thing", 110)];
-    expect(pickSlackRef({ ...base, clips }).ref?.channelId).toBe("C0123ABCDEF");
-  });
-
-  test("newest eligible link wins", () => {
-    const clips = [clip(OTHER, 103, 2 * MIN), clip(EXAMPLE, 107, MIN), clip("text", 110)];
-    expect(pickSlackRef({ ...base, clips }).ref?.channelId).toBe("C0123ABCDEF");
-  });
-
-  test("links copied before the last launch are ignored", () => {
-    expect(pickSlackRef({ ...base, clips: [clip(EXAMPLE, 100)] }).ref).toBeNull();
-  });
-
-  test("links older than 10 minutes are ignored", () => {
-    expect(pickSlackRef({ ...base, clips: [clip(EXAMPLE, 105, 11 * MIN)] }).ref).toBeNull();
-  });
-
-  test("first run and a counter reset after reboot both allow fresh links", () => {
-    expect(
-      pickSlackRef({ ...base, lastLaunchCount: null, clips: [clip(EXAMPLE, 5)] }).ref,
-    ).not.toBeNull();
-    expect(
-      pickSlackRef({ ...base, lastLaunchCount: 900, currentCount: 12, clips: [clip(EXAMPLE, 10)] })
-        .ref,
-    ).not.toBeNull();
-  });
-
-  test("prose that merely contains a link is ignored", () => {
-    expect(pickSlackRef({ ...base, clips: [clip(`look at ${EXAMPLE}`, 110)] }).ref).toBeNull();
-  });
-
-  test("a link already pasted into an agent since it was copied is ignored", () => {
-    const clips = [clip(EXAMPLE, 105, MIN)];
-    expect(pickSlackRef({ ...base, clips, alreadyPasted: () => true }).ref).toBeNull();
-    expect(pickSlackRef({ ...base, clips, alreadyPasted: () => false }).ref).not.toBeNull();
-  });
-
-  test("an older unpasted link is used when the newest was already pasted", () => {
-    const clips = [clip(OTHER, 103, 2 * MIN), clip(EXAMPLE, 107, MIN)];
-    const pasted = (url: string) => url === EXAMPLE;
-    expect(pickSlackRef({ ...base, clips, alreadyPasted: pasted }).ref?.channelId).toBe("C999");
-  });
-
-  test("a target sends the prompt as typed: no Slack binding from clipboard or prompt", () => {
-    const r = pickSlackRef({
-      ...base,
-      prompt: `:slak :new do the thing ${EXAMPLE}`,
-      clips: [clip(OTHER, 110)],
+  test("s: generic prompt bound to the copied link", () => {
+    const r = pick("s can you go look at xyz", EXAMPLE);
+    expect(r).toMatchObject({
+      fromClipboard: true,
+      mods: ["slack"],
+      prompt: "can you go look at xyz",
     });
+    expect(r.ref?.channelId).toBe("C0123ABCDEF");
+    expect(r.target).toBeUndefined();
+  });
+
+  test("s :agent: agent send carrying the copied link", () => {
+    const r = pick("s :fe-ai can you go look at xyz", EXAMPLE);
+    expect(r).toMatchObject({
+      target: "fe-ai",
+      fromClipboard: true,
+      prompt: "can you go look at xyz",
+    });
+    expect(r.ref?.channelId).toBe("C0123ABCDEF");
+  });
+
+  test("s :new :agent and s :new parse alongside the mod", () => {
+    expect(pick("s :new fix it", EXAMPLE)).toMatchObject({ fresh: true, prompt: "fix it" });
+    expect(pick("s :new :fe-ai fix it", EXAMPLE)).toMatchObject({ fresh: true, target: "fe-ai" });
+  });
+
+  test("most recent link: live clipboard first, else the newest clip-watch record", () => {
+    expect(pick("s x", OTHER, [watched(EXAMPLE, 9)]).ref?.channelId).toBe("C999");
+    const clips = [watched(OTHER, 1), watched(EXAMPLE, 3), watched(OTHER, 2)];
+    expect(pick("s x", "dictated text", clips).ref?.channelId).toBe("C0123ABCDEF");
+  });
+
+  test("s with no Slack link copied picks nothing but keeps the mod", () => {
+    expect(pick("s fix it", "plain text")).toMatchObject({ ref: null, mods: ["slack"] });
+  });
+
+  test("a link typed in the prompt binds without s and beats the clipboard with s", () => {
+    expect(pick(`x ${EXAMPLE}`, OTHER)).toMatchObject({ fromClipboard: false, reads: 0 });
+    expect(pick(`x ${EXAMPLE}`).ref?.channelId).toBe("C0123ABCDEF");
+    expect(pick(`s x ${EXAMPLE}`, OTHER).ref?.channelId).toBe("C0123ABCDEF");
+  });
+
+  test("an agent send without s goes as typed: no Slack binding from clipboard or prompt", () => {
+    const r = pick(`:slak :new do the thing ${EXAMPLE}`, OTHER);
     expect(r).toMatchObject({ prompt: `do the thing ${EXAMPLE}`, target: "slak", fresh: true });
     expect(r.ref).toBeNull();
+    expect(r.reads).toBe(0);
+  });
+
+  test("s is only a mod as an exact lowercase first token", () => {
+    for (const p of ["S fix it", "s3 bucket policy", "fix s it", ":fe-ai s fix it"])
+      expect(pick(p, EXAMPLE)).toMatchObject({ mods: [], reads: 0 });
   });
 
   test("scheduled prompts never pick a Slack ref", () => {
-    expect(pickSlackRef({ ...base, prompt: `x ${EXAMPLE}`, isScheduled: true }).ref).toBeNull();
+    const r = pickSlackRef({
+      prompt: `s x ${EXAMPLE}`,
+      clipboard: () => ({ live: EXAMPLE, watched: [] }),
+      isScheduled: true,
+    });
+    expect(r.ref).toBeNull();
+  });
+});
+
+describe("latestClipboardRef", () => {
+  test("a link inside copied text still counts; nothing copied is null", () => {
+    expect(latestClipboardRef({ live: `see ${EXAMPLE}`, watched: [] })?.channelId).toBe(
+      "C0123ABCDEF",
+    );
+    expect(latestClipboardRef({ live: "", watched: [] })).toBeNull();
   });
 });
 
@@ -195,24 +201,24 @@ describe("withSlackContext", () => {
 
 describe("parseFlags", () => {
   test.each([
-    [":new fix it", "fix it", true, undefined],
-    [":slak fix it", "fix it", false, "slak"],
-    [":new :platform-team fix it", "fix it", true, "platform-team"],
-    ["  :SLAK   fix it\nsecond line", "fix it\nsecond line", false, "slak"],
-    [":slak :other fix it", "fix it", false, "slak"],
-    ["fix :slak it", "fix :slak it", false, undefined],
-    [":) hello", ":) hello", false, undefined],
-    ["no commands", "no commands", false, undefined],
-  ])("%p", (input, prompt, fresh, target) => {
-    expect(parseFlags(input)).toEqual({ prompt, fresh, target });
-  });
-});
-
-describe("liveClipCopiedAt", () => {
-  const NOW = 1_000_000_000;
-  test("no earlier than the last launch, no older than the freshness window", () => {
-    expect(liveClipCopiedAt(NOW - 60_000, NOW)).toBe(NOW - 60_000);
-    expect(liveClipCopiedAt(NOW - 3_600_000, NOW)).toBe(NOW - 10 * 60_000);
-    expect(liveClipCopiedAt(null, NOW)).toBe(NOW - 10 * 60_000);
-  });
+    [":new fix it", "fix it", [], true, undefined],
+    [":slak fix it", "fix it", [], false, "slak"],
+    [":new :platform-team fix it", "fix it", [], true, "platform-team"],
+    ["  :SLAK   fix it\nsecond line", "fix it\nsecond line", [], false, "slak"],
+    [":slak :other fix it", "fix it", [], false, "slak"],
+    ["fix :slak it", "fix :slak it", [], false, undefined],
+    [":) hello", ":) hello", [], false, undefined],
+    ["no commands", "no commands", [], false, undefined],
+    ["s can you go look at xyz", "can you go look at xyz", ["slack"], false, undefined],
+    ["s :fe-ai :new fix it", "fix it", ["slack"], true, "fe-ai"],
+    ["s", "", ["slack"], false, undefined],
+    ["S fix it", "S fix it", [], false, undefined],
+    ["s3 fix it", "s3 fix it", [], false, undefined],
+    [":fe-ai s fix it", "s fix it", [], false, "fe-ai"],
+  ] as [string, string, Mod[], boolean, string | undefined][])(
+    "%p",
+    (input, prompt, mods, fresh, target) => {
+      expect(parseFlags(input)).toEqual({ prompt, mods, fresh, target });
+    },
+  );
 });

@@ -20,7 +20,6 @@ import {
 import { buildClaudeArgs, buildClaudeArgv } from "./lib/claude-cmd";
 import { launchWorkspace, resolveLaunch, type LaunchPlan } from "./lib/launch";
 import { matchAgent } from "./lib/agent-target";
-import { pastedSince } from "./lib/pasted";
 import { toAgentName, uniqueAgentName } from "./lib/agent-name";
 import {
   SLACK_TOKEN,
@@ -32,7 +31,7 @@ import {
   spawnAgent,
   unbindSlackAgent,
 } from "./lib/herdr-agent";
-import { liveClipCopiedAt, pickSlackRef, slackKey, withSlackContext } from "./lib/slack-link";
+import { pickSlackRef, slackKey, withSlackContext } from "./lib/slack-link";
 import {
   adoptLiveAgents,
   planSlackLaunch,
@@ -41,14 +40,7 @@ import {
   writeSessions,
 } from "./lib/slack-sessions";
 import { resolveLabel, workspaceFor } from "./lib/slack";
-import {
-  clipboardChangeCount,
-  lastLaunchAt,
-  lastLaunchCount,
-  readClipboard,
-  readWatchedClips,
-  recordLaunchCount,
-} from "./lib/clipboard";
+import { readClipboardState } from "./lib/clipboard";
 import { notify } from "./lib/notify";
 import {
   createSession,
@@ -84,38 +76,23 @@ interface Resolved {
   slack?: SlackTarget;
   target?: string; // `:<query>`
   fresh: boolean;
-  clipboardCount: number | null; // to record once the launch is dispatched
+  slackMod: boolean; // `s`: the prompt asked for the copied Slack link
 }
 
-/** Slack link from the prompt or a freshly copied clipboard; names the session and adds context. */
+/** Slack link typed in the prompt, or with `s` the latest copied one; names the session. */
 async function resolveSlack(
   rawPrompt: string,
   cfg: Config,
   isScheduled: boolean,
 ): Promise<Resolved> {
   if (isScheduled)
-    return { prompt: rawPrompt, routingPrompt: rawPrompt, fresh: false, clipboardCount: null };
-  const count = clipboardChangeCount();
-  const now = Date.now();
-  const picked = pickSlackRef({
-    prompt: rawPrompt,
-    // clip-watch records carry the real copy time; when the live clipboard is the same
-    // copy, the record sorts first, so the estimate below is only a fallback.
-    clips: [
-      ...readWatchedClips(),
-      { text: readClipboard(), changeCount: count, at: liveClipCopiedAt(lastLaunchAt(), now) },
-    ],
-    lastLaunchCount: lastLaunchCount(),
-    currentCount: count,
-    now,
-    isScheduled,
-    alreadyPasted: pastedSince,
-  });
+    return { prompt: rawPrompt, routingPrompt: rawPrompt, fresh: false, slackMod: false };
+  const picked = pickSlackRef({ prompt: rawPrompt, clipboard: readClipboardState, isScheduled });
   const base = {
     routingPrompt: picked.prompt,
     target: picked.target,
     fresh: picked.fresh,
-    clipboardCount: count,
+    slackMod: picked.mods.includes("slack"),
   };
   if (!picked.ref) return { ...base, prompt: picked.prompt };
   const key = slackKey(picked.ref);
@@ -136,8 +113,8 @@ async function resolveSlack(
 
 /**
  * `:<query>`: send to the existing agent the picker ranks first. On no match nothing
- * launches and the prompt goes to the clipboard so it isn't lost. Returns whether the
- * prompt was dispatched (a miss leaves any copied Slack link unused).
+ * launches and the prompt goes to the clipboard so it isn't lost. With `s` the prompt
+ * carries the copied link's Slack context. Returns whether the prompt was dispatched.
  */
 function sendToTarget(query: string, r: Resolved, launch: LaunchPlan): boolean {
   const miss = (why: string) => {
@@ -182,16 +159,18 @@ async function main() {
     const launch = resolveLaunch(cfg, isScheduled);
     const resolved = await resolveSlack(rawPrompt, cfg, isScheduled);
     const { prompt, routingPrompt, slack } = resolved;
-    const markLaunched = () => {
-      if (resolved.clipboardCount !== null) recordLaunchCount(resolved.clipboardCount);
-    };
 
+    if (resolved.slackMod && !slack) {
+      // `s` asked for Slack context; don't launch without it. Keep the prompt for a retry.
+      Bun.spawnSync(["pbcopy"], { stdin: new Blob([rawPrompt]) });
+      console.log("s: no Slack link copied; prompt copied to the clipboard");
+      notify("s: no Slack link copied. Prompt copied to the clipboard.");
+      return;
+    }
     if (resolved.target) {
-      // A targeted send doesn't use the clipboard, so a copied link stays available.
       sendToTarget(resolved.target, resolved, launch);
       return;
     }
-    markLaunched();
 
     // Exact keyword match first; a Slack name with a pinned cwd needs no router at all.
     const exactMatch = findExactMatch(routingPrompt, cfg);

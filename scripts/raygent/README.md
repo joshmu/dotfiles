@@ -2,13 +2,19 @@
 
 Raycast → Claude Code. Type (or dictate) a prompt in Raycast and Raygent starts a Claude Code session for it in Herdr or tmux, in the right directory, with a sensible name. Prompts about a Slack conversation are kept in one session per conversation.
 
+```text
+<mod> <:agent> <prompt>      both optional; see Usage
+s can you look at xyz        new session bound to the Slack link you copied last
+s :fe-ai can you look at xyz send to agent fe-ai, with that Slack link as context
+```
+
 ## How a launch is routed
 
 ```mermaid
 flowchart TD
     P[Raycast prompt] --> C{:agent command?}
-    C -->|yes| A[best picker match<br/>send prompt to it]
-    C -->|no| S{Slack link?<br/>in the prompt, else<br/>recently copied}
+    C -->|yes| A[best picker match<br/>send prompt to it<br/>s: with Slack context]
+    C -->|no| S{Slack link?<br/>in the prompt, or<br/>s: latest copied}
     S -->|yes| L[name = channel name<br/>workspace = slack]
     S -->|no| H[Haiku router names it<br/>workspace = raycast]
     L --> M{live session for<br/>this conversation?}
@@ -21,7 +27,7 @@ flowchart TD
 ```
 
 1. **Commands**: a leading `:<agent>` sends the prompt to an existing agent instead (see [Commands](#commands)).
-2. **Slack link**: taken from the prompt, otherwise from a link copied in the last 10 minutes (see [Slack conversations](#slack-conversations)).
+2. **Slack link**: taken from the prompt, or with the `s` mod from the clipboard: the Slack link copied last (see [Slack conversations](#slack-conversations)). Without `s` the clipboard is never read.
 3. **Name and directory**: an `exactKeywords` match wins; otherwise Claude Haiku picks a short name and a workspace from `config.json`. A Slack launch is named after the channel instead. `launch.fixedCwd` pins the directory and skips workspace routing.
 4. **Launch**: with `launch.mux: "herdr"`, a named Herdr agent in its own tab; otherwise (or if Herdr fails) a tmux session.
 5. **Feedback**: a macOS notification says where the prompt went, or why the launch failed.
@@ -120,7 +126,7 @@ The agent name is also the Claude session name (`claude -n`), and the prompt is 
 A launch is bound to a Slack conversation when:
 
 - the prompt contains a Slack message link, or
-- a Slack link was copied **since the last launch and within the last 10 minutes**, and it has **not already been pasted into a Claude session** since it was copied (checked against recently written transcripts; ~90 ms). The copy must be exactly the link. The newest such link wins, and later copies don't hide it when [clip-watch](#clip-watch) is installed; without it only the current clipboard is checked.
+- the prompt starts with the `s` mod: the most recently copied Slack link is used. A link on the current clipboard wins; otherwise the newest link [clip-watch](#clip-watch) recorded, so later copies (e.g. dictation) don't hide it. Without clip-watch only the current clipboard is checked. There is no age limit: `s` means "the link I copied last". If no Slack link was copied, nothing launches and the prompt is copied to the clipboard.
 
 Then:
 
@@ -132,16 +138,24 @@ Then:
 - **Context.** The prompt is prefixed with the link and the Slack MCP server to read it with.
 - Scheduled runs never read the clipboard.
 
+### Mods
+
+Single-letter tokens at the very start of the prompt, before any `:command`. Only the exact lowercase letter counts: `S fix it`, `s3 bucket` and `fix s it` are ordinary prompts.
+
+| Mod | Effect                                                                                                  |
+| --- | ------------------------------------------------------------------------------------------------------- |
+| `s` | [s]lack: bind to the Slack link copied last (see [Slack conversations](#slack-conversations)). With `:<agent>`, the prompt is sent with that link's Slack context |
+
 ### Commands
 
-Leading `:word` tokens, in any order, single words (use hyphens):
+Leading `:word` tokens after any mod, in any order, single words (use hyphens):
 
 | Command   | Effect                                                                                          |
 | --------- | ----------------------------------------------------------------------------------------------- |
 | `:new`    | Slack prompts: start a new session instead of re-injecting or resuming                          |
 | `:<agent>`| Send the prompt to the existing agent the Herdr agent picker (⌘P) ranks first for `<agent>`: same rows (pane, tab, workspace, session title), same recency order, same fuzzy match. `:slak fix the copy` goes to the best match for "slak" |
 
-With `:<agent>` the prompt is sent exactly as typed: the clipboard is not read and no Slack context is added (a link you type stays in the text), and a copied link stays available for your next prompt. If nothing matches, nothing launches: a notification says so and **your prompt is copied to the clipboard** so you can retry without retyping. Matching uses `herdr-agent-picker --match <query>`.
+Without `s`, `:<agent>` sends the prompt exactly as typed: the clipboard is not read and no Slack context is added (a link you type stays in the text). With `s :<agent>` the Slack context (copied link, or one typed in the prompt) is prepended; the agent is not bound to the conversation. If nothing matches, nothing launches: a notification says so and **your prompt is copied to the clipboard** so you can retry without retyping. Matching uses `herdr-agent-picker --match <query>`.
 
 ### clip-watch
 
@@ -174,7 +188,6 @@ State lives in `~/.local/state/raygent` (override with `RAYGENT_STATE_DIR`). Eve
 | ---------------------------- | ----------------------------------------------------- | ------------------------------ |
 | `herdr-runs.json`            | `raycast`/scheduled tabs (for the reaper)             | Pruned when a tab is gone      |
 | `slack-sessions.json`        | Slack conversation → last Claude session (for resume) | Dropped after 14 days idle     |
-| `clipboard.json`             | Clipboard change count at the last launch             | Single value                   |
 | `slack-clips.json`           | Slack links seen by clip-watch                        | 5 links, 10 minutes            |
 | `slack-names.json`           | Conversation name cache                               | Entries expire after a week    |
 | `pending/`                   | Prompts that could not be delivered                   | Deleted after a week           |
@@ -192,11 +205,24 @@ Other overrides: `RAYGENT_CONFIG` (config path), `RAYGENT_HERDR_SESSION` (named 
 | Session named `slack-{id}` instead of a channel | No `authCommand`, or it failed/expired: run it by hand and check it prints a JSON header object        |
 | Slack prompt started a new session instead of resuming | Last activity over 14 days ago, the transcript was deleted, or the prompt started with `:new` |
 | `:<agent>` went to the wrong agent | Same ranking as ⌘P: type the same query there to see the order; use a more specific word |
-| Copied Slack link not picked up (also: already pasted into a Claude session)                 | Copied over 10 minutes ago, already used by an earlier launch, or clip-watch not running: `launchctl print gui/$(id -u)/com.joshmu.raygent.clip-watch` |
+| Copied Slack link not picked up                 | The prompt must start with a lowercase `s` token. A dictated or later copy hid it: check clip-watch is running, `launchctl print gui/$(id -u)/com.joshmu.raygent.clip-watch` |
+| `s` used an older Slack link                    | `s` takes the link copied last, however old: copy the one you want first, or type it into the prompt |
 | Launched in tmux instead of Herdr               | Notification shows the Herdr error; `herdr status` (a client/server version mismatch needs a server restart) |
 | Random name like `quick-task-123`               | The Haiku router failed; test it with `bun lib/router-agent.ts "your prompt"`                          |
 
 ## Usage
+
+Prompt grammar: `<mod> <:agent> <prompt>`. Both prefixes are optional.
+
+| Prompt                         | Result                                                          |
+| ------------------------------ | --------------------------------------------------------------- |
+| `can you look at xyz`          | New session named by the router; the clipboard is never read    |
+| `s can you look at xyz`        | Slack session for the link copied last (re-inject, resume or new) |
+| `:fe-ai can you look at xyz`   | Sent as typed to the agent ⌘P ranks first for `fe-ai`           |
+| `s :fe-ai can you look at xyz` | Sent to that agent with the copied link's Slack context         |
+| `s :new can you look at xyz`   | New session for the copied link's conversation                  |
+
+A Slack link typed in the prompt binds the session with or without `s`.
 
 ```bash
 bun ~/dotfiles/scripts/raygent/raygent.ts "your prompt here"       # launch from a shell

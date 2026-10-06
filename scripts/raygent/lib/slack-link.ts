@@ -49,20 +49,37 @@ export function slackKey(ref: SlackRef): string {
   return `${ref.host ?? ref.teamId ?? "slack"}:${ref.channelId}`;
 }
 
+/**
+ * Single-letter mods, the first tokens of a prompt (before any `:command`). Only an exact,
+ * lowercase, standalone token counts, so "s3 bucket" or "S and P" are ordinary prompts.
+ * Add a letter here to add a mod.
+ */
+export const MODS = { s: "slack" } as const;
+export type Mod = (typeof MODS)[keyof typeof MODS];
+
 const COMMAND = /^:([a-z0-9][a-z0-9_-]*)$/i;
 
 export interface Flags {
-  prompt: string; // prompt with the leading commands removed
+  prompt: string; // prompt with the leading mods and commands removed
+  mods: Mod[]; // `s`: bind to the Slack link most recently copied
   fresh: boolean; // `:new`: start a new session even if one could be resumed
   target?: string; // `:<query>`: send to the existing agent the picker ranks first
 }
 
-/** Leading `:word` commands, any order: `:new`, else the first other word is the agent query. */
+/**
+ * `<mods> <:commands> <prompt>`, both optional. Mods first; then `:word` commands in any
+ * order: `:new`, else the first other word is the agent query.
+ */
 export function parseFlags(prompt: string): Flags {
   const tokens = prompt.trim().split(/\s+/);
+  const mods: Mod[] = [];
   let fresh = false;
   let target: string | undefined;
   let i = 0;
+  for (; i < tokens.length && Object.hasOwn(MODS, tokens[i]); i++) {
+    const mod = MODS[tokens[i] as keyof typeof MODS];
+    if (!mods.includes(mod)) mods.push(mod);
+  }
   for (; i < tokens.length; i++) {
     const m = COMMAND.exec(tokens[i]);
     if (!m) break;
@@ -70,8 +87,8 @@ export function parseFlags(prompt: string): Flags {
     if (word === "new") fresh = true;
     else if (!target) target = word;
   }
-  if (i === 0) return { prompt, fresh, target };
-  return { prompt: stripLeading(prompt, i), fresh, target };
+  if (i === 0) return { prompt, mods, fresh, target };
+  return { prompt: stripLeading(prompt, i), mods, fresh, target };
 }
 
 /** Removes the first `n` whitespace-separated tokens, keeping the rest of the prompt verbatim. */
@@ -81,73 +98,67 @@ function stripLeading(prompt: string, n: number): string {
   return rest;
 }
 
-/**
- * The live clipboard's copy time is unknown: it was copied after the previous launch
- * and, to be eligible at all, within the freshness window.
- */
-export function liveClipCopiedAt(lastLaunchAt: number | null, now: number): number {
-  return Math.max(lastLaunchAt ?? 0, now - CLIP_MAX_AGE_MS);
-}
-
-/** A clipboard entry: the live clipboard, or a Slack link recorded by clip-watch. */
+/** A Slack link recorded by clip-watch. */
 export interface ClipCandidate {
   text: string;
   changeCount: number; // NSPasteboard change count when it was copied
   at: number; // epoch ms
 }
 
-export const CLIP_MAX_AGE_MS = 10 * 60 * 1000;
+/** The clipboard, read only when a prompt asks for it. */
+export interface Clipboard {
+  live: string; // current clipboard text
+  watched: ClipCandidate[]; // clip-watch records (empty when it isn't installed)
+}
 
 export interface PickInput {
   prompt: string;
-  clips: ClipCandidate[];
-  lastLaunchCount: number | null; // change count at the previous Raycast launch
-  currentCount: number;
-  now: number;
+  clipboard: () => Clipboard;
   isScheduled: boolean;
-  /** True when the link already appears in an agent session since it was copied. */
-  alreadyPasted?: (url: string, copiedAt: number) => boolean;
 }
 
 export interface Picked {
   ref: SlackRef | null;
   fromClipboard: boolean;
+  mods: Mod[];
   fresh: boolean;
   target?: string;
-  prompt: string; // prompt with leading commands removed
+  prompt: string; // prompt with leading mods and commands removed
 }
 
 /**
- * A link in the prompt wins. Otherwise the newest clipboard entry that is exactly
- * one Slack link, copied since the last launch and within the last 10 minutes, so
- * later copies (e.g. dictation) don't hide it and an old copy can't hijack an
- * unrelated prompt.
+ * The most recently copied Slack link: the live clipboard is the newest copy, so a link
+ * on it wins; otherwise clip-watch's newest record (copies that replaced it, e.g.
+ * dictation, don't hide it).
+ */
+export function latestClipboardRef(clipboard: Clipboard): SlackRef | null {
+  const live = parseSlackUrl(clipboard.live);
+  if (live) return live;
+  const newest = [...clipboard.watched].sort((a, b) => b.at - a.at);
+  for (const c of newest) {
+    const ref = parseSlackUrl(c.text);
+    if (ref) return ref;
+  }
+  return null;
+}
+
+/**
+ * A link typed in the prompt binds the session, except for an `:<agent>` send, which goes
+ * as typed. The clipboard is read only with the `s` mod: then a typed link still wins,
+ * else the most recently copied Slack link is used, `:<agent>` sends included.
  */
 export function pickSlackRef(input: PickInput): Picked {
-  const { prompt, fresh, target } = parseFlags(input.prompt);
-  const none = { ref: null, fromClipboard: false, fresh, target, prompt };
-  // `:<agent>` sends the prompt as typed: no Slack binding, typed or copied.
-  if (input.isScheduled || target) return none;
+  const { prompt, mods, fresh, target } = parseFlags(input.prompt);
+  const none = { ref: null, fromClipboard: false, mods, fresh, target, prompt };
+  if (input.isScheduled) return none;
+  const slackMod = mods.includes("slack");
+  if (target && !slackMod) return none;
 
   const inPrompt = parseSlackUrl(prompt);
-  if (inPrompt) return { ref: inPrompt, fromClipboard: false, fresh, target, prompt };
-
-  // The counter restarts at boot; a lower current count means the last launch predates it.
-  const since =
-    input.lastLaunchCount === null || input.currentCount < input.lastLaunchCount
-      ? -1
-      : input.lastLaunchCount;
-  const eligible = input.clips
-    .filter((c) => c.changeCount > since && input.now - c.at <= CLIP_MAX_AGE_MS)
-    .sort((a, b) => b.changeCount - a.changeCount);
-  for (const c of eligible) {
-    const text = c.text.trim();
-    if (/\s/.test(text)) continue;
-    const ref = parseSlackUrl(text);
-    if (ref && ref.url === text && !input.alreadyPasted?.(ref.url, c.at))
-      return { ref, fromClipboard: true, fresh, target, prompt };
-  }
-  return none;
+  if (inPrompt) return { ...none, ref: inPrompt };
+  if (!slackMod) return none;
+  const copied = latestClipboardRef(input.clipboard());
+  return copied ? { ...none, ref: copied, fromClipboard: true } : none;
 }
 
 /** Prefixes the prompt so the session reads the conversation through the right Slack MCP server. */
