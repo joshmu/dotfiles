@@ -17,7 +17,7 @@ import {
   type Config,
   type SessionConfig,
 } from "./lib/router-agent";
-import { buildClaudeArgs, buildClaudeArgv } from "./lib/claude-cmd";
+import { buildClaudeArgs, buildClaudeArgv, writePromptFile } from "./lib/claude-cmd";
 import { launchWorkspace, resolveLaunch, type LaunchPlan } from "./lib/launch";
 import { matchAgent } from "./lib/agent-target";
 import { toAgentName, uniqueAgentName } from "./lib/agent-name";
@@ -51,7 +51,7 @@ import {
   killSession,
   setSessionOption,
 } from "./lib/tmux";
-import { existsSync, writeFileSync } from "fs";
+import { existsSync } from "fs";
 import { randomUUID } from "crypto";
 import {
   HERDR_WORKSPACE_LABEL,
@@ -199,8 +199,7 @@ async function main() {
 
     let args = buildClaudeArgs(process.env.CLAUDE_EXTRA_ARGS);
     if (isScheduled) args += ` --session-id ${claudeSessionId}`;
-    const promptFile = `/tmp/raygent-prompt-${Date.now()}.txt`;
-    writeFileSync(promptFile, prompt);
+    const promptFile = writePromptFile(prompt, claudeSessionId);
     const claudeCmd = `claude ${args} -- "$(cat ${promptFile})" && rm ${promptFile}`;
 
     // Scheduled runs can opt into Herdr (AGENT_SCHEDULER_MUX=herdr, set by

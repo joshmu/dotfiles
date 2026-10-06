@@ -1,5 +1,8 @@
-import { describe, test, expect } from "bun:test";
-import { buildClaudeArgs, buildClaudeArgv } from "./claude-cmd";
+import { describe, test, expect, beforeEach, afterEach } from "bun:test";
+import { mkdtempSync, readFileSync, rmSync } from "fs";
+import { tmpdir } from "os";
+import { join } from "path";
+import { buildClaudeArgs, buildClaudeArgv, writePromptFile } from "./claude-cmd";
 
 describe("buildClaudeArgs", () => {
   test("returns --permission-mode auto with no args", () => {
@@ -59,5 +62,31 @@ describe("buildClaudeArgv", () => {
       "--model",
       "opus",
     ]);
+  });
+});
+
+describe("writePromptFile", () => {
+  let dir: string;
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), "raygent-prompt-test-"));
+  });
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  test("launches in the same instant keep their own prompts", () => {
+    // Regression: obsidian-review and ingest-m365 fired together and both panes
+    // read ingest-m365's prompt from one timestamp-named file.
+    const a = writePromptFile("/obsidian-review", "session-a", dir);
+    const b = writePromptFile("/ingest-m365", "session-b", dir);
+    expect(a).not.toBe(b);
+    expect(readFileSync(a, "utf8")).toBe("/obsidian-review");
+    expect(readFileSync(b, "utf8")).toBe("/ingest-m365");
+  });
+
+  test("never overwrites an existing prompt file", () => {
+    writePromptFile("first", "same-session", dir);
+    expect(() => writePromptFile("second", "same-session", dir)).toThrow();
+    expect(readFileSync(join(dir, "raygent-prompt-same-session.txt"), "utf8")).toBe("first");
   });
 });
