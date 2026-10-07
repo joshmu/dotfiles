@@ -917,8 +917,14 @@ export function batchApart<T>(items: T[], keyOf: (item: T) => string, size: numb
 // Absolute git common dir, shared by a repo and all of its worktrees. Falls
 // back to the repo path, so an unresolvable repo is never grouped with others.
 export function gitCommonDir(repoPath: string): string {
+  // An inherited GIT_DIR (git exports one to hooks run from a linked worktree) would
+  // answer for that repo instead of repoPath.
+  const env = Object.fromEntries(
+    Object.entries(process.env).filter(([key]) => !key.startsWith("GIT_")),
+  );
   const proc = spawnSync(["git", "rev-parse", "--path-format=absolute", "--git-common-dir"], {
     cwd: repoPath,
+    env,
   });
   return proc.success ? proc.stdout.toString().trim() : repoPath;
 }
