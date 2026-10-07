@@ -178,7 +178,7 @@ With `AGENT_SCHEDULER_MUX=herdr` a scheduled run opens as a tab (`{task} MM-DD H
 
 ### Cleanup
 
-`raycast` and scheduled Herdr tabs are recorded in `herdr-runs.json` with their workspace, so the reaper can close stale ones. `raycast` tabs are only closed after a long idle period, and never while the agent is working, waiting for input, or when panes were added to the tab. `slack` tabs are not registered: they are resumable, so close them yourself whenever you like. Tabs you open yourself are never touched.
+`raycast` and scheduled Herdr tabs are recorded in `herdr-runs.json` with their workspace, so the reaper can close stale ones. `raycast` tabs are only closed after a long idle period, and never while the agent is working, waiting for input, or when panes were added to the tab. `slack` tabs are not registered: they are resumable, so close them yourself whenever you like. Tabs you open yourself are never touched. raygent and the reaper both rewrite `herdr-runs.json` under an flock on `herdr-runs.json.lock`, so concurrent launches and reaps never drop each other's entries.
 
 ## State and logs
 

@@ -1,6 +1,7 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "fs";
 import { homedir } from "os";
 import { dirname, join } from "path";
+import { withFileLock } from "./file-lock";
 
 /**
  * Herdr backend for scheduled runs: one shared workspace (default label
@@ -45,10 +46,26 @@ export function readRegistry(): HerdrRun[] {
   }
 }
 
+/** The reaper rewrites the same file; both take this lock so neither drops the other's change. */
+export function herdrRegistryLockPath(): string {
+  return `${herdrRegistryPath()}.lock`;
+}
+
 export function appendRegistry(run: HerdrRun): void {
   const p = herdrRegistryPath();
   mkdirSync(dirname(p), { recursive: true });
-  writeFileSync(p, JSON.stringify([...readRegistry(), run], null, 2));
+  const write = () => {
+    const tmp = `${p}.${process.pid}.tmp`;
+    writeFileSync(tmp, JSON.stringify([...readRegistry(), run], null, 2));
+    renameSync(tmp, p);
+  };
+  try {
+    withFileLock(herdrRegistryLockPath(), write);
+  } catch (e) {
+    // The tab already exists; an unrecorded run is never reaped, so record it anyway.
+    console.error(`raygent: ${(e as Error).message}; writing the run registry unlocked`);
+    write();
+  }
 }
 
 // Named Herdr session to target (empty = the default session the user attaches to).

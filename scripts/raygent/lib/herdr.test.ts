@@ -47,6 +47,26 @@ describe("run registry", () => {
     appendRegistry({ ...run, tabId: "w2:t2" });
     expect(readRegistry().map((r) => r.tabId)).toEqual(["w2:t1", "w2:t2"]);
   });
+
+  test("concurrent writers in separate processes lose no entries", async () => {
+    const lib = join(import.meta.dir, "herdr.ts");
+    const writer = (n: number) =>
+      Bun.spawn(
+        [
+          process.execPath,
+          "-e",
+          `import { appendRegistry } from ${JSON.stringify(lib)};
+           for (let i = 0; i < 15; i++)
+             appendRegistry({ tabId: "w${n}:t" + i, paneId: "p", label: "l", task: "t",
+               claudeSessionId: "s", launched: 1, herdrSession: "" });`,
+        ],
+        { env: { ...process.env, RAYGENT_STATE_DIR: dir }, stderr: "pipe" },
+      );
+    const procs = Array.from({ length: 6 }, (_, n) => writer(n));
+    expect(await Promise.all(procs.map((p) => p.exited))).toEqual([0, 0, 0, 0, 0, 0]);
+    expect(readRegistry()).toHaveLength(90);
+    expect(new Set(readRegistry().map((r) => r.tabId)).size).toBe(90);
+  });
 });
 
 describe("parseHerdrOutput", () => {
