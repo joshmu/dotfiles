@@ -6,9 +6,13 @@
 .mermaid {
     overflow: auto;
 }
+/* disabled 2026-10-13: hover zoom conflicts with Zoomdrag / ELK sizing
+/* disabled 2026-10-13: hover zoom conflicts with Zoomdrag / ELK sizing
 .mermaid:hover svg {
     max-width: 250%;
 }
+*/
+*/
 
 /* create more editing space */
 body {
