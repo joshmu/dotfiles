@@ -75,8 +75,13 @@ vim.keymap.set('n', '<leader>e', '<cmd>Neotree toggle<CR>', { desc = 'Toggle Neo
 
 vim.keymap.set('n', '<leader>vs', require('utils.code_helpers').openIDEWithWorkspaceEnabledIfAvailable, { desc = 'Open in [V][S]Code' })
 vim.keymap.set('n', '<leader>oc', function()
-  require('utils.code_helpers').openIDEWithWorkspaceEnabledIfAvailable 'cursor'
-end, { desc = '[O]pen in [C]ursor' })
+  -- Same choice as dotfiles/bin/gui-open: $GUI_EDITOR (per machine, ~/.zshenv.local), else cursor, else code
+  local editor = vim.env.GUI_EDITOR
+  if editor == nil or editor == '' then
+    editor = vim.fn.executable 'cursor' == 1 and 'cursor' or 'code'
+  end
+  require('utils.code_helpers').openIDEWithWorkspaceEnabledIfAvailable(editor)
+end, { desc = '[O]pen in [C]ode editor' })
 
 vim.keymap.set('n', '<leader>oo', function()
   local path = vim.fn.expand '%:p'

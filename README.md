@@ -69,6 +69,11 @@ cp .zshenv.local.example ~/.zshenv.local
 #   these vars). On a path move, also find + update every literal hit:
 #     /usr/bin/grep -rIl 'work/brg' ~/dotfiles ~/.claude/scripts ~/.claude/commands \
 #       --exclude-dir=node_modules --exclude-dir=.git   # repeat for the vault path
+#
+# 6. Code editor (per machine, NOT tracked): work Mac = VS Code, personal = Cursor.
+#   Set GUI_EDITOR in ~/.zshenv.local (`export GUI_EDITOR=code` on the work Mac,
+#   `cursor` on personal) and mirror it into ~/.claude/settings.local.json "env".
+#   `gui-open` reads it; unset falls back to cursor, then code, then `open`.
 ```
 
 > **Note:** `HOMEBREW_NO_ANALYTICS=1` is exported in `.zshenv`, so Homebrew analytics
@@ -123,7 +128,7 @@ The repository uses **dotbot** (git submodule at `./dotbot/`) with configuration
 - Editor configs: `~/.config/nvim`, `~/.vimrc`, `~/.tmux.conf`
 - Git: `~/.gitconfig`, `~/Library/Application Support/lazygit/config.yml`
 - Terminal: `~/.config/kitty/`, ghostty config
-- Application configs: Claude Desktop, Cursor, Obsidian snippets
+- Application configs: Claude Desktop, Cursor and VS Code keybindings, Obsidian snippets
 
 ### Shell Configuration
 - **Primary shell**: zsh with oh-my-posh prompt (config: `oh-my-mu.json`)
@@ -150,6 +155,7 @@ Custom keybindings in `lazygit-config.yml`:
 - **Terminal emulators**: Ghostty (primary), Kitty (configured), iTerm2 (configured)
 - **Tmux**: Terminal multiplexer config at `tmux.conf`
 - **nvimpager**: Configured as `$PAGER` for git and man pages
+- **GUI code editor**: per machine via `GUI_EDITOR` in `~/.zshenv.local` (work Mac = VS Code, personal = Cursor). `bin/gui-open path[:line[:col]]...` opens files in it; tmux-fzf-url, the `r` alias and nvim `<leader>oc` all go through the same choice. Config for both lives in `cursor/` and `vscode/`; setup in `docs/editor-setup.md`
 
 ### Tool Integrations
 - **Brewfile**: Declarative package management (brew formulae, casks, VSCode extensions). Two files:
@@ -210,5 +216,5 @@ notify "message text"  # function defined in .aliases
 - **Dotbot symlinks**: Changes to files in this repo immediately affect system (files are symlinked, not copied)
 - **Script execution**: TypeScript scripts use Bun runtime (require `bun` installed via Homebrew)
 - **Package manager selection**: Prefer pnpm for new projects; detect from lock files otherwise
-- **Cursor**: Opens files from CLI with: `cursor -g path/to/file:line[:column]`
+- **Open a file in the code editor**: `gui-open path/to/file:line[:column]` (VS Code on the work Mac, Cursor on personal, chosen via `GUI_EDITOR` in `~/.zshenv.local`)
 - **Current date**: Use `date` command instead of assuming; never hardcode dates

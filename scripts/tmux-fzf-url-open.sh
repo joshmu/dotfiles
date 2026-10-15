@@ -54,7 +54,7 @@ http://* | https://* | ftp://* | file://*)
   ;;
 esac
 
-# A trailing :LINE or :LINE:COL is useful to Cursor but breaks Obsidian and open,
+# A trailing :LINE or :LINE:COL is useful to the code editor but breaks Obsidian and open,
 # so keep the bare path and the suffix separately.
 path=$target
 suffix=
@@ -84,7 +84,8 @@ fi
 #   vault .md          Obsidian  (.md only; vault .txt transcripts are notes to
 #                                 nobody, so they fall through to the editor)
 #   .md .html .svg     browser   (these render; everything else does not)
-#   everything else    Cursor    (jumps to :LINE when one was captured)
+#   everything else    editor    (gui-open: GUI_EDITOR, else cursor/code; jumps
+#                                 to :LINE when one was captured)
 #
 # The fallback is the editor rather than the browser because @fzf-url-custom-pat
 # only ever offers a known extension, so anything reaching it is source or config.
@@ -92,7 +93,7 @@ fi
 case $path in
 "$PERSONAL_VAULT"/*.md) obsidian "$path" ;;
 *.md | *.html | *.svg) browser "$path" ;;
-*) cursor -g "$path$suffix" ;;
+*) "$HOME/dotfiles/bin/gui-open" "$path$suffix" ;;
 esac || notify "could not open: $path"
 
 # Always exit clean. tmux paints a "returned 1" error panel over the pane on any

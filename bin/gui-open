@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+# gui-open: open files in this machine's code editor, jumping to a line when one is given.
+# Separate from $EDITOR/$VISUAL (nvim, the primary editor): this is the GUI app that agents and
+# tools pop open to show a file. Work Mac uses VS Code because Cursor is not IT-endorsed there.
+#
+#   gui-open [--wait] path[:line[:col]]...
+#
+# Editor choice, first match wins:
+#   1. $GUI_EDITOR, set per machine in ~/.zshenv.local (work Mac: code, personal: cursor)
+#   2. cursor, then code, whichever is on PATH
+#   3. macOS open (no line jump, so the :line[:col] suffix is dropped)
+#
+# --wait blocks until the file is closed (open falls back to waiting for the app to quit).
+# GUI_OPEN_DRY_RUN=1 prints the command instead of running it.
+
+set -euo pipefail
+
+usage() {
+  echo "usage: gui-open [--wait] path[:line[:col]]..." >&2
+  exit 2
+}
+
+# GUI launchers (Obsidian, Raycast, launchd) start with a bare PATH; the editor CLIs live here.
+PATH="$PATH:/usr/local/bin:/opt/homebrew/bin"
+
+wait=
+while [ $# -gt 0 ]; do
+  case $1 in
+  -w | --wait) wait=1 && shift ;;
+  -h | --help) usage ;;
+  --) shift && break ;;
+  -*) echo "gui-open: unknown option: $1" >&2 && usage ;;
+  *) break ;;
+  esac
+done
+[ $# -gt 0 ] || usage
+
+editor=${GUI_EDITOR:-}
+if [ -n "$editor" ]; then
+  if ! command -v "$editor" >/dev/null 2>&1; then
+    echo "gui-open: GUI_EDITOR=$editor is not on PATH (set in ~/.zshenv.local)" >&2
+    exit 127
+  fi
+else
+  for candidate in cursor code open; do
+    if command -v "$candidate" >/dev/null 2>&1; then
+      editor=$candidate
+      break
+    fi
+  done
+fi
+if [ -z "$editor" ]; then
+  echo "gui-open: no editor found: set GUI_EDITOR in ~/.zshenv.local, or install cursor or code" >&2
+  exit 127
+fi
+
+if [ "$editor" = open ]; then
+  cmd=(open)
+  [ -z "$wait" ] || cmd+=(-W)
+  for target in "$@"; do
+    cmd+=("$(printf '%s' "$target" | sed -E 's/:[0-9]+(:[0-9]+)?$//')")
+  done
+else
+  # -g applies to every path that follows, so one flag covers all args.
+  cmd=("$editor")
+  [ -z "$wait" ] || cmd+=(--wait)
+  cmd+=(-g "$@")
+fi
+
+if [ -n "${GUI_OPEN_DRY_RUN:-}" ]; then
+  printf '%q ' "${cmd[@]}"
+  echo
+  exit 0
+fi
+exec "${cmd[@]}"

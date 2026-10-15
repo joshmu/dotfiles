@@ -33,9 +33,17 @@
       ~/.config/gh-dash/config.yml: gh-dash-config.yml
       ~/vault/.obsidian/snippets: obsidian/snippets
       ~/vault/.obsidian.vimrc: obsidian/obsidian.vimrc
-      ~/.cursor/mcp.json: cursor/mcp.json
-      ~/Library/Application Support/Cursor/User/keybindings.json: cursor/keybindings.json
-      ~/Library/Application Support/Code/User/keybindings.json: vscode/keybindings.json
+      # Editor configs link only where the app is installed: VS Code on the work Mac,
+      # Cursor on the personal Mac (see docs/editor-setup.md).
+      ~/.cursor/mcp.json:
+          path: cursor/mcp.json
+          if: '[ -d /Applications/Cursor.app ]'
+      ~/Library/Application Support/Cursor/User/keybindings.json:
+          path: cursor/keybindings.json
+          if: '[ -d /Applications/Cursor.app ]'
+      ~/Library/Application Support/Code/User/keybindings.json:
+          path: vscode/keybindings.json
+          if: '[ -d "/Applications/Visual Studio Code.app" ]'
       ~/Library/Application Support/Claude/claude_desktop_config.json: claude_desktop_config.json
       ~/scripts: scripts
       ~/.config/opencode/opencode.json: opencode/opencode.json

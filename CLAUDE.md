@@ -24,7 +24,8 @@ overview — architecture, install/setup, and command & script reference — see
   (`#!/usr/bin/env bun`).
 - **Commits:** commitlint convention `type(scope): description` (e.g.
   `fix(nvim): …`). Don't mention test counts.
-- **Open a file:** `cursor -g path/to/file:line[:column]`.
+- **Open a file:** `gui-open path/to/file:line[:column]` (`bin/gui-open`). Work Mac = VS Code,
+  personal = Cursor, chosen via `GUI_EDITOR` in `~/.zshenv.local`.
 - **Clipboard:** pipe to `pbcopy`.
 - **Detect git host:** `git remote -v` (GitHub / Bitbucket / GitLab).
 - **Per-machine paths:** prefer the env vars over hardcoded paths — `$PERSONAL_VAULT`,

@@ -5,3 +5,8 @@
 # export PERSONAL_VAULT="$HOME/vault"
 # export BRG_WORKSPACE="$HOME/work/brg"
 # export AGENT_OBSERVABILITY_PATH="$HOME/code/agent-observability"
+#
+# Code editor for `gui-open` (dotfiles/bin) and editor-aware tooling. Work Mac: code
+# (VS Code; Cursor is not IT-endorsed there). Personal Mac: cursor. Unset = cursor if
+# installed, else code. Mirror it into ~/.claude/settings.local.json "env" too.
+# export GUI_EDITOR=code

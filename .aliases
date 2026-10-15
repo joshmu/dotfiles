@@ -64,10 +64,10 @@ function notify() {
   osascript -e "display notification \"$msg\""
 }
 
-# grep from current file and open in vscode
+# grep from current file and open the match in the code editor (gui-open)
 function r() {
   local pattern="$1"
-  rg "$1" --smart-case --vimgrep --color ansi | fzf --ansi | cut -f 1 -d ' ' | sed 's/.$//' | xargs -I '{}' code --goto '{}'
+  rg "$1" --smart-case --vimgrep --color ansi | fzf --ansi | cut -f 1 -d ' ' | sed 's/.$//' | xargs -I '{}' gui-open '{}'
 }
 
 # ----------------------

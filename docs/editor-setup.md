@@ -4,6 +4,21 @@ How to reproduce the Cursor / VSCode configuration on a new machine. Both editor
 are configured the same way; only the app name (`Cursor` vs `Code`) and CLI
 (`cursor` vs `code`) differ.
 
+## Which editor on which machine
+
+- **Work Mac = VS Code** (`code`). Cursor is not IT-endorsed there, so it is not installed.
+- **Personal Mac = Cursor** (`cursor`).
+- `GUI_EDITOR` is only the GUI app tools pop open to show a file. The primary editor stays nvim (`$EDITOR`/`$VISUAL`, git `core.editor`).
+- The choice lives in `GUI_EDITOR` in `~/.zshenv.local` (gitignored, per machine; see
+  `.zshenv.local.example`): `export GUI_EDITOR=code` on the work Mac, `cursor` on personal.
+  Mirror it into `~/.claude/settings.local.json` `"env"` so Claude-spawned tools see it.
+- Open files with `gui-open path[:line[:col]]...` (`bin/gui-open`, on PATH). It uses
+  `$GUI_EDITOR -g`; when unset it tries `cursor`, then `code`, then macOS `open`.
+  `--wait` blocks until the file is closed; `GUI_OPEN_DRY_RUN=1` prints the command instead.
+- Everything that opens a file in the GUI editor goes through this choice: `gui-open`, the
+  tmux-fzf-url opener, the `r` alias, and nvim `<leader>oc`. Both editors keep their config
+  here (`cursor/`, `vscode/`); `./install` links each one only where its app is installed.
+
 ## What's tracked here vs per-machine
 
 | Item | Tracked in dotfiles? | Why |
@@ -33,7 +48,8 @@ Paths below:
 ~/Library/Application Support/Code/User/keybindings.json   -> vscode/keybindings.json
 ```
 
-No manual step beyond `./install`.
+No manual step beyond `./install`. Each link is gated on its app existing in `/Applications`,
+so the work Mac (no Cursor) only gets the VS Code link.
 
 ## 3. Extensions
 
