@@ -31,8 +31,9 @@ export PERSONAL_VAULT="${PERSONAL_VAULT:-$HOME/vault}"
 export BRG_WORKSPACE="${BRG_WORKSPACE:-$HOME/work/brg}"
 export AGENT_OBSERVABILITY_PATH="${AGENT_OBSERVABILITY_PATH:-$HOME/code/agent-observability}"
 
-# Claude Code mods: every folder in ~/.claude/mods loads as a plugin in each session
-_claude_mods=($HOME/.claude/mods/*(N/))
+# Claude Code mods: every folder in ~/.claude/mods loads as a plugin in each session,
+# except one holding a .disabled file
+_claude_mods=($HOME/.claude/mods/*(N/e:'[[ ! -e $REPLY/.disabled ]]':))
 export CLAUDE_CODE_PLUGIN_DIRS="${(j/:/)_claude_mods}"
 unset _claude_mods
 
