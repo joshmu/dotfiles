@@ -60,3 +60,12 @@ export PATH="$HOME/.local/bin:$PATH"
 if command -v fnm &>/dev/null; then
   eval "$(fnm env --use-on-cd --version-file-strategy=recursive --log-level=quiet --shell zsh)"
 fi
+
+# A pane started with OUTBOX_PANE_EXEC (the outbox skill's editor pane) runs that script in place of
+# an interactive shell. Last in .zshenv, so the env is complete, and before .zshrc, so it is quick and
+# no command text is typed into the pane
+if [[ -o interactive && -n "$OUTBOX_PANE_EXEC" ]]; then
+  _pane_exec=$OUTBOX_PANE_EXEC
+  unset OUTBOX_PANE_EXEC
+  exec sh "$_pane_exec"
+fi
