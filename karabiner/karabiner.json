@@ -470,6 +470,21 @@
                                 "type": "basic"
                             }
                         ]
+                    },
+                    {
+                        "description": "Left Option -> Left Option + Space (tap), Option when held",
+                        "manipulators": [
+                            {
+                                "from": {
+                                    "key_code": "left_option",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "parameters": { "basic.to_if_alone_timeout_milliseconds": 300 },
+                                "to": [{ "key_code": "left_option" }],
+                                "to_if_alone": [{ "key_code": "spacebar", "modifiers": ["left_option"] }],
+                                "type": "basic"
+                            }
+                        ]
                     }
                 ]
             },
