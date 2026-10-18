@@ -260,10 +260,11 @@ show_agent_labels_on_pane_borders = false
 agent_panel_sort = "priority"
 status_indicators = "symbols"
 
-# Agent sidebar rows: pane name (only when set) and tab bold, workspace dimmed; agent kind omitted
+# Agent sidebar rows: machine label on remote agents only (hidden for Local), pane name (only
+# when set) and tab bold, workspace dimmed; agent kind omitted
 [ui.sidebar.agents]
 rows = [
-  ["state_icon", { token = "pane", bold = true }, { token = "tab", bold = true }, { token = "workspace", bold = false, dim = true }],
+  ["state_icon", { token = "machine", fg = "#f5a97f", bold = true, rules = [{ equals = "Local", hide = true }] }, { token = "pane", bold = true }, { token = "tab", bold = true }, { token = "workspace", bold = false, dim = true }],
 ]
 
 # Spaces rows: name only; the default branch line follows the active tab's cwd, so it appears
