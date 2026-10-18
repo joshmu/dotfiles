@@ -45,11 +45,13 @@ name = "catppuccin"
 # Use "stable" for normal releases or "preview" for opt-in preview builds.
 channel = "stable"
 
-# Check herdr.dev for new Herdr versions in the background.
-version_check = true
+# Check herdr.dev for new Herdr versions in the background. Off: Herdr makes no background
+# network calls; update with `brew upgrade herdr` when wanted.
+version_check = false
 
-# Check herdr.dev for remote agent-detection manifest updates in the background.
-manifest_check = true
+# Check herdr.dev for remote agent-detection manifest updates in the background. Off: the
+# bundled manifests and local overrides still apply.
+manifest_check = false
 
 [keys]
 # Prefix key to enter prefix mode (default: "ctrl+b")
