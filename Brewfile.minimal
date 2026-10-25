@@ -55,7 +55,6 @@ brew "nvimpager"
 # Prompt theme engine for any shell
 brew "oh-my-posh"
 # Create, run, and share large language models (LLMs)
-brew "ollama"
 # Search tool like grep and The Silver Searcher
 brew "ripgrep"
 # Terminal multiplexer
