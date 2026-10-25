@@ -18,6 +18,7 @@ import {
   TRANSIENT_NETWORK_ERROR,
   DEFAULT_GIT_SSH_COMMAND,
   resolveGitSshCommand,
+  isMissingLocalRemote,
 } from "./update-repos";
 
 describe("parseArgs", () => {
@@ -428,6 +429,23 @@ describe("discoverGitRepos", () => {
   test("SKIP_DIRS covers the repo-boundary marker and node_modules", () => {
     expect(SKIP_DIRS.has(".git")).toBe(true);
     expect(SKIP_DIRS.has("node_modules")).toBe(true);
+  });
+});
+
+describe("isMissingLocalRemote", () => {
+  test("flags a sandbox mount path that is absent on the host", () => {
+    expect(isMissingLocalRemote("/upstream/vault.git")).toBe(true);
+    expect(isMissingLocalRemote("file:///upstream/vault.git")).toBe(true);
+  });
+
+  test("keeps a local remote that exists", () => {
+    expect(isMissingLocalRemote(tmpdir())).toBe(false);
+    expect(isMissingLocalRemote(`file://${tmpdir()}`)).toBe(false);
+  });
+
+  test("ignores network remotes", () => {
+    expect(isMissingLocalRemote("git@github.com:joshmu/dotfiles.git")).toBe(false);
+    expect(isMissingLocalRemote("https://github.com/joshmu/dotfiles.git")).toBe(false);
   });
 });
 

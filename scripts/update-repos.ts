@@ -358,6 +358,15 @@ function isGitRepo(path: string): boolean {
   return existsSync(join(path, ".git"));
 }
 
+// A filesystem remote (absolute path or file:// URL) that does not exist on
+// this machine. Agent sandboxes clone from a mount like `/upstream/vault.git`
+// that only exists inside the container, so the clone left on the host can
+// never fetch. That is not a failure of the run, so the caller skips it.
+export function isMissingLocalRemote(url: string): boolean {
+  const path = url.startsWith("file://") ? url.slice("file://".length) : url;
+  return path.startsWith("/") && !existsSync(path);
+}
+
 // Directories we never descend into while discovering repos. `.git` is the
 // repo-boundary marker (handled by pruning), the rest are heavy/irrelevant
 // trees that would only slow the walk or surface vendored repos we don't own.
@@ -725,6 +734,14 @@ async function updateRepo(
     return {
       status: "skipped",
       message: `${repoName} [${branch}] (no remote)`,
+    };
+  }
+
+  const originUrl = await runGitCommand(repoPath, ["remote", "get-url", "origin"]);
+  if (originUrl.success && isMissingLocalRemote(originUrl.output.trim())) {
+    return {
+      status: "skipped",
+      message: `${repoName} [${branch}] (local remote missing: ${originUrl.output.trim()})`,
     };
   }
 
