@@ -1,8 +1,8 @@
 # ----------------------
 # DOCKER
 # ----------------------
-# FIX: docker host not visible to sam cli
-export DOCKER_HOST=unix://$HOME/.docker/run/docker.sock
+# Colima (Docker Desktop replaced 2026-10-28); explicit for tools that ignore docker contexts (sam cli)
+export DOCKER_HOST=unix://$HOME/.colima/default/docker.sock
 
 # GPG SIGNING KEY
 export GPG_TTY=$(tty)
