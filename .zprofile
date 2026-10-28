@@ -1,8 +1,9 @@
 # ----------------------
 # DOCKER
 # ----------------------
-# Colima (Docker Desktop replaced 2026-10-28); explicit for tools that ignore docker contexts (sam cli)
-export DOCKER_HOST=unix://$HOME/.colima/default/docker.sock
+# Explicit for tools that ignore docker contexts (sam cli). Default: Docker Desktop.
+# A machine on Colima sets DOCKER_HOST in ~/.zshenv.local (work-comp does).
+export DOCKER_HOST=${DOCKER_HOST:-unix://$HOME/.docker/run/docker.sock}
 
 # GPG SIGNING KEY
 export GPG_TTY=$(tty)

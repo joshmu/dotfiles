@@ -10,3 +10,6 @@
 # (VS Code; Cursor is not IT-endorsed there). Personal Mac: cursor. Unset = cursor if
 # installed, else code. Mirror it into ~/.claude/settings.local.json "env" too.
 # export GUI_EDITOR=code
+
+# Docker engine on Colima instead of Docker Desktop (work-comp):
+# export DOCKER_HOST="unix://$HOME/.colima/default/docker.sock"
