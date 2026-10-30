@@ -179,7 +179,7 @@ Both `speak.sh` and `notification.ts` skip audio when any of these detectors exi
 | Script                                      | Detects                 | Mechanism                                                                                                                                                      | Env var override             |
 | ------------------------------------------- | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
 | `~/dotfiles/scripts/zoom-meeting-active.sh` | Active Zoom meeting     | `pgrep -x CptHost` (the audio/video subprocess Zoom only spawns during calls; `zoom.us` itself is always alive when Zoom is open and is not a reliable signal) | `ZOOM_MEETING_ACTIVE_SCRIPT` |
-| `~/dotfiles/scripts/mic-in-use.swift`       | Any input device in use | CoreAudio: iterates all input-capable devices, checks `kAudioDevicePropertyDeviceIsRunningSomewhere`. Catches Zoom, Meet, Teams, OpenWhispr, browser mic, etc. | `MIC_IN_USE_SCRIPT`          |
+| `~/dotfiles/scripts/mic-in-use.swift`       | Any input device in use | CoreAudio: iterates all input-capable devices, checks `kAudioDevicePropertyDeviceIsRunningSomewhere`. Catches Zoom, Meet, Teams, Handy, browser mic, etc. | `MIC_IN_USE_SCRIPT`          |
 | `~/dotfiles/scripts/webcam-in-use.swift`    | Any camera in use       | CoreMediaIO: iterates all CMIO devices, checks `kCMIODevicePropertyDeviceIsRunningSomewhere`. Catches FaceTime cam, external/virtual webcams.                  | `WEBCAM_IN_USE_SCRIPT`       |
 
 Behaviour:

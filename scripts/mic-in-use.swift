@@ -1,6 +1,6 @@
 #!/usr/bin/env swift
 // Exit 0 if any audio input device is currently in use by any process,
-// 1 otherwise. Covers Zoom, OpenWhispr, Meet, Teams, browsers — anything
+// 1 otherwise. Covers Zoom, Handy, Meet, Teams, browsers — anything
 // opening a mic via CoreAudio. Iterates every input-capable device so
 // non-default mics (BlackHole, specific USB mics, etc.) are also caught.
 import CoreAudio
