@@ -372,6 +372,8 @@ export function isMissingLocalRemote(url: string): boolean {
 // trees that would only slow the walk or surface vendored repos we don't own.
 export const SKIP_DIRS = new Set([
   ".git",
+  // Parked clones whose upstream is gone or unreachable.
+  "archive",
   "node_modules",
   ".next",
   "dist",
