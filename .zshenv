@@ -69,3 +69,10 @@ if [[ -o interactive && -n "$OUTBOX_PANE_EXEC" ]]; then
   unset OUTBOX_PANE_EXEC
   exec sh "$_pane_exec"
 fi
+
+# Claude Code agent shells (CLAUDECODE=1): pass an unmatched glob through literally instead of
+# failing the command, so `grep -r --include=*.ts` searches rather than erroring "no matches
+# found", and leave `=word` unexpanded. Interactive shells keep zsh's defaults.
+if [[ -n $CLAUDECODE ]]; then
+  setopt NO_NOMATCH NO_EQUALS
+fi
