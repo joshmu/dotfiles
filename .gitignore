@@ -33,3 +33,4 @@ bun.lock
 
 # macOS
 .DS_Store
+karabiner/automatic_backups/
