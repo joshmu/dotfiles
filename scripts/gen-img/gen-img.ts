@@ -3,7 +3,7 @@
  * gen-img - AI Image Generation
  *
  * Providers:
- * - openai (default): OpenAI gpt-image-2 via OPENAI_API_KEY env var
+ * - openai (default): OpenAI gpt-image-2.6 (flare, or sunburst for quality) via OPENAI_API_KEY (or the env var named by --key-env)
  * - replicate: Flux 2 Pro via Replicate API key in config.json
  *
  * Flow:
@@ -40,13 +40,37 @@ interface Options {
   provider: Provider;
   model: string;
   size: string;
-  quality: "low" | "medium" | "high" | "auto";
+  quality: Quality;
+  background?: "transparent" | "opaque" | "auto";
+  format: "png" | "webp" | "jpeg";
+  complexity?: "low" | "medium" | "high";
+  keyEnv: string;
   inputs: string[];
+}
+
+type Quality = "low" | "medium" | "high" | "xhigh" | "max" | "auto";
+const QUALITIES: Quality[] = ["low", "medium", "high", "xhigh", "max", "auto"];
+
+/** Short names for the OpenAI models; any other --model value is passed through as is. */
+const OPENAI_MODEL_ALIASES: Record<string, string> = {
+  flare: "gpt-image-2.6-flare",
+  sunburst: "gpt-image-2.6-sunburst",
+};
+
+function oneOf<T extends string>(
+  flag: string,
+  value: string | undefined,
+  allowed: readonly T[],
+): T {
+  if (!allowed.includes(value as T)) {
+    throw new Error(`Invalid ${flag}: ${value} (expected ${allowed.join("|")})`);
+  }
+  return value as T;
 }
 
 const DOWNLOADS_DIR = join(process.env.HOME!, "Downloads");
 const CLAUDE_PATH = join(process.env.HOME!, ".local/bin/claude");
-const DEFAULT_OPENAI_MODEL = "gpt-image-2";
+const DEFAULT_OPENAI_MODEL = "gpt-image-2.6-flare";
 const DEFAULT_REPLICATE_MODEL = "black-forest-labs/flux-2-pro";
 
 const getImageUrl = (output: string | string[]): string =>
@@ -109,9 +133,9 @@ async function generateFilename(prompt: string): Promise<string> {
 }
 
 async function generateOpenAI(opts: Options, outputPath: string): Promise<void> {
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = process.env[opts.keyEnv];
   if (!apiKey) {
-    throw new Error("OPENAI_API_KEY env var is not set");
+    throw new Error(`${opts.keyEnv} env var is not set`);
   }
 
   const response =
@@ -131,6 +155,21 @@ async function generateOpenAI(opts: Options, outputPath: string): Promise<void> 
   await Bun.write(outputPath, Buffer.from(b64, "base64"));
 }
 
+/** Request fields shared by generations and edits; optional ones are sent only when set. */
+function openAIFields(opts: Options): Record<string, string> {
+  const fields: Record<string, string> = {
+    model: opts.model,
+    prompt: opts.prompt,
+    size: opts.size,
+    quality: opts.quality,
+    output_format: opts.format,
+    n: "1",
+  };
+  if (opts.background) fields.background = opts.background;
+  if (opts.complexity) fields.complexity = opts.complexity;
+  return fields;
+}
+
 async function openAIGenerate(apiKey: string, opts: Options): Promise<Response> {
   return fetch("https://api.openai.com/v1/images/generations", {
     method: "POST",
@@ -138,23 +177,13 @@ async function openAIGenerate(apiKey: string, opts: Options): Promise<Response> 
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      model: opts.model,
-      prompt: opts.prompt,
-      size: opts.size,
-      quality: opts.quality,
-      n: 1,
-    }),
+    body: JSON.stringify({ ...openAIFields(opts), n: 1 }),
   });
 }
 
 async function openAIEdit(apiKey: string, opts: Options): Promise<Response> {
   const form = new FormData();
-  form.append("model", opts.model);
-  form.append("prompt", opts.prompt);
-  form.append("size", opts.size);
-  form.append("quality", opts.quality);
-  form.append("n", "1");
+  for (const [key, value] of Object.entries(openAIFields(opts))) form.append(key, value);
 
   for (const path of opts.inputs) {
     if (!existsSync(path)) {
@@ -280,16 +309,24 @@ OPTIONS
   --model <id>                   Model ID
                                  - openai default:    ${DEFAULT_OPENAI_MODEL}
                                  - replicate default: ${DEFAULT_REPLICATE_MODEL}
+                                 - openai aliases:    flare, sunburst (gpt-image-2.6-*)
   --size <WxH>                   Output size (default: 1024x1024, openai only)
-  --quality <low|medium|high|auto>  Quality (default: auto, openai only)
+  --quality <low|medium|high|xhigh|max|auto>
+                                 Quality (default: auto, openai only; xhigh and max need 2.6)
+  --background <transparent|opaque|auto>
+                                 Background (openai only; transparent needs png or webp)
+  --format <png|webp|jpeg>       Output format (default: png, openai only)
+  --complexity <low|medium|high> How much the model plans (2.6 only; API default high)
+  --key-env <VAR>                Env var holding the OpenAI key (default: OPENAI_API_KEY)
   --input <path>                 Reference image (openai only, repeatable)
                                  Triggers /v1/images/edits (image-to-image)
 
 PROVIDERS
   openai (default)
-    Uses OpenAI's image generation endpoint.
-    Requires OPENAI_API_KEY env var.
-    Output format: PNG. Saved to ~/Downloads/<descriptive-name>.png.
+    Uses OpenAI's image generation endpoint. gpt-image-2.6-flare is the fast default;
+    use --model sunburst for final assets (more detail, steadier edits).
+    Reads OPENAI_API_KEY, or the env var named by --key-env.
+    Saved to ~/Downloads/<descriptive-name>.<format>.
 
   replicate
     Uses Replicate's predictions API (Flux 2 Pro by default).
@@ -307,6 +344,7 @@ BEHAVIOR
 EXAMPLES
   gen-img.ts "a cat wearing a top hat"
   gen-img.ts "minimalist coffee logo, white background" --quality high
+  gen-img.ts "app icon, flat, centred glyph" --model sunburst --quality xhigh --background transparent
   gen-img.ts "neon cyberpunk skyline" --provider replicate
   gen-img.ts "portrait" --size 1024x1536`);
 }
@@ -316,7 +354,11 @@ function parseArgs(argv: string[]): Options | null {
   let provider: Provider = "openai";
   let model: string | undefined;
   let size = "1024x1024";
-  let quality: Options["quality"] = "auto";
+  let quality: Quality = "auto";
+  let background: Options["background"];
+  let format: Options["format"] = "png";
+  let complexity: Options["complexity"];
+  let keyEnv = "OPENAI_API_KEY";
   const inputs: string[] = [];
 
   for (let i = 0; i < argv.length; i++) {
@@ -333,11 +375,15 @@ function parseArgs(argv: string[]): Options | null {
     } else if (arg === "--size") {
       size = argv[++i];
     } else if (arg === "--quality") {
-      const value = argv[++i];
-      if (value !== "low" && value !== "medium" && value !== "high" && value !== "auto") {
-        throw new Error(`Invalid --quality: ${value} (expected low|medium|high|auto)`);
-      }
-      quality = value;
+      quality = oneOf(arg, argv[++i], QUALITIES);
+    } else if (arg === "--background") {
+      background = oneOf(arg, argv[++i], ["transparent", "opaque", "auto"] as const);
+    } else if (arg === "--format") {
+      format = oneOf(arg, argv[++i], ["png", "webp", "jpeg"] as const);
+    } else if (arg === "--complexity") {
+      complexity = oneOf(arg, argv[++i], ["low", "medium", "high"] as const);
+    } else if (arg === "--key-env") {
+      keyEnv = argv[++i];
     } else if (arg === "--input") {
       inputs.push(argv[++i]);
     } else if (arg.startsWith("--")) {
@@ -357,12 +403,21 @@ function parseArgs(argv: string[]): Options | null {
     throw new Error("--input is only supported with --provider openai");
   }
 
+  if (background === "transparent" && format === "jpeg") {
+    throw new Error("--background transparent needs --format png or webp");
+  }
+
+  const openAIModel = OPENAI_MODEL_ALIASES[model ?? ""] ?? model ?? DEFAULT_OPENAI_MODEL;
   return {
     prompt,
     provider,
-    model: model ?? (provider === "openai" ? DEFAULT_OPENAI_MODEL : DEFAULT_REPLICATE_MODEL),
+    model: provider === "openai" ? openAIModel : (model ?? DEFAULT_REPLICATE_MODEL),
     size,
     quality,
+    background,
+    format,
+    complexity,
+    keyEnv,
     inputs,
   };
 }
@@ -391,7 +446,7 @@ async function main() {
   }
 
   try {
-    const ext = opts.provider === "openai" ? "png" : "jpg";
+    const ext = opts.provider === "openai" ? (opts.format === "jpeg" ? "jpg" : opts.format) : "jpg";
     const filename = await generateFilename(opts.prompt);
     const outputPath = join(DOWNLOADS_DIR, `${filename}.${ext}`);
 
