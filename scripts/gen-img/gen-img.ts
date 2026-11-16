@@ -3,7 +3,7 @@
  * gen-img - AI Image Generation
  *
  * Providers:
- * - openai (default): OpenAI gpt-image-2.6 (flare, or sunburst for quality) via OPENAI_API_KEY (or the env var named by --key-env)
+ * - openai (default): OpenAI gpt-image-2.6 (flare, or sunburst for quality) via OPENAI_API_KEY
  * - replicate: Flux 2 Pro via Replicate API key in config.json
  *
  * Flow:
@@ -44,7 +44,6 @@ interface Options {
   background?: "transparent" | "opaque" | "auto";
   format: "png" | "webp" | "jpeg";
   complexity?: "low" | "medium" | "high";
-  keyEnv: string;
   inputs: string[];
 }
 
@@ -133,9 +132,9 @@ async function generateFilename(prompt: string): Promise<string> {
 }
 
 async function generateOpenAI(opts: Options, outputPath: string): Promise<void> {
-  const apiKey = process.env[opts.keyEnv];
+  const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    throw new Error(`${opts.keyEnv} env var is not set`);
+    throw new Error("OPENAI_API_KEY env var is not set");
   }
 
   const response =
@@ -317,7 +316,6 @@ OPTIONS
                                  Background (openai only; transparent needs png or webp)
   --format <png|webp|jpeg>       Output format (default: png, openai only)
   --complexity <low|medium|high> How much the model plans (2.6 only; API default high)
-  --key-env <VAR>                Env var holding the OpenAI key (default: OPENAI_API_KEY)
   --input <path>                 Reference image (openai only, repeatable)
                                  Triggers /v1/images/edits (image-to-image)
 
@@ -325,7 +323,7 @@ PROVIDERS
   openai (default)
     Uses OpenAI's image generation endpoint. gpt-image-2.6-flare is the fast default;
     use --model sunburst for final assets (more detail, steadier edits).
-    Reads OPENAI_API_KEY, or the env var named by --key-env.
+    Requires OPENAI_API_KEY env var.
     Saved to ~/Downloads/<descriptive-name>.<format>.
 
   replicate
@@ -358,7 +356,6 @@ function parseArgs(argv: string[]): Options | null {
   let background: Options["background"];
   let format: Options["format"] = "png";
   let complexity: Options["complexity"];
-  let keyEnv = "OPENAI_API_KEY";
   const inputs: string[] = [];
 
   for (let i = 0; i < argv.length; i++) {
@@ -382,8 +379,6 @@ function parseArgs(argv: string[]): Options | null {
       format = oneOf(arg, argv[++i], ["png", "webp", "jpeg"] as const);
     } else if (arg === "--complexity") {
       complexity = oneOf(arg, argv[++i], ["low", "medium", "high"] as const);
-    } else if (arg === "--key-env") {
-      keyEnv = argv[++i];
     } else if (arg === "--input") {
       inputs.push(argv[++i]);
     } else if (arg.startsWith("--")) {
@@ -417,7 +412,6 @@ function parseArgs(argv: string[]): Options | null {
     background,
     format,
     complexity,
-    keyEnv,
     inputs,
   };
 }

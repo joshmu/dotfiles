@@ -6,7 +6,7 @@ AI image generation via Raycast or CLI. Supports OpenAI (default) and Replicate.
 
 ### OpenAI (default)
 
-1. Set `OPENAI_API_KEY` in your environment (or name another variable with `--key-env`)
+1. Set `OPENAI_API_KEY` in your environment
 2. Done — no config file needed
 
 ### Replicate (optional fallback)
