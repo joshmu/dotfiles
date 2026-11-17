@@ -166,6 +166,40 @@ bindkey '^[[B' _mu-down-or-menu '^[OB' _mu-down-or-menu          # Down: enter t
 bindkey -M menuselect '^[[A' up-line-or-history   '^[OA' up-line-or-history    # in-menu: Up
 bindkey -M menuselect '^[[B' down-line-or-history '^[OB' down-line-or-history  # in-menu: Down
 
+# ZSH-AUTOCOMPLETE — hard deadline on async completion workers.
+# Each real-time completion forks a worker from this shell (same process group)
+# and waits on a zpty helper with no bound on the result read (upstream #909,
+# still open in 26.08.04). A worker interrupted mid-completion (its global
+# TRAPINT calls `zle` outside a widget, upstream #851) can fall back into the
+# REPL and spin at 100% CPU on tty reads once another program owns the terminal.
+# Guard: every worker starts a watchdog child that SIGKILLs it after 10s unless
+# the worker finished first. The watchdog only fires while the worker is still
+# its parent (sysparams[ppid]), so a recycled pid is never hit. Killing the
+# worker closes the pty master, which hangs up its zpty helper too.
+if (( $+functions[.autocomplete:async:start:inner] )); then
+  zmodload -F zsh/system p:sysparams
+  zmodload -F zsh/zselect b:zselect
+  functions[.autocomplete:async:start:inner:upstream]=$functions[.autocomplete:async:start:inner]
+  .autocomplete:async:start:inner() {
+    local -i worker=$sysparams[pid] watchdog=0
+    {
+      trap '' INT QUIT HUP
+      typeset -F SECONDS=0
+      local -i left
+      while (( (left = 100 * (10 - SECONDS) + 1) > 1 )); do
+        zselect -t $left  # hundredths of a second; loop past EINTR (e.g. SIGWINCH)
+      done
+      (( sysparams[ppid] == worker )) && kill -KILL $worker
+    } </dev/null >/dev/null 2>&1 &!
+    watchdog=$!
+    {
+      .autocomplete:async:start:inner:upstream "$@"
+    } always {
+      kill -KILL $watchdog 2>/dev/null
+    }
+  }
+fi
+
 # REMOVE COMP NAME FROM PROMPT
 # removed 'promp_context()' as it is uneeded with p10k
 # prompt_context() {
